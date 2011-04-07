@@ -1,0 +1,293 @@
+#include "config.h"
+#include "crcmodel.h"
+#include "delay.h"
+#include "rtc.h"
+#include "spi_eeprom.h"
+#include "serial.h"
+#include "Fill.h"
+
+
+//--------------------------------------------------------------
+// Delays in ms
+//--------------------------------------------------------------
+#define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
+#define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tF  	100    // End of fill - > response (4ms - 2sec)
+
+//--------------------------------------------------------------
+// Delays for the appropriate timings in usecs
+//--------------------------------------------------------------
+#define tJ  	25		// D HIGH -> First data bit on B
+#define tK3  	425 	// First Data bit on B -> E (CLK) LOW
+#define tK4  	425		// Last E (CLK) LOW -> TRISTATE E
+
+
+//--------------------------------------------------------------
+// Timeouts in ms
+//--------------------------------------------------------------
+#define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
+#define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
+#define tZ  	500	   // Query cell duration
+#define tE  	3000   // End of REQ -> start fill (0ms - 2.3sec)
+
+static byte  PreviousState;
+static byte  NewState;	
+
+static char GetQueryByte(void)
+{
+  byte  bit_count;
+  byte  Data;
+  
+  pinMode(PIN_B, INPUT);		// make a pin an input
+  pinMode(PIN_E, INPUT);		// make a pin an input
+
+  bit_count = 0;
+  PreviousState = LOW;
+  set_timeout(tZ);
+
+  // We exit on timeout or Pin F going high
+  while( is_not_timeout() )
+  {
+    NewState = digitalRead(PIN_E);
+    if( PreviousState != NewState  )
+    {
+      if( NewState == LOW )
+      {
+		Data = (Data >> 1 ) | ((digitalRead(PIN_B)) ? 0 : 0x80);
+        bit_count++; 
+		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
+		{
+			return MODE3;
+		}
+      }
+      PreviousState = NewState;
+    }
+  }
+  return -1;
+}
+
+static void SendEquipmentType(void)
+{
+  byte i;
+  // Set up pins mode and levels
+  delay(tB);
+  
+  pinMode(PIN_B, OUTPUT);		// make a pin active
+  pinMode(PIN_E, OUTPUT);		// make a pin active
+  digitalWrite(PIN_E, HIGH);	// Set clock to High
+  delayMicroseconds(tJ);		// Setup time for clock high
+
+  // Output the data bit of the equipment code
+  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" always
+  delayMicroseconds(tK3);		// Satisfy Setup time tK1
+
+  // Output the data
+  for(i = 0; i < 40; i++)
+  {
+	// Pulse the clock
+    delayMicroseconds(tT);		// Hold Clock in HIGH for tT (setup time)
+    digitalWrite(PIN_E, LOW);	// Drop Clock to LOW 
+    delayMicroseconds(tT);		// Hold Clock in LOW for tT
+    digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+  }
+  delayMicroseconds(tK4 - tT);  // Wait there
+  
+  // Release PIN_E - the Fill device will drive it
+  pinMode(PIN_E, INPUT);		// Tristate the pin
+}
+
+static byte ReceiveCell(byte *p_cell, byte count)
+{
+  byte  bit_count;
+  byte  byte_count;
+  byte  Data;
+
+  pinMode(PIN_D, INPUT);		// make a pin an input DATA
+  pinMode(PIN_E, INPUT);		// make a pin an input CLOCK
+  pinMode(PIN_F, INPUT);		// make a pin an input MUX OVR
+
+  byte_count = 0;
+  bit_count = 0;
+  PreviousState = LOW;
+  set_timeout(tE);
+
+  while( is_not_timeout() && 
+				(byte_count < count))
+  {
+	// Check for the last fill for Mode2 and 3
+	if( ((fill_type == MODE2) || (fill_type == MODE3)) 
+			&& (digitalRead(PIN_F) == HIGH ))
+	{
+		break;	// Fill device had deasserted PIN F - exit
+	}
+
+    NewState = digitalRead(PIN_E);
+    if( PreviousState != NewState  )
+    {
+      PreviousState = NewState;
+      if( NewState == LOW )
+      {
+  	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
+        bit_count++; 
+		if( bit_count >= 8)
+		{
+			*p_cell++ = Data;
+			bit_count = 0;
+			byte_count++;
+		    set_timeout(tF);
+		}
+      }
+    }
+  }
+  return byte_count;
+}
+
+static char SendFillRequest(byte req_type)
+{
+  pinMode(PIN_C, OUTPUT);		// make a pin an output
+  digitalWrite(PIN_C, LOW);
+  delay(tD);
+  digitalWrite(PIN_C, HIGH);
+}
+
+void ClearFill(byte stored_slot)
+{
+	 unsigned int base_address = ((int)stored_slot) << 10;
+   	 byte_write(base_address, 0x00);
+}
+
+
+// Detect the fill type - if nothing happened before BTN was pressed - 
+//  that is Type 1 request.
+// If before that we got the request for the equipment type - that was
+// Type 2 or 3 request.
+char GetFillType()
+{
+  byte type;
+
+  // Setup pins
+  pinMode(PIN_B, INPUT);		// make a pin an input
+  pinMode(PIN_C, OUTPUT);		// make a pin an output
+  pinMode(PIN_D, INPUT);		// make a pin an input
+  pinMode(PIN_E, INPUT);		// make a pin an input
+  pinMode(PIN_F, INPUT);		// make a pin an input
+  digitalWrite(PIN_C, HIGH);	// Keep PTT high
+
+	// Wait for the Pins F and D going down
+	// Here we are waiting for some time when F and D are LOW, and then D comes back
+	// to HIGH no later than before tA timeout
+	if( (digitalRead(PIN_D) == HIGH) || (digitalRead(PIN_F) == HIGH)) return -1;
+
+	// Both PIN_D and PIN_F are LOW - wait for PIN_D to get HIGH
+	set_timeout(tA);
+	while( is_not_timeout() )
+	{
+		if( digitalRead(PIN_F) == HIGH) return -1;
+		
+		// Pin D went high - wait for query request from the fill device
+		if( digitalRead(PIN_D) == HIGH)
+		{
+			type = 	GetQueryByte();
+			if( type > 0 )  
+			{
+				SendEquipmentType();
+				fill_type = type;
+				return type;
+			}
+		}
+	}
+	return -1;
+}
+
+void (*p_tx)(byte *, byte);
+byte (*p_rx)(byte *, byte);
+char (*p_ack)(byte);
+
+static unsigned int base_address;
+
+char SendSerialAck(byte ack_type)
+{
+	byte key_ack = KEY_ACK;
+	p_tx(&key_ack, 1);			// ACK the previous packet
+}
+
+static byte GetFill(void)
+{
+	byte records, byte_cnt, record_size;
+	unsigned int saved_base_address;
+
+	records = 0;
+	record_size = 0;
+
+	saved_base_address = base_address++;
+
+	p_ack(REQ_FIRST);	// ACK the first packet
+  	while(1)
+	{
+		byte_cnt = p_rx(&data_cell[0], FILL_MAX_SIZE);
+		record_size += byte_cnt;
+		if(record_size == 0)
+		{
+			break;	// No data provided - exit
+		}
+		if(byte_cnt)
+		{
+			array_write(base_address, &data_cell[0], byte_cnt);
+			base_address += byte_cnt;
+		}
+		if(byte_cnt < FILL_MAX_SIZE)
+		{
+			byte_write(saved_base_address, record_size);
+			records++; 
+			record_size = 0;
+			saved_base_address = base_address++;
+			p_ack(REQ_NEXT);	// ACK the previous packet
+		}
+	}
+	
+	return records;
+}
+
+
+char GetStoreFill(byte stored_slot)
+{
+	char result = -1;
+	byte required_fill;
+	byte records;
+	unsigned int saved_base_addrress;
+
+	base_address = ((unsigned int)(stored_slot & 0x0F)) << 10;
+	required_fill = stored_slot >> 4;
+
+	saved_base_addrress = base_address++;	// Skip the records field
+	base_address++;							// Skip the fill_type field
+											// .. to be filled at the end
+	// All data are stored in 1K bytes (8K bits) slots
+	// The first byte of the each slot has the number of the records (0 - 255)
+	// The first byte of the record has the number of bytes that should be sent out
+	// so each record has no more than 255 bytes as well
+	// Empty slot has first byte as 0x00
+	
+	if(required_fill)
+	{
+		fill_type = required_fill;
+		p_rx = rx_eusart;
+		p_tx = tx_eusart;
+		p_ack = SendSerialAck;
+	}else
+	{
+		p_rx = ReceiveCell;
+		p_ack = SendFillRequest;
+	}
+	records = GetFill();
+	// Mark the slot as valid slot containig data
+	if( records > 0)
+	{
+		byte_write(saved_base_addrress++, records);
+		byte_write(saved_base_addrress++, fill_type);
+		result = 0;
+	}
+   	return result;
+}
