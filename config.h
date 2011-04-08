@@ -8,6 +8,7 @@
 #define MAX(a,b)  ((a) > (b) ? (a) : (b))
 #define MIN(a,b)  ((a) < (b) ? (a) : (b))
 #define _BV(bit)  (1 << (bit))
+#define NUM_ELEMS(a) (sizeof((a))/sizeof((a)[0]))
 
 #ifndef byte
 typedef unsigned char byte;

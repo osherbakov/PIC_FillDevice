@@ -31,6 +31,7 @@ extern volatile byte tx_count;
 extern void PCInterface(void);
 
 extern void open_eusart(void);
+extern void open_eusart_rx(void);
 extern void close_eusart(void);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern void tx_eusart(unsigned char *p_data, byte ncount);
