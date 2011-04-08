@@ -58,6 +58,23 @@ void send_options()
 	tx_eusart_buff(OK_RESP);
 }
 
+
+void open_eusart_rx()
+{
+	if(!RCSTA1bits.SPEN)
+	{
+		TRIS_Tx = INPUT;
+
+		SPBRGH1 = 0x00;
+		SPBRG1 = BRREG_CMD;
+		BAUDCON1 = DATA_POLARITY;
+	
+		RCSTA1bits.CREN = 1; // Enable Rx
+		RCSTA1bits.SPEN = 1; // Enable EUSART
+	}
+}
+
+
 void open_eusart()
 {
 	if(!RCSTA1bits.SPEN)
