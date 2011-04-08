@@ -224,10 +224,10 @@ void ReleaseBus()
   delayMicroseconds(tL);
   digitalWrite(PIN_F, HIGH);
   delay(tZ);
-//  pinMode(PIN_B, INPUT);
-//  pinMode(PIN_C, INPUT);
-//  pinMode(PIN_D, INPUT);
-//  pinMode(PIN_E, INPUT);
+  pinMode(PIN_B, INPUT);
+  pinMode(PIN_C, INPUT);
+  pinMode(PIN_D, INPUT);
+  pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
   delay(tZ);
 }
@@ -286,6 +286,9 @@ char CheckEquipment()
 	  pinMode(PIN_F, OUTPUT);
 	  digitalWrite(PIN_B, LOW);
 	  digitalWrite(PIN_F, LOW);
+	  // Apply GND on PIN B
+  	  TRIS_PIN_GND = INPUT;
+	  ON_GND = 1;
 	  Equipment = MODE1;
   }else if(fill_type == MODE4)
   {
