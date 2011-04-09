@@ -146,8 +146,9 @@ void setup_start_io()
 	// Setup and disable USART
 	// Configure the EUSART module
 	IPR1bits.TX1IP = 1;		// High priority TX
-	TXSTA1 = 0x00;
-	RCSTA1bits.SPEN = 0;
+	TXSTA1 = 0x00;			// Disable TX
+	IPR1bits.RC1IP = 0;		// Low priority RX
+	RCSTA1bits.SPEN = 0;	// Disable EUSART
 
 
 	// Enable all interrupts

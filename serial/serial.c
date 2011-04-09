@@ -61,17 +61,16 @@ void send_options()
 
 void open_eusart_rx()
 {
-	if(!RCSTA1bits.SPEN)
-	{
-		TRIS_Tx = INPUT;
+	TRIS_Tx = INPUT;
 
-		SPBRGH1 = 0x00;
-		SPBRG1 = BRREG_CMD;
-		BAUDCON1 = DATA_POLARITY;
-	
-		RCSTA1bits.CREN = 1; // Enable Rx
-		RCSTA1bits.SPEN = 1; // Enable EUSART
-	}
+	SPBRGH1 = 0x00;
+	SPBRG1 = BRREG_CMD;
+	BAUDCON1 = DATA_POLARITY;
+
+	rx_count = 0;
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	RCSTA1bits.CREN = 1; // Enable Rx
+	RCSTA1bits.SPEN = 1; // Enable EUSART
 }
 
 
@@ -86,7 +85,10 @@ void open_eusart()
 		SPBRG1 = BRREG_CMD;
 		BAUDCON1 = DATA_POLARITY;
 	
+		rx_count = 0;
 		tx_count = 0;
+		PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+		PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
 		TXSTA1bits.TXEN = 1; // Enable Tx	
 		RCSTA1bits.CREN = 1; // Enable Rx
 		RCSTA1bits.SPEN = 1; // Enable EUSART
@@ -95,7 +97,8 @@ void open_eusart()
 
 void close_eusart()
 {
-	PIE1bits.TX1IE = 0;		// Disable Interrupts
+	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
+	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA1bits.TXEN = 0; 	// Disable Tx	
 	RCSTA = 0;				// Disable EUSART
 }
@@ -112,6 +115,16 @@ void PCInterface()
 		SendStoredFill(data_cell[5]);
 	}
 }
+
+
+void start_eusart_rx(unsigned char *p_data, byte ncount)
+{
+	rx_orig_data = rx_data = (volatile byte *) p_data;
+	rx_count = ncount;
+	rx_orig_count_1 = ncount - 1;
+	PIE1bits.RC1IE = 1;	// Enable Interrupts
+}
+
 
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
@@ -139,6 +152,8 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 
 volatile byte *tx_data;
 volatile byte tx_count;
+volatile byte *rx_data;
+volatile byte rx_count;
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {

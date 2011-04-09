@@ -27,11 +27,18 @@
 
 extern volatile byte *tx_data;
 extern volatile byte tx_count;
+extern volatile byte *rx_data;
+extern volatile byte rx_count;
+extern volatile byte *rx_orig_data;
+extern volatile byte rx_orig_count_1;
 
 extern void PCInterface(void);
 
 extern void open_eusart(void);
 extern void open_eusart_rx(void);
+extern void start_eusart_rx(unsigned char *, byte );
+#define is_eusart_ready() (rx_count == 0)
+
 extern void close_eusart(void);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern void tx_eusart(unsigned char *p_data, byte ncount);

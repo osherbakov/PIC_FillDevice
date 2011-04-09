@@ -1,3 +1,4 @@
+#include "string.h"
 #include "config.h"
 #include "delay.h"
 #include "controls.h"
@@ -29,6 +30,9 @@ byte prev_switch_pos;
 
 byte power_pos;
 byte prev_power_pos;
+
+volatile byte *rx_orig_data;
+volatile byte rx_orig_count_1;
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -175,6 +179,23 @@ void low_isr ()
 			LAT_LEDP = ~LAT_LEDP;
 		}
 	}
+
+	// Is it a EUSART RX interrupt ?
+	if(PIR1bits.RC1IF)
+	{
+		if(rx_count)
+		{	
+			*rx_data = RCREG1;
+			rx_count--;
+			if(rx_count) rx_data++;
+		}else
+		{
+			memmove((void *)rx_orig_data, (void *)(rx_orig_data + 1), rx_orig_count_1);
+			*rx_data = RCREG1;
+		}
+		// No need to clear the Interrupt Flag
+	}
+
 }
 
 
