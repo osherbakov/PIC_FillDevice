@@ -313,7 +313,7 @@ char CheckEquipment()
 }
 
 #define	 NUM_TYPE3_CELLS	(22)
-#define	 TOD_CELL_NUMBER	(13)
+#define	 TOD_CELL_NUMBER	(14)
 
 // Send only TOD fill info for Type 3 SINCGARS
 char SendTODFill()

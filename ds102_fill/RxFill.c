@@ -165,16 +165,17 @@ void ClearFill(byte stored_slot)
 // Type 2 or 3 request.
 char GetFillType()
 {
-  byte type;
+	byte type;
 
-  // Setup pins
-  pinMode(PIN_B, INPUT);		// make a pin an input
-  pinMode(PIN_C, OUTPUT);		// make a pin an output
-  pinMode(PIN_D, INPUT);		// make a pin an input
-  pinMode(PIN_E, INPUT);		// make a pin an input
-  pinMode(PIN_F, INPUT);		// make a pin an input
-  digitalWrite(PIN_C, HIGH);	// Keep PTT high
+	// Setup pins
+	pinMode(PIN_B, INPUT);		// make a pin an input
+	pinMode(PIN_C, OUTPUT);		// make a pin an output
+	pinMode(PIN_D, INPUT);		// make a pin an input
+	pinMode(PIN_E, INPUT);		// make a pin an input
+	pinMode(PIN_F, INPUT);		// make a pin an input
+	digitalWrite(PIN_C, HIGH);	// Keep PTT high
 
+	if( is_eusart_ready() && 
 	// Wait for the Pins F and D going down
 	// Here we are waiting for some time when F and D are LOW, and then D comes back
 	// to HIGH no later than before tA timeout
