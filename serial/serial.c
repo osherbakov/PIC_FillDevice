@@ -9,18 +9,26 @@
 #define tx_eusart_str(a) tx_eusart((a), strlen((char *)a))
 #define tx_eusart_buff(a) tx_eusart((a), NUM_ELEMS(a))
 
-static byte KEY_FILL[] 		= "/FILL";
-static byte KEY_DUMP[] 		= "/DUMP";
+// The command from the PC to fill the key or to dump it
+// The byte after the command specifies the key number and type
+//  /FILL<0x34> means fill key 4 of type 3
+static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
+static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
 
+/****************************************************************/
+// Those are commands and responses that MBITR receives and sends
+// When programmed from the PC
+/****************************************************************/
+// Command to request a serial number
 static byte SN_REQ[]		= {0x2F, 0x39, 0x38, 0x0D}; // "/98\n"	
 static byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
  0x31, 0x32, 0x33, 0x34, 0x35, 0x0D, 					// "12345\n"
  0x4F, 0x4B, 0x0D, 0x00 };								// "OK\n"
 
+// Command to request the radio capabilities
 static byte OPT_REQ[] 		= {0x2F, 0x38, 0x34, 0x0D};	// "/84\n" ;
-static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
 
-static byte OPT_ENABLED[] 	= "Radio Option Enabled";
+// Capabilities options
 static byte OPT_BASIC[]  	= "Basic ";
 static byte OPT_RETRAN[] 	= "Retransmit ";
 static byte OPT_SINC1[]  	= "Sincgar ";
@@ -34,16 +42,19 @@ static byte OPT_OPT_X[] 	= "Option X ";
 static byte OPT_MELP[] 		= "Andvt MELP ";
 static byte OPT_DIGITAL[] 	= "Clear Digital ";
 static byte OPT_GPS[] 		= "Enhanced GPS ";
-
 static byte OPT_END[] 		= {0x0D, 0x00};
 
+static byte OPT_ENABLED[] 	= "Radio Option Enabled";
+static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
+
+// The list of all options enabled in the radio
 static byte *OPTS[] = 
 {
 	OPT_BASIC, OPT_RETRAN, OPT_SINC1, OPT_SINC2, OPT_HQ2, OPT_ANDVT,
 	OPT_DES, OPT_AES, OPT_LDRM, OPT_OPT_X, OPT_MELP, OPT_DIGITAL, OPT_GPS
 };
 
-void send_options()
+static void send_options(void)
 {
 	byte idx;
 	// Go thru the list of all options and send them out.
@@ -58,7 +69,38 @@ void send_options()
 	tx_eusart_buff(OK_RESP);
 }
 
+static unsigned char SerialBuffer[4];
 
+// Check serial port if there is a request to send DES keys
+char CheckSerial()
+{
+	if( RCSTA1bits.SPEN == 0)
+	{
+//		TRIS_PIN_GND = INPUT;	// Make Ground
+//		ON_GND = 1;				//  on Pin B
+		open_eusart_rx();
+		start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
+	}
+
+	if(rx_count >= 4)
+	{
+		if( is_equal(SerialBuffer, SN_REQ, 4) )
+		{
+			tx_eusart_buff(SN_RESP);
+			start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
+		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
+		{
+			send_options();
+			while( PIE1bits.TX1IE && tx_count ) {};	// Wait to finish previous Tx
+			open_eusart_rxtx();
+			return MODE4;
+		}
+	}
+	return 0;
+}
+
+
+// Open EUSART for reading only, TX is not affected
 void open_eusart_rx()
 {
 	TRIS_Tx = INPUT;
@@ -74,25 +116,22 @@ void open_eusart_rx()
 }
 
 
-void open_eusart()
+void open_eusart_rxtx()
 {
-	if(!RCSTA1bits.SPEN)
-	{
-		TRIS_Rx = INPUT;
-		TRIS_Tx = INPUT;
+	TRIS_Rx = INPUT;
+	TRIS_Tx = INPUT;
 
-		SPBRGH1 = 0x00;
-		SPBRG1 = BRREG_CMD;
-		BAUDCON1 = DATA_POLARITY;
-	
-		rx_count = 0;
-		tx_count = 0;
-		PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-		PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
-		TXSTA1bits.TXEN = 1; // Enable Tx	
-		RCSTA1bits.CREN = 1; // Enable Rx
-		RCSTA1bits.SPEN = 1; // Enable EUSART
-	}
+	SPBRGH1 = 0x00;
+	SPBRG1 = BRREG_CMD;
+	BAUDCON1 = DATA_POLARITY;
+
+	rx_count = 0;
+	tx_count = 0;
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
+	TXSTA1bits.TXEN = 1; // Enable Tx	
+	RCSTA1bits.CREN = 1; // Enable Rx
+	RCSTA1bits.SPEN = 1; // Enable EUSART
 }
 
 void close_eusart()
@@ -117,12 +156,13 @@ void PCInterface()
 }
 
 
+// Set up interrupt-driven Rx buffers and counters
 void start_eusart_rx(unsigned char *p_data, byte ncount)
 {
-	rx_orig_data = rx_data = (volatile byte *) p_data;
-	rx_count = ncount;
-	rx_orig_count_1 = ncount - 1;
-	PIE1bits.RC1IE = 1;	// Enable Interrupts
+	rx_data = (volatile byte *) p_data;
+	rx_count = 0;
+	rx_count_1 = ncount - 1;
+	PIE1bits.RC1IE = 1;	 // Enable Interrupts
 }
 
 
@@ -130,14 +170,14 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 {
 	byte	nrcvd = 0;	
 	
-    set_timeout(RX_TIMEOUT_PC);
+    set_timeout(RX_TIMEOUT1_PC);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
 			// Get data byte and save it
 			*p_data++ = RCREG1;
-		    set_timeout(RX_TIMEOUT_PC);
+		    set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -152,16 +192,19 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 
 volatile byte *tx_data;
 volatile byte tx_count;
+
 volatile byte *rx_data;
 volatile byte rx_count;
+volatile byte rx_count_1;
+
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
-	if( tx_count ) {};	// Wait to finish previous Tx
+	TXSTA1bits.TXEN = 1; // Enable Tx	
+	while( PIE1bits.TX1IE && tx_count ) {};	// Wait to finish previous Tx
 
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
-	
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated
 }
 
@@ -172,7 +215,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	TRIS_Rx = INPUT;
 	PR6 = TIMER_CMD;
-    set_timeout(RX_TIMEOUT_MBITR);
+    set_timeout(RX_TIMEOUT1_MBITR);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -189,7 +232,8 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 			}
 			*p_data++ = ~data;
 			nrcvd++;
-			while(RxBIT) {};
+		    set_timeout(RX_TIMEOUT2_MBITR);
+			while(RxBIT) {};	// Wait for stop bit
 		}
 	}
 	return nrcvd;

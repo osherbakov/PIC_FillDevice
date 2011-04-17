@@ -31,9 +31,6 @@ byte prev_switch_pos;
 byte power_pos;
 byte prev_power_pos;
 
-volatile byte *rx_orig_data;
-volatile byte rx_orig_count_1;
-
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
 #define DATA_FRAME_SIZE		(112/8)		// 112 bits of actual timing data
@@ -181,17 +178,20 @@ void low_isr ()
 	}
 
 	// Is it a EUSART RX interrupt ?
+	// Maintain a circular buffer pointed by rx_data
 	if(PIR1bits.RC1IF)
 	{
-		if(rx_count)
+		if(rx_count <= rx_count_1)
 		{	
-			*rx_data = RCREG1;
-			rx_count--;
-			if(rx_count) rx_data++;
+			rx_data[rx_count++] = RCREG1;
 		}else
 		{
-			memmove((void *)rx_orig_data, (void *)(rx_orig_data + 1), rx_orig_count_1);
-			*rx_data = RCREG1;
+			byte i;
+			for( i = 0; i < rx_count_1; i++)
+			{
+				rx_data[i] = rx_data[i+1];
+			}
+			rx_data[rx_count_1] = RCREG1;
 		}
 		// No need to clear the Interrupt Flag
 	}

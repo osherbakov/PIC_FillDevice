@@ -20,6 +20,7 @@ static enum
 	FILL_RX,
 	FILL_RX_SG,
 	FILL_RX_PROC,
+	FILL_RX_PC,
 	ZERO_FILL,
 	HQ_TX,
 	HQ_RX,
@@ -84,14 +85,14 @@ void SetNextState(char nextState)
 		case FILL_TX :
 		case TIME_TX :
 			if(fill_type == MODE4)
-				set_led_state(5 , 95);
+				set_led_state(5 , 95);	// "Connect Serial" blink pattern	
 			else			
-				set_led_state(70 , 30);		// "Key valid" blink pattern
+				set_led_state(70 , 30);	// "Key valid" blink pattern
 			break;
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(5 , 95);		// "Key HQ sending" blink pattern
+			set_led_state(5 , 95);		// "Connect Serial" blink pattern
 			break;
 		
 		default:
@@ -159,11 +160,11 @@ void main()
 							SetNextState(FILL_RX) ; // Receive fill
 						}
 					}
-				}else if(switch_pos == PC_POS )
+				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
 					TRIS_PIN_GND = INPUT;			// Make Ground
 					ON_GND = 1;						//  on Pin B
-					open_eusart();
+					open_eusart_rxtx();
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
@@ -197,7 +198,13 @@ void main()
 			case FILL_RX:
 				if(GetFillType() > 0)
 				{
-					SetNextState(FILL_RX_SG);
+					if(fill_type == MODE4)
+					{
+						SetNextState(FILL_RX_PC);
+					}else
+					{
+						SetNextState(FILL_RX_SG);
+					}
 				}
 				if( TestButtonPress() )
 				{
@@ -211,6 +218,10 @@ void main()
 				{
 					SetNextState(FILL_RX_PROC);
 				}
+				break;
+
+			case FILL_RX_PC:
+				TestFillResult(GetStoreFill( (MODE4<<4) | switch_pos));
 				break;
 
 			case FILL_RX_PROC:
@@ -229,8 +240,8 @@ void main()
 				PCInterface();
 				break;
 
-//			case HQ_TX:
-//				break;
+			case HQ_TX:
+				break;
 
 			case TIME_TX:
 				if( CheckEquipment() == MODE3 )

@@ -4,10 +4,11 @@
 // QUERY bytes
 typedef enum 
 {
-	MODE1 =  0x01,
-	MODE2 = 0x02,
-	MODE3 = 0x03,
-	MODE4 = 0x04
+	MODE0 = 0x00,	// No fill
+	MODE1 = 0x01,	// Type 1 fill
+	MODE2 = 0x02,	// SINCGARS Type 2 fill
+	MODE3 = 0x03,	// SINCGARS Type 3 fill
+	MODE4 = 0x04	// Serial PC/MBITR fill
 } FILL_TYPE;
 
 typedef enum
@@ -27,8 +28,9 @@ typedef enum
 #define digitalWrite(pin, value) pin = value
 #define pinMode(pin, mode) TRIS_##pin = mode
 
+#define KEY_MAX_SIZE_PWR	(11)	// Max_size = 2^(N)
 
-#define FILL_MAX_SIZE (32)
+#define FILL_MAX_SIZE (64)
 #define MODE2_3_CELL_SIZE (16)
 
 #define TOD_TAG_0 (0x00)

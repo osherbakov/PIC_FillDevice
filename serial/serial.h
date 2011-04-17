@@ -22,22 +22,23 @@
 #define	 RxBIT	(PIN_E)
 #define	 TRIS_Rx (TRIS_PIN_E)
 
-#define  RX_TIMEOUT_PC	 	(250)
-#define  RX_TIMEOUT_MBITR 	(2000)
+#define  RX_TIMEOUT1_PC	 	(5000)
+#define  RX_TIMEOUT2_PC	 	(100)
+#define  RX_TIMEOUT1_MBITR 	(2000)
+#define  RX_TIMEOUT2_MBITR 	(200)
 
 extern volatile byte *tx_data;
 extern volatile byte tx_count;
-extern volatile byte *rx_data;
-extern volatile byte rx_count;
-extern volatile byte *rx_orig_data;
-extern volatile byte rx_orig_count_1;
+extern volatile byte *rx_data;	// Pointer to the start of the buffer
+extern volatile byte rx_count;	// Number of symbols collected
+extern volatile byte rx_count_1; // Last byte index
 
 extern void PCInterface(void);
+extern char CheckSerial(void);
 
-extern void open_eusart(void);
+extern void open_eusart_rxtx(void);
 extern void open_eusart_rx(void);
 extern void start_eusart_rx(unsigned char *, byte );
-#define is_eusart_ready() (rx_count == 0)
 
 extern void close_eusart(void);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);

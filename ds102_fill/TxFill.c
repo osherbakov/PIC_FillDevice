@@ -346,7 +346,7 @@ unsigned int base_address;
 
 byte CheckFillType(byte stored_slot)
 {
-	base_address = ((unsigned int)(stored_slot & 0x0F)) << 10;
+	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
    	records = byte_read(base_address++); if(records == 0xFF) records = 0x00;
 	fill_type = byte_read(base_address++);
 	p_ack = WaitSerialReq;
