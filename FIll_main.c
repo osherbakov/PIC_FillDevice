@@ -114,6 +114,25 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
+/***********************************
+	rtc_date.Century	= 0x20;
+	rtc_date.Year		= 0x11;
+	rtc_date.Month		= 0x04;
+	rtc_date.Day		= 0x18;
+	rtc_date.JulianDayH = 0x01;
+	rtc_date.JulianDayL = 0x09;
+	rtc_date.Hours		= 0x22;
+	rtc_date.Minutes	= 0x12;
+	rtc_date.Seconds	= 0x44;
+
+SetRTCData();
+
+while(1)
+{
+	GetRTCData();
+	DelayMs(1000);
+}
+************************************/
 	while(1)
 	{
 		Sleep();	// Will wake up every 10 ms

@@ -23,7 +23,7 @@ static void EndHandshake(void);
 //--------------------------------------------------------------
 #define tM 		10	  // D LOW -> F LOW 	(-5us - 100ms)
 #define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	100   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	350   // REQ -> Fill		(0 - 2.3 sec)
 
 #define tZ  	150   // End -> New Fill	
 //--------------------------------------------------------------
@@ -46,9 +46,6 @@ static void EndHandshake(void);
 
 static byte  PreviousState;
 static byte  NewState;	
-byte  fill_type;
-byte records;
-
 
 // Sends byte data on PIN_B with clocking on PIN_E
 void SendQuery(byte Data)
@@ -110,11 +107,15 @@ void SendCell(byte *p_cell, byte count)
   byte i;
   pinMode(PIN_D, OUTPUT);    // make a pin active
   pinMode(PIN_E, OUTPUT);    // make a pin active
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, HIGH);
   delay(tE);     // Delay before sending first bit
   for (i = 0; i < count; i++)
   {
     SendByte(*p_cell++);
   }
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, HIGH);
 }
 
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
@@ -156,10 +157,12 @@ char WaitReq(byte req_type)
   pinMode(PIN_C, INPUT);    // make a pin input
   PreviousState = HIGH;
 
-  set_timeout(tD);
-  if( req_type )
+  if( req_type == REQ_FIRST)
   {
-  	set_timeout(tF);
+	  set_timeout(tD);	// Return every 500 ms to check for keys
+  }else
+  {
+	  set_timeout(tF);
   }
   while( is_not_timeout() )  
   {
@@ -179,7 +182,9 @@ char WaitReq(byte req_type)
       Result = 1;  // Bad CRC
     }
   }
-  return -1;
+  
+  // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
+  return ((fill_type == MODE1) && (req_type == REQ_LAST)) ? 0 : -1;
 }
 
 
@@ -187,8 +192,8 @@ void StartHandshake()
 {
   delay(tZ);
 
-  pinMode(PIN_D, OUTPUT);    // make a pin input
-  pinMode(PIN_F, OUTPUT);    // make a pin input
+  pinMode(PIN_D, OUTPUT);    // make a pin output
+  pinMode(PIN_F, OUTPUT);    // make a pin output
   // Drop PIN_D first
   digitalWrite(PIN_D, LOW);
   // Drop PIN_F after delay
@@ -281,14 +286,15 @@ char CheckEquipment()
   char Equipment = 0;
   if((fill_type == MODE1))
   {
-	  AcquireBus();
 	  pinMode(PIN_B, OUTPUT);
+      pinMode(PIN_C, INPUT);
+	  pinMode(PIN_D, OUTPUT);
+	  pinMode(PIN_E, OUTPUT);
 	  pinMode(PIN_F, OUTPUT);
 	  digitalWrite(PIN_B, LOW);
-	  digitalWrite(PIN_F, LOW);
-	  // Apply GND on PIN B
-  	  TRIS_PIN_GND = INPUT;
-	  ON_GND = 1;
+	  digitalWrite(PIN_D, LOW);
+	  digitalWrite(PIN_E, LOW);
+	  digitalWrite(PIN_F, HIGH);
 	  Equipment = MODE1;
   }else if(fill_type == MODE4)
   {
@@ -343,18 +349,20 @@ byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 byte send_SN;
 
 unsigned int base_address;
+byte  fill_type;
+byte records;
 
 byte CheckFillType(byte stored_slot)
 {
 	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
    	records = byte_read(base_address++); if(records == 0xFF) records = 0x00;
 	fill_type = byte_read(base_address++);
-	p_ack = WaitSerialReq;
-	send_SN = 0;
 	if(stored_slot >> 4)	// Send fill to the PC
 	{
+		send_SN = 0;
 		p_rx = rx_eusart;
 		p_tx = tx_eusart;
+		p_ack = WaitSerialReq;
 	}else					// Send Fill to the MBITR
 	{
 		if(fill_type == MODE4) // DES fill mode
@@ -362,8 +370,10 @@ byte CheckFillType(byte stored_slot)
 			send_SN = 1;
 			p_rx = rx_mbitr;
 			p_tx = tx_mbitr;
+			p_ack = WaitSerialReq;
 		}else					// Regular MODE 1, 2, 3 fills
 		{
+			send_SN = 0;
 			p_tx = SendCell;
 			p_ack = WaitReq;
 		}
@@ -396,7 +406,7 @@ char SendFill(byte records)
 	// If first fill request was not answered - just return with timeout
 	if( p_ack(REQ_FIRST) < 0 ) return -1;
 
-  	while(records--)	
+  	while(records)	
 	{
 		bytes = byte_read(base_address++);
 		while(bytes )
@@ -404,9 +414,10 @@ char SendFill(byte records)
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
 			array_read(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
-			bytes -= byte_cnt;
 			p_tx(&data_cell[0], byte_cnt);
+			bytes -= byte_cnt;
 		}
+		records--;
 		if( p_ack( records ? REQ_NEXT : REQ_LAST ) ) return 1;	// Error - no Ack
 	}	
     ReleaseBus();
@@ -416,7 +427,7 @@ char SendFill(byte records)
 
 char SendStoredFill(byte stored_slot)
 {
-  // All data are stored in 1K bytes (8K bits) slots
+  // All data are stored in 2K bytes (16K bits) slots
   // The first byte of the each slot has the number of the records (0 - 255)
   // The first byte of the record has the number of bytes that should be sent out
   // so each record has no more than 255 bytes as well
