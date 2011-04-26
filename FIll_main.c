@@ -59,11 +59,11 @@ void TestFillResult(char result)
 		current_state = INIT;
 	}else if(result == 1)			// ERROR return value
 	{
-		set_led_state(10 , 5);		// "Fill error" blink pattern
+		set_led_state(15 , 5);		// "Fill error" blink pattern
 		current_state = DONE;
 	}else if(result == 2 )			// DONE return value
 	{
-		set_led_state(70 , 30);		// "Key valid" blink pattern
+		set_led_state(50 , 100);	// "Key valid" blink pattern
 		current_state = DONE;
 	}
 	// Timeout - stay in the same state
@@ -85,18 +85,18 @@ void SetNextState(char nextState)
 		case FILL_TX :
 		case TIME_TX :
 			if(fill_type == MODE4)
-				set_led_state(5 , 95);	// "Connect Serial" blink pattern	
+				set_led_state(5 , 150);	// "Connect Serial" blink pattern	
 			else			
-				set_led_state(70 , 30);	// "Key valid" blink pattern
+				set_led_state(50 , 150);	// "Key valid" blink pattern
 			break;
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(5 , 95);		// "Connect Serial" blink pattern
+			set_led_state(5 , 150);		// "Connect Serial" blink pattern
 			break;
 		
 		default:
-			set_led_state(95 , 5);		// "Key loading" blink pattern
+			set_led_state(150 , 5);		// "Key loading" blink pattern
 			break;
 	}
 	current_state = nextState;

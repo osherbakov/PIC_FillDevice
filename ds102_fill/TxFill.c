@@ -318,9 +318,6 @@ char CheckEquipment()
   return Equipment;
 }
 
-#define	 NUM_TYPE3_CELLS	(22)
-#define	 TOD_CELL_NUMBER	(14)
-
 // Send only TOD fill info for Type 3 SINCGARS
 char SendTODFill()
 {
@@ -414,7 +411,18 @@ char SendFill(byte records)
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
 			array_read(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
-			p_tx(&data_cell[0], byte_cnt);
+			// Check if the cell that we are about to send is the 
+			// TOD cell - replace it with the real Time cell
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+			{
+				FillTODData();
+				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+		  		p_tx(TOD_cell, MODE2_3_CELL_SIZE);
+			}else
+			{
+				p_tx(&data_cell[0], byte_cnt);
+			}
 			bytes -= byte_cnt;
 		}
 		records--;

@@ -33,6 +33,9 @@ typedef enum
 #define FILL_MAX_SIZE (64)
 #define MODE2_3_CELL_SIZE (16)
 
+#define	 TOD_CELL_NUMBER	(14)
+#define	 NUM_TYPE3_CELLS	(22)
+
 #define TOD_TAG_0 (0x00)
 #define TOD_TAG_1 (0x02)
 
