@@ -385,7 +385,7 @@ char WaitSerialReq(byte req_type)
 
 	char_to_expect = KEY_ACK; 
 	// This is the DES key load - send serial number request
-	if( (req_type == REQ_FIRST) && 	send_SN )
+	if( (req_type == REQ_FIRST) && send_SN )
 	{
 		p_tx(&CHECK_MBITR[0], 4);
 		char_to_expect = KEY_EOL ; 
@@ -428,7 +428,10 @@ char SendFill(byte records)
 		records--;
 		if( p_ack( records ? REQ_NEXT : REQ_LAST ) ) return 1;	// Error - no Ack
 	}	
-    ReleaseBus();
+	if( (fill_type == MODE1) || (fill_type == MODE2) || (fill_type == MODE3))
+	{
+    	ReleaseBus();
+	}
   	return send_SN ? 2 : 0;	// When send to MBITR - return with DONE flag
 }
 

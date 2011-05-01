@@ -245,17 +245,18 @@ void tx_mbitr(byte *p_data, byte ncount)
 {
 	byte 	bitcount;
 	byte 	data;
+
+    DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
 	PR6 = TIMER_CMD;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-
 	while(ncount-- )
 	{
 		TxBIT = START;
 		data = ~(*p_data++);
-		for(bitcount = 0; bitcount < 12; bitcount++)
+		for(bitcount = 0; bitcount < 14; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
