@@ -23,9 +23,9 @@
 #define	 TRIS_Rx (TRIS_PIN_E)
 
 #define  RX_TIMEOUT1_PC	 	(5000)
-#define  RX_TIMEOUT2_PC	 	(200)
+#define  RX_TIMEOUT2_PC	 	(100)
 #define  RX_TIMEOUT1_MBITR 	(3000)
-#define  RX_TIMEOUT2_MBITR 	(200)
+#define  RX_TIMEOUT2_MBITR 	(100)
 
 #define TX_MBITR_DELAY_MS	(10) 	
 
