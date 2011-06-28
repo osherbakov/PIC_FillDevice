@@ -199,6 +199,7 @@ while(1)
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
+					fill_type == MODE3;
 					SetNextState(TIME_TX);
 				}
 				break;
@@ -211,7 +212,14 @@ while(1)
 				break;
 
 			case FILL_TX_PROC:
-				TestFillResult(SendStoredFill(switch_pos));
+				// Check if the fill was initialed on the Rx device
+				TestFillResult(WaitReqSendFill());
+				// For Type1 Fills we can simulate KOI18 and start
+				//     sending data on button press....
+				if( (fill_type == MODE1) && TestButtonPress() )
+				{
+					TestFillResult(SendFill());
+				}
 				break;
 
 			case FILL_RX:
@@ -270,7 +278,7 @@ while(1)
 				break;
 
 			case TIME_TX_PROC:
-				TestFillResult(SendTODFill());
+				TestFillResult(WaitReqSendTODFill());
 				break;
 
 			case HQ_RX:

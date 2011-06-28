@@ -63,7 +63,9 @@ extern char CheckEquipment(void);
 extern void ClearFill(byte stored_slot);
 extern byte CheckFillType(byte stored_slot);
 extern char SendStoredFill(byte stored_slot);
-extern char SendTODFill(void);
+extern char WaitReqSendFill(void);
+extern char WaitReqSendTODFill(void);
+extern char SendFill(void);
 
 
 
