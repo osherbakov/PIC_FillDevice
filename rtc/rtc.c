@@ -60,17 +60,43 @@ void SetNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
 	byte sec;
-	// Skip the incrementing - bad time (once a minute)
-	if(rtc_date.Seconds >= 0x59)
+    byte min;
+    byte hours;
+
+	sec = rtc_date.Seconds;
+	min = rtc_date.Minutes;
+	hours = rtc_date.Hours;
+
+	if(sec >= 0x59)
 	{
-		rtc_date.Valid = 0;
+		sec = 0x00;
+        if(min >= 0x59)
+		{
+			min = 0x00;
+			if(hours >= 23)
+			{
+				// Skip the incrementing - bad time (once a day)
+				rtc_date.Valid = 0;
+			}else
+			{
+				hours += 1;
+				if( (hours & 0x0F) == 0x0A) hours += 0x06;
+			}
+		}else
+		{
+			min += 1;
+			// This is a cool way to increment BCD numbers!!!
+			if( (min & 0x0F) == 0x0A) min += 0x06;
+		}
 	}else
 	{
-		sec = rtc_date.Seconds + 1;
+		sec += 1;
 		// This is a cool way to increment BCD numbers!!!
 		if( (sec & 0x0F) == 0x0A) sec += 0x06;
-		rtc_date.Seconds = sec;
 	}
+	rtc_date.Hours = hours;
+	rtc_date.Minutes = min;
+	rtc_date.Seconds = sec;
 }
 
 void GetRTCData()
