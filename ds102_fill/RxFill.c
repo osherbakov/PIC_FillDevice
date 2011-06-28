@@ -152,9 +152,46 @@ static char SendFillRequest(byte req_type)
   digitalWrite(PIN_C, HIGH);
 }
 
+static char SendBadFillAck(void)
+{
+  pinMode(PIN_B, OUTPUT);		// make a pin an output
+  digitalWrite(PIN_B, LOW);
+  delay(tG);
+  digitalWrite(PIN_B, HIGH);
+  delay(tH);
+}
+
+static void  ExtractTODData(void)
+{
+	rtc_date.Century	= data_cell[2];
+	rtc_date.Year		= data_cell[3];
+	rtc_date.Month		= data_cell[4];
+	rtc_date.Day		= data_cell[5];
+	rtc_date.JulianDayH = data_cell[6];
+	rtc_date.JulianDayL = data_cell[7];
+	rtc_date.Hours		= data_cell[8];
+	rtc_date.Minutes	= data_cell[9];
+	rtc_date.Seconds	= data_cell[10];
+}
+
+static void SetTimeFromCell(void)
+{
+	ExtractTODData();
+	SetNextSecond();
+	if( !rtc_date.Valid )
+	{
+		SendBadFillAck();
+	}else
+	{
+		char ms_100 =  10 - data_cell[11] >> 4 ; 
+		while(ms_100-- > 0) delay(100);
+		SetRTCData();		
+	}
+}
+
 void ClearFill(byte stored_slot)
 {
-	 unsigned int base_address = ((int)stored_slot) << 10;
+	 unsigned int base_address = ((int)stored_slot & 0x0F) << KEY_MAX_SIZE_PWR;
    	 byte_write(base_address, 0x00);
 }
 
@@ -175,7 +212,12 @@ char GetFillType()
 	pinMode(PIN_F, INPUT);		// make a pin an input
 	digitalWrite(PIN_C, HIGH);	// Keep PTT high
 
-	if( is_eusart_ready() && 
+	if(CheckSerial() > 0)
+	{
+		fill_type = MODE4;
+		return fill_type;
+	}
+
 	// Wait for the Pins F and D going down
 	// Here we are waiting for some time when F and D are LOW, and then D comes back
 	// to HIGH no later than before tA timeout
@@ -196,7 +238,8 @@ char GetFillType()
 				SendEquipmentType();
 				fill_type = type;
 				return type;
-			}
+			}else
+				return -1;
 		}
 	}
 	return -1;
@@ -206,11 +249,12 @@ void (*p_tx)(byte *, byte);
 byte (*p_rx)(byte *, byte);
 char (*p_ack)(byte);
 
+static byte key_ack;
 static unsigned int base_address;
 
 char SendSerialAck(byte ack_type)
 {
-	byte key_ack = KEY_ACK;
+	key_ack = KEY_ACK;
 	p_tx(&key_ack, 1);			// ACK the previous packet
 }
 
@@ -224,7 +268,7 @@ static byte GetFill(void)
 
 	saved_base_address = base_address++;
 
-	p_ack(REQ_FIRST);	// ACK the first packet
+	p_ack(REQ_FIRST);	// REQ the first packet
   	while(1)
 	{
 		byte_cnt = p_rx(&data_cell[0], FILL_MAX_SIZE);
@@ -244,10 +288,9 @@ static byte GetFill(void)
 			records++; 
 			record_size = 0;
 			saved_base_address = base_address++;
-			p_ack(REQ_NEXT);	// ACK the previous packet
+			p_ack(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}
-	
 	return records;
 }
 
@@ -259,7 +302,7 @@ char GetStoreFill(byte stored_slot)
 	byte records;
 	unsigned int saved_base_addrress;
 
-	base_address = ((unsigned int)(stored_slot & 0x0F)) << 10;
+	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
 	required_fill = stored_slot >> 4;
 
 	saved_base_addrress = base_address++;	// Skip the records field
