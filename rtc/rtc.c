@@ -61,11 +61,11 @@ void SetNextSecond()
 	// The next transition HIGH->LOW will happen at that time
 	byte sec;
     byte min;
-    byte hours;
+    byte hour;
 
 	sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
-	hours = rtc_date.Hours;
+	hour = rtc_date.Hours;
 
 	if(sec >= 0x59)
 	{
@@ -73,14 +73,14 @@ void SetNextSecond()
         if(min >= 0x59)
 		{
 			min = 0x00;
-			if(hours >= 23)
+			if(hour >= 23)
 			{
 				// Skip the incrementing - bad time (once a day)
 				rtc_date.Valid = 0;
 			}else
 			{
-				hours += 1;
-				if( (hours & 0x0F) == 0x0A) hours += 0x06;
+				hour += 1;
+				if( (hour & 0x0F) == 0x0A) hour += 0x06;
 			}
 		}else
 		{
@@ -94,7 +94,7 @@ void SetNextSecond()
 		// This is a cool way to increment BCD numbers!!!
 		if( (sec & 0x0F) == 0x0A) sec += 0x06;
 	}
-	rtc_date.Hours = hours;
+	rtc_date.Hours = hour;
 	rtc_date.Minutes = min;
 	rtc_date.Seconds = sec;
 }

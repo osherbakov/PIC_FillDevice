@@ -242,7 +242,7 @@ void AcquireMode23Bus()
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
+//  digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
