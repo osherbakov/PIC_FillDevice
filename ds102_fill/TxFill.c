@@ -26,9 +26,9 @@ static void SendMode23Query(byte Data);
 //--------------------------------------------------------------
 #define tM 		10	  // D LOW -> F LOW 	(-5us - 100ms)
 #define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	350   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	250   // REQ -> Fill		(0 - 2.3 sec)
 
-#define tZ  	150   // End -> New Fill	
+#define tZ  	250   // End -> New Fill	
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
 //--------------------------------------------------------------
@@ -45,10 +45,9 @@ static void SendMode23Query(byte Data);
 #define tG  250     // PIN_B Pulse Wodth (0.25ms - 80ms)
 #define tH  500     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
 #define tF  3000    // End of fill - > response (4ms - 2sec)
-#define tC  (5L * 60L * 1000L)  // 5 minutes - > until REQ (300us - 5min )
+#define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
 
 static byte  PreviousState;
-static byte  NewState;	
 
 // Sends byte data on PIN_B with clocking on PIN_E
 void SendMode23Query(byte Data)
@@ -127,7 +126,8 @@ void SendDS102Cell(byte *p_cell, byte count)
 char GetEquipmentMode23Type()
 {
   byte i;
-  
+  byte  NewState;	
+
   i = 0;
 	ON_GND = 0;
   pinMode(PIN_B, INPUT);
@@ -160,16 +160,8 @@ char GetEquipmentMode23Type()
 //			1 	- PinB was asserted - error fill
 char WaitDS102Req(byte req_type)
 {
-  char   Result = -1;
-
-  // Check for the PinB only in modes 2 and 3
-  if( (fill_type != MODE1) && (req_type != REQ_FIRST) )
-  {
-  	pinMode(PIN_B, INPUT);    // make pin input
-  }
-
-  pinMode(PIN_C, INPUT);    // make pin input
-  PreviousState = HIGH;
+  byte  NewState;	
+  char   Result = 0;
 
   if( req_type == REQ_FIRST)
   {
@@ -179,18 +171,19 @@ char WaitDS102Req(byte req_type)
 	  set_timeout(tF);	// If not first - wait 3 seconds until timeout
   }
 
+  PreviousState = HIGH;
   while( is_not_timeout() )  
   {
     NewState = digitalRead(PIN_C);
     if(PreviousState != NewState)  
     {
-	  	Result = 0;	// Success 
-      PreviousState = NewState;
-	  	// If this is the last request - return just as PinC goes LOW	
+      // check if we should return now or wait for the PIN_C to go HIGH
+      // If this is the last request - return just as PinC goes LOW	
       if( (NewState == HIGH) || (req_type == REQ_LAST)) 
       {
         return Result;
  	  	} 
+      PreviousState = NewState;
     }
 
 		// Do not check for pin B in MODE1 fill
@@ -199,30 +192,30 @@ char WaitDS102Req(byte req_type)
       Result = 1;  // Bad CRC
     }
   }
-  // Timeout occured
-  // For Type 1 fill the first request may be just long pull of PIN C
+  // Timeout occured - must return -1, escept some special cases
+  // For Type 1 Fill the first request may be just a long pull of PIN_C
   // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
-  if( (fill_type == MODE1) && (req_type == REQ_LAST) )
-	{
+  if( (fill_type == MODE1) && 
+          ( (PreviousState == LOW) || (req_type == REQ_LAST) ) )
+  {
 		Result = 0;
-	}
+	}else
+  {
+		Result = -1;
+  }
   return Result;
 }
 
 
 void StartMode23Handshake()
 {
-  delay(tZ);
-
   pinMode(PIN_D, OUTPUT);    // make pin output
   pinMode(PIN_F, OUTPUT);    // make pin output
   // Drop PIN_D first
   digitalWrite(PIN_D, LOW);
-  // Drop PIN_F after delay
-  digitalWrite(PIN_F, LOW);
-  delay(tA);    // Pin D pulse width
-  // Bring PIN_D up again
-  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
+  delay(tA);                  // Pin D pulse width
+  digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
 }
 
 void EndMode23Handshake()
@@ -242,10 +235,10 @@ void AcquireMode23Bus()
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_B, HIGH);
-//  digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
+  delay(tZ);
 }
 
 

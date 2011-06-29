@@ -5,7 +5,7 @@
 extern void	Delay1K(unsigned int cnt);
 
 extern volatile signed int timeout_counter;
-#define set_timeout(a) 	timeout_counter = (int)(((long)(a))/ 10)
+#define set_timeout(a) 	timeout_counter = (((int)(a))/ 10)
 #define is_not_timeout() 	(timeout_counter >= 0)
 
 #define DelayMs(x) 		Delay1K((XTAL_FREQ * ((int)(x))) / 4 )
