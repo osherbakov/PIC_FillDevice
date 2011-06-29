@@ -77,7 +77,7 @@ char CheckSerial()
 	if( RCSTA1bits.SPEN == 0)
 	{
 		TRIS_PIN_GND = INPUT;	// Make Ground
-		ON_GND = 1;				//  on Pin B
+		ON_GND = 1;				    //  on Pin B
 		open_eusart_rx();
 		start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
 	}

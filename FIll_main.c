@@ -40,6 +40,9 @@ byte 	prev_button_pos;
 #define PC_POS 		(16)
 
 
+//
+// Test if the button was depressed 
+//  Return 1 if yes
 byte TestButtonPress(void)
 {
 	button_pos = get_button_state();
@@ -47,7 +50,9 @@ byte TestButtonPress(void)
 	{
 		prev_button_pos = button_pos;
 		if(button_pos == UP_POS)
+		{
 			return 1;
+		}
 	}
 	return 0;
 }
@@ -114,30 +119,12 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
-/***********************************
-	rtc_date.Century	= 0x20;
-	rtc_date.Year		= 0x11;
-	rtc_date.Month		= 0x04;
-	rtc_date.Day		= 0x18;
-	rtc_date.JulianDayH = 0x01;
-	rtc_date.JulianDayL = 0x09;
-	rtc_date.Hours		= 0x22;
-	rtc_date.Minutes	= 0x12;
-	rtc_date.Seconds	= 0x44;
-
-SetRTCData();
-
-while(1)
-{
-	GetRTCData();
-	DelayMs(1000);
-}
-************************************/
 	while(1)
 	{
 		Sleep();	// Will wake up every 10 ms
 
-	  	switch_pos = get_switch_state();
+	  	// Check the switch position - did it change?
+		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
 			prev_switch_pos = switch_pos;
@@ -183,6 +170,7 @@ while(1)
 				{
 					TRIS_PIN_GND = INPUT;			// Make Ground
 					ON_GND = 1;						//  on Pin B
+					hq_enabled = 0;
 					open_eusart_rxtx();
 					SetNextState(PC_CONN);
 				}
@@ -190,6 +178,7 @@ while(1)
 				{
 					TRIS_PIN_GND = INPUT;			// Make ground
 					ON_GND = 1;						//  on Pin B
+					hq_enabled = 0;
 					SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
@@ -214,7 +203,7 @@ while(1)
 			case FILL_TX_PROC:
 				// Check if the fill was initialed on the Rx device
 				TestFillResult(WaitReqSendFill());
-				// For Type1 Fills we can simulate KOI18 and start
+				// For Type1 fills we can simulate KOI18 and start
 				//     sending data on button press....
 				if( (fill_type == MODE1) && TestButtonPress() )
 				{
