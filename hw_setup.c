@@ -156,36 +156,36 @@ void setup_start_io()
 	INTCONbits.GIE = 1;
 }
 
-//void setup_sleep_io()
-//{
-//	INTCONbits.GIE = 0;		// Disable interrupts
-//
-//	// Release I2C bus
-//	SWStopI2C();
-//
-//	// Use all ports as Analog In
-//	TRISA = 0xFF;
-//	TRISB = 0xFF;
-//	TRISC = 0xFF;
-//	TRISD = 0xFF;
-//	TRISE = 0xFF;
-//	ANSELA = 0xFF;
-//	ANSELB = 0xFF;
-//	ANSELC = 0xFF;
-//	ANSELD = 0xFF;
-//	ANSELE = 0xFF;
-//
-//	INTCON2bits.RBPU = 1;	// Disable Weak Pull Ups
-//	WPUB = 0x00;			// Turn off Weak pull-up
-//
-//	// Turn off SPI
-//	TRIS_SPI_CS = OUTPUT;	// Drive the CS pin
-//	TRIS_SPI_SCK = OUTPUT;	// Drive the CLOCK pin		
-//	TRIS_SPI_SDO = OUTPUT;	// Drive SDOut pin
-//	SPI_CS = 1;				// Keep CS HIGH
-//	SPI_SCK = 0;			// Keep CLOCK LOW
-//	SPI_SDO = 0;			// Keep SDOut LOW
-//
-//	OSCCONbits.IDLEN = 0; 	// On Sleep() enter Sleep
-//}
-//
+void setup_sleep_io()
+{
+	INTCONbits.GIE = 0;		// Disable interrupts
+
+	// Release I2C bus
+	SWStopI2C();
+
+	// Use all ports as Analog In
+	TRISA = 0xFF;
+	TRISB = 0xFF;
+	TRISC = 0xFF;
+	TRISD = 0xFF;
+	TRISE = 0xFF;
+	ANSELA = 0xFF;
+	ANSELB = 0xFF;
+	ANSELC = 0xFF;
+	ANSELD = 0xFF;
+	ANSELE = 0xFF;
+
+	INTCON2bits.RBPU = 1;	// Disable Weak Pull Ups
+	WPUB = 0x00;			// Turn off Weak pull-up
+
+	// Turn off SPI
+	TRIS_SPI_CS = OUTPUT;	// Drive the CS pin
+	TRIS_SPI_SCK = OUTPUT;	// Drive the CLOCK pin		
+	TRIS_SPI_SDO = OUTPUT;	// Drive SDOut pin
+	SPI_CS = 1;				// Keep CS HIGH
+	SPI_SCK = 0;			// Keep CLOCK LOW
+	SPI_SDO = 0;			// Keep SDOut LOW
+
+	OSCCONbits.IDLEN = 0; 	// On Sleep() enter Sleep
+}
+
