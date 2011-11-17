@@ -2,12 +2,6 @@
 #include "controls.h"
 #include "delay.h"
 
-
-// static char majority(char val1, char val2, char val3)
-// {
-//   return ( (val1 == val2) || (val1 == val3) ? val1 : val2) ;
-// }
-
 byte get_switch_state()
 {
 	byte data;
