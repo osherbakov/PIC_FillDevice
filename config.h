@@ -68,6 +68,8 @@ typedef enum
 #define	S15 RA6
 #define	S16	RA7
 
+// Rotary switch ports - the position is indicated
+// by the grounding of the pin.
 #define S1_8 PORTD
 #define S9_16 PORTA
 
