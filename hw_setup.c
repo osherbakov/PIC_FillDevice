@@ -100,7 +100,7 @@ void setup_start_io()
 	TRIS_S9_16 = 0xFF;	// Inputs
 	
 	// Voltage on Resistor network
-	TRIS_VRD = 0;		// Drive it
+	TRIS_VRD = OUTPUT;		// Drive it
 	VRD = 0;			// Zero to save power
 	
 	// Audio Connector - Inputs
@@ -120,16 +120,20 @@ void setup_start_io()
 	// Button and Power sensors
 	INTCON2bits.RBPU = 0;	// Enable Weak Pull Ups
 
+	// Zero button - input and no pullup
 	TRIS_ZBR = INPUT;		// Input
 	WPUB_ZBR = 0;			// Turn off Weak pull-up
 
+	// Ground control - output and no pullup
 	TRIS_OFFBR = OUTPUT;	// Output
+	WPUB_OFFBR = 0;
 	ON_GND = 0;
 
+	// Push button - input with weak pullup
 	TRIS_BTN = INPUT;		// Input
 	WPUB_BTN = 1;			// Turn on Weak pull-up
 
-	// setup I2C pins
+	// setup I2C pins both to high
 	DATA_HI();
 	CLOCK_HI();
 	
@@ -149,7 +153,6 @@ void setup_start_io()
 	TXSTA1 = 0x00;			// Disable TX
 	IPR1bits.RC1IP = 0;		// Low priority RX
 	RCSTA1bits.SPEN = 0;	// Disable EUSART
-
 
 	// Enable all interrupts
 	INTCONbits.PEIE = 1;

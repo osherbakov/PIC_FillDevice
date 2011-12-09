@@ -96,6 +96,7 @@ typedef enum
 
 #define	OFFBR		PORTBbits.RB1
 #define	TRIS_OFFBR	TRISBbits.RB1
+#define	WPUB_OFFBR	WPUBbits.WPUB1
 
 #define	BTN			PORTBbits.RB2
 #define	TRIS_BTN	TRISBbits.RB2

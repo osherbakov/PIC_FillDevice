@@ -10,6 +10,8 @@
 extern volatile byte hq_enabled; 
 extern char ReceiveHQTime(void);
 
+extern void SetNextState(char nextState);
+
 byte 	current_state;
 
 static enum 
@@ -27,6 +29,7 @@ static enum
 	TIME_TX,
 	TIME_TX_PROC, 
 	PC_CONN,
+	ERROR,
 	DONE
 } MAIN_STATES;
 
@@ -41,8 +44,8 @@ byte 	prev_button_pos;
 
 
 //
-// Test if the button was depressed 
-//  Return 1 if yes
+// Test if the button was depressed and released
+//  Returns 1 if transition from LOW to HIGH was detected
 byte TestButtonPress(void)
 {
 	button_pos = get_button_state();
@@ -57,51 +60,69 @@ byte TestButtonPress(void)
 	return 0;
 }
 
+// Test the resutlt of the fill and set next state.
+//   if result is 0 - go back to INIT state
+//		result = 1 - error happened - set error blink 
+//				and wait for the button press in DONE state
+//		result = 2 - loaded sucessfully - set "Key Valid" blink 
+//				and wait for the button press in DONE state
 void TestFillResult(char result)
 {
 	if(result == 0)					// OK return value
 	{
-		current_state = INIT;
+		SetNextState(INIT);
 	}else if(result == 1)			// ERROR return value
 	{
-		set_led_state(15 , 5);		// "Fill error" blink pattern
-		current_state = DONE;
+		SetNextState(ERROR);
 	}else if(result == 2 )			// DONE return value
 	{
-		set_led_state(50 , 100);	// "Key valid" blink pattern
-		current_state = DONE;
+		SetNextState(DONE);
 	}
 	// Timeout - stay in the same state
 }
 
+
+// Set the blink pattern depending on the next state specified
 void SetNextState(char nextState)
 {
 	switch(nextState)
 	{
+		case INIT:
+			set_led_state(0, 100);		// No light
+			break;
+
 		case ZERO_FILL:
-			set_led_state(5 , 5);		// About to zero-out pattern
+			set_led_state(5, 5);		// About to zero-out pattern
 			break;
 
 		case FILL_RX :
 		case HQ_RX :
-			set_led_state(15 , 15);		// "Key empty" blink pattern
+			set_led_state(15, 15);		// "Key empty" blink pattern
 			break;
 
 		case FILL_TX :
 		case TIME_TX :
 			if(fill_type == MODE4)
-				set_led_state(5 , 150);	// "Connect Serial" blink pattern	
+				set_led_state(5, 150);	// "Connect Serial" blink pattern	
 			else			
-				set_led_state(50 , 150);	// "Key valid" blink pattern
+				set_led_state(50, 150);	// "Key valid" blink pattern
 			break;
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(5 , 150);		// "Connect Serial" blink pattern
+			set_led_state(5, 150);		// "Connect Serial" blink pattern
 			break;
-		
+	
+		case ERROR:
+			set_led_state(15, 5);		// "Fill error" blink pattern
+			break;
+
+		case DONE:
+			set_led_state(50, 100);	// "Done - key valid" blink pattern
+			break;
+	
 		default:
-			set_led_state(150 , 5);		// "Key loading" blink pattern
+			set_led_state(150, 5);		// "Key loading" blink pattern
 			break;
 	}
 	current_state = nextState;
@@ -111,7 +132,7 @@ void SetNextState(char nextState)
 void main()
 {
 	setup_start_io();
-	OSCTUNEbits.TUN = 10;
+//	OSCTUNEbits.TUN = 10;
 	current_state = INIT;
 
 	// Initialize current state of the butons, switches, etc
@@ -128,7 +149,7 @@ void main()
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
 			prev_switch_pos = switch_pos;
-			current_state = INIT;
+			SetNextState(INIT);
 		}
 
 		power_pos = get_power_state();
@@ -138,12 +159,13 @@ void main()
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
 			{
-				current_state = INIT;
+				SetNextState(INIT);
 			}
 		}
 
 		switch(current_state)
 		{
+			// This case when any switch or button changes
 			case INIT:
 				// Remove ground from pin B
 				ON_GND = 0;
@@ -158,9 +180,10 @@ void main()
 						SetNextState(ZERO_FILL);
 					}else
 					{
+						// Any type > 0 - fill exists
 						if( CheckFillType(switch_pos) > 0)
 						{
-							SetNextState(FILL_TX);
+							SetNextState(FILL_TX);	// Be ready to send
 						}else
 						{
 							SetNextState(FILL_RX) ; // Receive fill
@@ -275,6 +298,7 @@ void main()
 				TestFillResult(ReceiveHQTime());
 				break;
 
+			case ERROR:
 			case DONE:
 				if( TestButtonPress() )
 				{
