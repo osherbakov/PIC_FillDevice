@@ -42,6 +42,7 @@ void CalculateDay(void)
 		day -= 100;
 		rtc_date.JulianDayH++;
 	}
+  // Present the Julian day in BCD format
 	day10 = 0;
 	while (day >= 10)
 	{
@@ -49,7 +50,9 @@ void CalculateDay(void)
 		day10 += 0x10;
 	}
 	rtc_date.JulianDayL =   (day10 + (byte) day);
-	while( weekday > 7 )
+	
+  // caclulat weekday as number from 1 to 7
+  while( weekday > 7 )
 	{
 		weekday -= 7;
 	}
@@ -59,18 +62,19 @@ void CalculateDay(void)
 void SetNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
-	byte sec;
+	  byte sec;
     byte min;
     byte hour;
 
-	sec = rtc_date.Seconds;
+	// Use current time
+  sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
 
 	if(sec >= 0x59)
 	{
 		sec = 0x00;
-        if(min >= 0x59)
+    if(min >= 0x59)
 		{
 			min = 0x00;
 			if(hour >= 23)

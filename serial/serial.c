@@ -82,17 +82,18 @@ char CheckSerial()
 		start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
 	}
 
-	if(rx_count >= 4)
+	if(rx_count >= sizeof(SerialBuffer))
 	{
-		if( is_equal(SerialBuffer, SN_REQ, 4) )
+		if( is_equal(SerialBuffer, SN_REQ, sizeof(SN_REQ)) )
 		{
 			tx_eusart_buff(SN_RESP);
 			start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
-		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
+		}else if(is_equal(SerialBuffer, OPT_REQ, sizeof(OPT_REQ)))
 		{
 			send_options();
-			while( PIE1bits.TX1IE && tx_count ) {};	// Wait to finish previous Tx
+			while( tx_count || TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 			open_eusart_rxtx();
+			start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
 			return MODE4;
 		}
 	}
@@ -134,12 +135,22 @@ void open_eusart_rxtx()
 	RCSTA1bits.SPEN = 1; // Enable EUSART
 }
 
+// Set up interrupt-driven Rx buffers and counters
+void start_eusart_rx(unsigned char *p_data, byte ncount)
+{
+	rx_data = (volatile byte *) p_data;
+	rx_count = 0;
+	rx_count_1 = ncount - 1;
+	PIE1bits.RC1IE = 1;	 // Enable Interrupts
+}
+
+
 void close_eusart()
 {
 	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA1bits.TXEN = 0; 	// Disable Tx	
-	RCSTA = 0;				// Disable EUSART
+	RCSTA = 0;				    // Disable EUSART
 }
 
 void PCInterface()
@@ -156,28 +167,17 @@ void PCInterface()
 }
 
 
-// Set up interrupt-driven Rx buffers and counters
-void start_eusart_rx(unsigned char *p_data, byte ncount)
-{
-	rx_data = (volatile byte *) p_data;
-	rx_count = 0;
-	rx_count_1 = ncount - 1;
-	PIE1bits.RC1IE = 1;	 // Enable Interrupts
-}
-
-
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
-	byte	nrcvd = 0;	
-	
-    set_timeout(RX_TIMEOUT1_PC);
+  byte	nrcvd = 0;	
+  set_timeout(RX_TIMEOUT1_PC);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
 			// Get data byte and save it
 			*p_data++ = RCREG1;
-		    set_timeout(RX_TIMEOUT2_PC);
+		  set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -201,13 +201,16 @@ volatile byte rx_count_1;
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
 	TXSTA1bits.TXEN = 1; // Enable Tx	
-	while( PIE1bits.TX1IE && tx_count ) {};	// Wait to finish previous Tx
+	while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated
 }
 
+//
+// Soft UART to communicate with MBITR
+//
 byte rx_mbitr(unsigned char *p_data, byte ncount)
 {
 	byte bitcount, data;
@@ -215,7 +218,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	TRIS_Rx = INPUT;
 	PR6 = TIMER_CMD;
-    set_timeout(RX_TIMEOUT1_MBITR);
+  set_timeout(RX_TIMEOUT1_MBITR);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -232,7 +235,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 			}
 			*p_data++ = ~data;
 			nrcvd++;
-		    set_timeout(RX_TIMEOUT2_MBITR);
+		  set_timeout(RX_TIMEOUT2_MBITR);
 			while(RxBIT) {};	// Wait for stop bit
 		}
 	}
@@ -246,7 +249,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-    DelayMs(TX_MBITR_DELAY_MS);
+  DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
 	PR6 = TIMER_CMD;
@@ -254,15 +257,16 @@ void tx_mbitr(byte *p_data, byte ncount)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 	while(ncount-- )
 	{
-		TxBIT = START;
-		data = ~(*p_data++);
-		for(bitcount = 0; bitcount < 14; bitcount++)
+		TxBIT = START;        // Issue the start bit
+		data = ~(*p_data++);  // Get the symbol and advance pointer
+    // send 8 data bits and 4 stop bits
+		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 			TxBIT = data & 0x01;	// Set the output
 			data >>= 1;				// We use the fact that 
-									// "0" bits are STOP bits
+									      // "0" bits are STOP bits
+			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 		}
 	}
 }

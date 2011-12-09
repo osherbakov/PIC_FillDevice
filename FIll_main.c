@@ -12,11 +12,12 @@ extern char ReceiveHQTime(void);
 
 extern void SetNextState(char nextState);
 
-byte 	current_state;
 
 static enum 
 {
 	INIT = 0,
+	BIST,
+	BIST_ERR,
 	FILL_TX, 
 	FILL_TX_PROC, 
 	FILL_RX,
@@ -34,6 +35,7 @@ static enum
 } MAIN_STATES;
 
 
+byte 	current_state;
 byte 	button_pos;
 byte 	prev_button_pos;
 
@@ -118,7 +120,7 @@ void SetNextState(char nextState)
 			break;
 
 		case DONE:
-			set_led_state(50, 100);	// "Done - key valid" blink pattern
+			set_led_state(100, 100);	// "Done - key valid" blink pattern
 			break;
 	
 		default:
@@ -172,15 +174,18 @@ void main()
 				hq_enabled = 0;
 				close_eusart();
 
-				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				// Switch is in one of the key fill positions
+				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				{
 					if( power_pos == ZERO_POS)
 					{
 						SetNextState(ZERO_FILL);
 					}else
 					{
-						// Any type > 0 - fill exists
+						// Type = 0 - empty slot
+						//		= 1 - Type 1 fill
+						//		= 2,3 - Type 2,3 fill
+						//		= 4 - PC or DES Key fill
 						if( CheckFillType(switch_pos) > 0)
 						{
 							SetNextState(FILL_TX);	// Be ready to send
@@ -294,8 +299,15 @@ void main()
 				break;
 
 			case HQ_RX:
-				TestFillResult(ReceiveGPSTime());
-				TestFillResult(ReceiveHQTime());
+				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
+				if( current_state == HQ_RX)
+				{
+					TestFillResult(ReceiveGPSTime());
+				}
+				if( current_state == HQ_RX)
+				{
+					TestFillResult(ReceiveHQTime());
+				}
 				break;
 
 			case ERROR:

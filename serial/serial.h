@@ -22,12 +22,12 @@
 #define	 RxBIT	(PIN_E)
 #define	 TRIS_Rx (TRIS_PIN_E)
 
-#define  RX_TIMEOUT1_PC	 	(5000)
+#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
 #define  RX_TIMEOUT2_PC	 	(100)
-#define  RX_TIMEOUT1_MBITR 	(3000)
-#define  RX_TIMEOUT2_MBITR 	(100)
+#define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
+#define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
 
-#define TX_MBITR_DELAY_MS	(10) 	
+#define TX_MBITR_DELAY_MS	(10) 	  
 
 extern volatile byte *tx_data;
 extern volatile byte tx_count;
