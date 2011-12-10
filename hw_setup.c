@@ -63,6 +63,9 @@ void setup_clocks()
 	T6CON = 0x06;			// 1:1 Post, 16 prescaler, on 
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
 	PIE5bits.TMR6IE = 0;	// Disable TIMER6 Interrupt
+
+// Initialize the seconds counter
+  seconds_counter = 0;
 }
 
 void setup_spi()
@@ -139,7 +142,7 @@ void setup_start_io()
 	
 	// Setup RTC 1PPS pin as input, High priority
 	TRIS_1PPS = INPUT;		
-	IOC_1PPS = 1;
+	IOC_1PPS = 1;         // Enable IOC
 	INTCON2bits.RBIP = 1;
 	INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
 	

@@ -12,13 +12,14 @@ volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
 volatile signed int timeout_counter;
-RTC_date_t	rtc_date;
+volatile int seconds_counter;
+volatile RTC_date_t	rtc_date;
 
 extern void CalculateHQDate(void);			
 
 extern byte hq_data[];
 
-byte hq_enabled;
+volatile byte hq_enabled;
 static unsigned char hq_active;
 static unsigned char hq_bit_counter;
 static unsigned char hq_byte_counter;
@@ -102,7 +103,8 @@ void high_isr (void)
 				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data
 			}
 			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms
-    	TMR2 = 0;	        // zero out 10ms counter
+    	TMR2 = 0;	          // zero out 10ms counter
+      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
 		}
 		INTCONbits.RBIF = 0;
 	}

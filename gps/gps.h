@@ -11,4 +11,6 @@ extern byte is_equal(byte *p1, byte *p2, byte n);
 // Timer and RTC functions
 extern char ReceiveGPSTime(void);
 
+extern volatile byte hq_enabled; 
+
 #endif		// __GPS_H_

@@ -7,9 +7,7 @@
 #include "serial.h"
 #include "Fill.h"
 
-extern volatile byte hq_enabled; 
 extern char ReceiveHQTime(void);
-
 extern void SetNextState(char nextState);
 
 
@@ -33,6 +31,12 @@ static enum
 	ERROR,
 	DONE
 } MAIN_STATES;
+
+
+
+#define IDLE_SECS (60)
+
+int idle_counter;
 
 
 byte 	current_state;
@@ -141,23 +145,35 @@ void main()
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
+  
+  idle_counter = seconds_counter + IDLE_SECS;
 
 	while(1)
 	{
+    // If no activity was detected for more than 3 minutes - shut down
+    if(idle_counter < seconds_counter)
+    {
+      setup_sleep_io();
+    }
+
 		Sleep();	// Will wake up every 10 ms
 
-	  	// Check the switch position - did it change?
+	  // Check the switch position - did it change?
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
-			prev_switch_pos = switch_pos;
+      // On any change bump the idle counter
+      idle_counter = seconds_counter + IDLE_SECS;
+			prev_switch_pos = switch_pos; // Save new state
 			SetNextState(INIT);
 		}
 
 		power_pos = get_power_state();
 		if( power_pos != prev_power_pos )
 		{
-			prev_power_pos = power_pos;
+      // On any change bump the idle counter
+      idle_counter = seconds_counter + IDLE_SECS;
+			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
 			{

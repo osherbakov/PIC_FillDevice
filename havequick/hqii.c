@@ -258,7 +258,7 @@ char ReceiveHQTime(void )
 	{
 		GetRTCData();		// Prefill some of the fields - HQ does not provide the Month and Day
 							// Just the Julian day
-	//	1. Find the HQ stream rising edge and
+  //	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
 		if( HQTime() )	return -1;
 	//  2. Find the next time that we will have HQ train
@@ -268,14 +268,14 @@ char ReceiveHQTime(void )
 		SetNextSecond();
 	} while( !rtc_date.Valid );
 
-INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
+  INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
 	SetRTCDataPart1();
-//	3. Find the next HQ stream rising edge
+  //	3. Find the next HQ stream rising edge
 	while ( WaitTimer(0xF0) >=0 ) ;	// Wait until IDLE
 	while(HQ_PIN);		// look for the rising edge
 	while(!HQ_PIN);		
 
-//  4. Finally, set up the RTC clock on the rising edge
+  //  4. Finally, set up the RTC clock on the rising edge
 	CLOCK_LOW();
 	DelayI2C();
 	DATA_HI();	
@@ -289,8 +289,10 @@ INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
 //  5. Get the HQ time again and compare with the current RTC
 	if( HQTime() )	return -1;
 	GetRTCData();
-	return ( (HQ_Hours == rtc_date.Hours) &&
+	return ( 
+  (HQ_Hours == rtc_date.Hours) &&
 		(HQ_Minutes == rtc_date.Minutes) &&
-		(HQ_Seconds == rtc_date.Seconds)) ? 0 : 1;
+		  (HQ_Seconds == rtc_date.Seconds)) ? 
+        0 : 1;
 }
 

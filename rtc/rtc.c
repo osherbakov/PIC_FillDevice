@@ -2,8 +2,6 @@
 #include "rtc.h"
 #include "i2c_sw.h"
 
-extern RTC_date_t	rtc_date;
-
 #define RTC_I2C_ADDRESS			(0xD0)
 #define RTC_I2C_CONTROL_REG		(0x0E)
 

@@ -112,6 +112,7 @@ typedef enum
 #define  SCLK_PIN()   PORTAbits.RA3         // define macro for clock pin
 
 // RTC 1 PULSE_PER_SEC pin
+// Will generate Interrupt On Change (IOC)
 #define  PIN_1PPS	PORTBbits.RB5		
 #define  TRIS_1PPS	TRISBbits.RB5		
 #define  IOC_1PPS	IOCBbits.IOCB5

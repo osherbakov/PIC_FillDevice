@@ -18,7 +18,7 @@ typedef struct BCD_date
 }RTC_date_t;
 
 // Timer and RTC functions
-extern RTC_date_t	rtc_date;
+extern volatile RTC_date_t	rtc_date;
 
 extern void SetupRTC(void);
 extern void GetRTCData(void);
