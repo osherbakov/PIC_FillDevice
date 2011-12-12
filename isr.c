@@ -103,8 +103,8 @@ void high_isr (void)
 				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data
 			}
 			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms
-    	TMR2 = 0;	          // zero out 10ms counter
-      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
+    		TMR2 = 0;	          // zero out 10ms counter
+      		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
 		}
 		INTCONbits.RBIF = 0;
 	}

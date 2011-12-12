@@ -157,10 +157,10 @@ void PCInterface()
 {
 	if( rx_eusart(&data_cell[0], 6) == 0 ) return;
 
-	if( is_equal(&data_cell[0], KEY_FILL, 5))
+	if( is_equal(&data_cell[0], KEY_FILL, sizeof(KEY_FILL)))
 	{
 		GetStoreFill(data_cell[5]);
-	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
+	}else if(is_equal( &data_cell[0], KEY_DUMP, sizeof(KEY_DUMP)))
 	{
 		SendStoredFill(data_cell[5]);
 	}
@@ -217,14 +217,14 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	byte	nrcvd = 0;	
 
 	TRIS_Rx = INPUT;
-	PR6 = TIMER_CMD;
+	PR6 = TIMER_MBITR;
   	set_timeout(RX_TIMEOUT1_MBITR);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxBIT )
 		{
-			TMR6 = TIMER_START_CMD;
+			TMR6 = TIMER_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
@@ -252,7 +252,7 @@ void tx_mbitr(byte *p_data, byte ncount)
   	DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
-	PR6 = TIMER_CMD;
+	PR6 = TIMER_MBITR;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 	while(ncount-- )

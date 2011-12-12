@@ -375,11 +375,9 @@ char WaitReqSendTODFill()
   return 0;
 }
 
-byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
-
 static unsigned int base_address;
-byte  fill_type;
-byte records;
+byte  	fill_type;
+byte 	records;
 
 // Set up functions that will be called depending on the Key type
 // Type 1, 2,3 - will be sent thru DS102 interface
@@ -414,6 +412,8 @@ byte CheckFillType(byte stored_slot)
 	return records ? fill_type : 0;
 }
 
+byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
+
 char WaitMBITRReq(byte req_type)
 {
 	byte char_received;
@@ -427,7 +427,7 @@ char WaitMBITRReq(byte req_type)
 	}
 
 	// wait in the loop until receive the ACK character, or timeout
-  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  	while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? 0 : -1 ; 
 }
 
@@ -438,7 +438,7 @@ char WaitPCReq(byte req_type)
 
 	char_to_expect = KEY_ACK; 
 	// wait in the loop until receive the ACK character, or timeout
-  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  	while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? 0 : -1 ; 
 }
 
@@ -493,11 +493,6 @@ char SendFill()
 
 char SendStoredFill(byte stored_slot)
 {
-  // All data are stored in 2K bytes (16K bits) slots
-  // The first byte of the each slot has the number of the records (0 - 255)
-  // The first byte of the record has the number of bytes that should be sent out
-  // so each record has no more than 255 bytes as well
-  // Empty slot has first byte as 0x00
 	CheckFillType(stored_slot);
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked

@@ -2,15 +2,15 @@
 #define __SERIAL_H__
 
 
-#define CMD_BAUDRATE  	(9600)
+#define MBITR_BAUDRATE  (9600)
 #define PLGR_BAUDRATE	(19200)
 #define DATA_POLARITY  	(0x30)
 
-#define BRREG_CMD ( ( (XTAL_FREQ * 1000000L)/(64L * CMD_BAUDRATE)) - 1 )
+#define BRREG_CMD ( ( (XTAL_FREQ * 1000000L)/(64L * MBITR_BAUDRATE)) - 1 )
 #define BRREG_PLGR ( ( (XTAL_FREQ * 1000000L)/(64L * PLGR_BAUDRATE)) - 1 )
 
-#define TIMER_CMD 		( ( (XTAL_FREQ * 1000000L) / ( 64L * CMD_BAUDRATE)) - 1 )
-#define TIMER_START_CMD ( -(TIMER_CMD/2) )
+#define TIMER_MBITR 	( ( (XTAL_FREQ * 1000000L) / ( 64L * MBITR_BAUDRATE)) - 1 )
+#define TIMER_START 	( -(TIMER_MBITR/2) )
 
 // Use negative logic
 #define  START	(1)
