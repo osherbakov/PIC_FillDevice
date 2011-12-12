@@ -218,7 +218,8 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	TRIS_Rx = INPUT;
 	PR6 = TIMER_MBITR;
-  	set_timeout(RX_TIMEOUT1_MBITR);
+  set_timeout(RX_TIMEOUT1_MBITR);
+	
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -230,8 +231,8 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 			{
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
-				data = (data >> 1) | (RxBIT ? 0x80 : 0x00);
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
+				data = (data >> 1) | (RxBIT ? 0x80 : 0x00);
 			}
 			*p_data++ = ~data;
 			nrcvd++;
@@ -249,7 +250,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-  	DelayMs(TX_MBITR_DELAY_MS);
+  DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
 	PR6 = TIMER_MBITR;
@@ -263,10 +264,10 @@ void tx_mbitr(byte *p_data, byte ncount)
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
+			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 			TxBIT = data & 0x01;	// Set the output
 			data >>= 1;				// We use the fact that 
 									      // "0" bits are STOP bits
-			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 		}
 	}
 }

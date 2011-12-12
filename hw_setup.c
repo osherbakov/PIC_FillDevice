@@ -5,6 +5,7 @@
 #include <spi.h>
 #include "i2c_sw.h"
 #include "serial.h"
+#include "clock.h"
 
 extern void setup_clocks();	
 extern void setup_spi();
@@ -40,6 +41,14 @@ void setup_clocks()
 #endif
 	OSCCONbits.SCS = 0x02;	// Internal
 
+// Set up Timer 0 to count OSC_CLOCK in 16-bit mode
+  TMR0H = 0;  // Reset the counter
+  TMR0L = 0;
+  INTCONbits.TMR0IF =  0;   // Clear interrupt
+  INTCON2bits.TMR0IP = 0;   // Low priority
+  INTCONbits.TMR0IE =  1;   // Enable interrupt
+  T0CON = 0x88;   // Enable TIMER0, 16-bit mode,no prescaler
+  
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
@@ -150,6 +159,9 @@ void setup_start_io()
 	setup_spi();
 	SetupRTC();
 
+  //Setup HS clock adjustment
+  InitClockData();
+  
 	// Setup and disable USART
 	// Configure the EUSART module
 	IPR1bits.TX1IP = 1;		// High priority TX

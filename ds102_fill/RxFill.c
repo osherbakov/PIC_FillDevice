@@ -5,6 +5,7 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
+#include "clock.h"
 
 
 //--------------------------------------------------------------
@@ -190,6 +191,7 @@ static void SetTimeFromCell(void)
 		char ms_100 =  10 - data_cell[11] >> 4 ; 
 		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
+    InitClockData();
 	}
 }
 

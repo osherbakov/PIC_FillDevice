@@ -3,6 +3,7 @@
 #include "rtc.h"
 #include "delay.h"
 #include "i2c_sw.h"
+#include "clock.h"
 
 enum {
 	INIT = 0,
@@ -182,8 +183,10 @@ char ReceiveGPSTime()
 {
 	byte *p_date;
 	byte *p_time;
-	// Config the pin as input, apply Ground to pin B
+	// Config the pin as input
 	TRIS_GPS_1PPS = INPUT;
+	
+	// Apply Ground to pin B
 	TRIS_PIN_GND = INPUT;
 	ON_GND = 1;
 
@@ -196,7 +199,7 @@ char ReceiveGPSTime()
 	//  3. Calculate the next current time.
 		SetNextSecond();
 	}while(!rtc_date.Valid);
-INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
+  INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
 	SetRTCDataPart1();
 
 //	4. Find the 1PPS rising edge
@@ -212,8 +215,15 @@ INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
 	CLOCK_HI();
 
 	SetRTCDataPart2();
-INTCONbits.RBIF = 0;
-INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
+	
+  // Reset the 10 ms clock
+  rtc_date.MilliSeconds = 0;
+ 	TMR2 = 0;
+  InitClockData();
+
+  INTCONbits.RBIF = 0;
+  INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
+  
 //  6. Get the GPS time again and compare with the current RTC
 	if( GPSTime() )	return -1;
 	GetRTCData();

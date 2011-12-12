@@ -4,6 +4,7 @@
 #include "controls.h"
 #include "rtc.h"
 #include "serial.h"
+#include "clock.h"
 
 void high_isr (void);
 void low_isr (void);
@@ -93,6 +94,22 @@ void high_isr (void)
 		}
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
+      // Get statistics for the clock adjustment
+      curr_lsb = TMR0L;
+      curr_lsb += (TMR0H << 8);
+      UpdateClockData();
+      ProcessClockData();
+      TMR0H = 0;  // Reset the counter
+      TMR0L = 0;
+      
+      // Adjust current time
+			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms
+    	TMR2 = 0;	          // zero out 10ms counter
+      
+      // Increment big timeout counter
+      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
+
+			// Check for HQ status and prepare everything for the next falling edge
 			if( hq_enabled )
 			{
 				GetRTCData();     // Get current time and data from RTC
@@ -102,9 +119,6 @@ void high_isr (void)
 				HQ_PIN = 0;
 				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data
 			}
-			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms
-    		TMR2 = 0;	          // zero out 10ms counter
-      		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
 		}
 		INTCONbits.RBIF = 0;
 	}
@@ -206,6 +220,13 @@ void low_isr ()
 		}
 		// No need to clear the Interrupt Flag
 	}
+  
+  // Check for the clock correction timer0
+  if(INTCONbits.TMR0IF)
+  {
+    curr_msb++; 
+    INTCONbits.TMR0IF = 0;  // Clear interrupt
+  }
 
 }
 

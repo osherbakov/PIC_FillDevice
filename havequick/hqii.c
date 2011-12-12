@@ -3,6 +3,7 @@
 #include "controls.h"
 #include "rtc.h"
 #include "i2c_sw.h"
+#include "clock.h"
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -256,11 +257,12 @@ char ReceiveHQTime(void )
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
 	do
 	{
-		GetRTCData();		// Prefill some of the fields - HQ does not provide the Month and Day
-							// Just the Julian day
+		GetRTCData();	// Prefill some of the fields - HQ does not provide the Month and Day
+							    // Just the Julian day
   //	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
 		if( HQTime() )	return -1;
+	
 	//  2. Find the next time that we will have HQ train
 		rtc_date.Hours = HQ_Hours;
 		rtc_date.Minutes = HQ_Minutes;
@@ -270,8 +272,9 @@ char ReceiveHQTime(void )
 
   INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
 	SetRTCDataPart1();
+	
   //	3. Find the next HQ stream rising edge
-	while ( WaitTimer(0xF0) >=0 ) ;	// Wait until IDLE
+	while ( WaitTimer(0xF0) >= 0 ) {};	// Wait until IDLE
 	while(HQ_PIN);		// look for the rising edge
 	while(!HQ_PIN);		
 
@@ -283,8 +286,14 @@ char ReceiveHQTime(void )
 	CLOCK_HI();
 
 	SetRTCDataPart2();
-INTCONbits.RBIF = 0;
-INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
+	
+  // Reset the 10 ms clock
+  rtc_date.MilliSeconds = 0;
+ 	TMR2 = 0;
+  InitClockData();
+
+  INTCONbits.RBIF = 0;
+  INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
 
 //  5. Get the HQ time again and compare with the current RTC
 	if( HQTime() )	return -1;
