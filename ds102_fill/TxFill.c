@@ -41,8 +41,8 @@ static void SendMode23Query(byte Data);
 // Timeouts in ms
 //--------------------------------------------------------------
 #define tB  1000    // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  250     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  250     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tD  500     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  500     // PIN_B Pulse Wodth (0.25ms - 80ms)
 #define tH  500     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
 #define tF  3000    // End of fill - > response (4ms - 2sec)
 #define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
@@ -54,7 +54,7 @@ void SendMode23Query(byte Data)
 {
   byte i;
   // Set up pins mode and levels
-	ON_GND = 0;
+  ON_GND = 0;
   pinMode(PIN_B, OUTPUT);    // make pin active
   pinMode(PIN_E, OUTPUT);    // make pin active
   digitalWrite(PIN_E, HIGH);  // Set clock to High
@@ -129,8 +129,9 @@ char GetEquipmentMode23Type()
   byte  NewState;	
 
   i = 0;
-	ON_GND = 0;
+  ON_GND = 0;
   pinMode(PIN_B, INPUT);
+  pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
   PreviousState = LOW;
   set_timeout(tB);
@@ -163,9 +164,13 @@ char WaitDS102Req(byte req_type)
   byte  NewState;	
   char   Result = 0;
 
+  ON_GND = 0;
+  pinMode(PIN_B, INPUT);
+  pinMode(PIN_C, INPUT); 
+
   if( req_type == REQ_FIRST)
   {
-	  set_timeout(tD);	// Return every 300 ms to check for switch position
+	  set_timeout(tD);	// Return every 500 ms to check for switch position
   }else
   {
 	  set_timeout(tF);	// If not first - wait 3 seconds until timeout
@@ -182,11 +187,11 @@ char WaitDS102Req(byte req_type)
       if( (NewState == HIGH) || (req_type == REQ_LAST)) 
       {
         return Result;
- 	  	} 
+ 	  } 
       PreviousState = NewState;
     }
 
-		// Do not check for pin B in MODE1 fill
+	// Do not check for pin B in MODE1 fill
     if( (fill_type != MODE1) && (digitalRead(PIN_B) == LOW) ) 
     {
       Result = 1;  // Bad CRC
@@ -199,7 +204,7 @@ char WaitDS102Req(byte req_type)
           ( (PreviousState == LOW) || (req_type == REQ_LAST) ) )
   {
 		Result = 0;
-	}else
+  }else
   {
 		Result = -1;
   }
@@ -228,7 +233,7 @@ void EndMode23Handshake()
 
 void AcquireMode23Bus()
 {
-	ON_GND = 0;
+  ON_GND = 0;
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -244,11 +249,11 @@ void AcquireMode23Bus()
 
 void ReleaseMode23Bus()
 {
+  ON_GND = 0;
   delayMicroseconds(tL);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_F, HIGH);
   delay(tZ);
-	ON_GND = 0;
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, INPUT);
@@ -310,13 +315,13 @@ char CheckEquipment()
   char Equipment = 0;
   if((fill_type == MODE1))
   {
-	  ON_GND = 0;
+	  ON_GND = 0;	// No ground on pin B
 	  pinMode(PIN_B, OUTPUT);
-    pinMode(PIN_C, INPUT);
+      pinMode(PIN_C, INPUT);
 	  pinMode(PIN_D, OUTPUT);
 	  pinMode(PIN_E, OUTPUT);
 	  pinMode(PIN_F, OUTPUT);
-	  digitalWrite(PIN_B, HIGH);
+	  digitalWrite(PIN_B, LOW);
 	  digitalWrite(PIN_D, LOW);
 	  digitalWrite(PIN_E, LOW);
 	  digitalWrite(PIN_F, HIGH);
@@ -324,7 +329,7 @@ char CheckEquipment()
   }else if(fill_type == MODE4)
   {
 	  // Connect ground on PIN B
-  	TRIS_PIN_GND = INPUT;
+  	  TRIS_PIN_GND = INPUT;
 	  ON_GND = 1;
 	  if( p_ack(REQ_FIRST) == 0 )  
 	  {
@@ -335,9 +340,9 @@ char CheckEquipment()
 	  ON_GND = 0;
 	  AcquireMode23Bus();
 	  StartMode23Handshake();
-  	SendMode23Query(MODE3);
+  	  SendMode23Query(MODE3);
 	  Equipment = GetEquipmentMode23Type();
-  	EndMode23Handshake();
+   	  EndMode23Handshake();
 	  if(Equipment < 0)	// Timeout occured
 	  {
 		  ReleaseMode23Bus();
@@ -372,7 +377,7 @@ char WaitReqSendTODFill()
 
 byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 
-unsigned int base_address;
+static unsigned int base_address;
 byte  fill_type;
 byte records;
 
@@ -383,11 +388,11 @@ byte records;
 byte CheckFillType(byte stored_slot)
 {
 	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
-  records = byte_read(base_address++); 
-  if(records == 0xFF) records = 0x00;
-
+	records = byte_read(base_address++); 
+	if(records == 0xFF) records = 0x00;
+	
 	// Get the fill type from the EEPROM
-  fill_type = byte_read(base_address++);
+	fill_type = byte_read(base_address++);
 	if(stored_slot >> 4)	// Send fill to the PC
 	{
 		p_rx = rx_eusart;
@@ -441,8 +446,8 @@ char SendFill()
 {
 	byte bytes, byte_cnt;
 	char wait_result;
-
-  while(records)	
+	
+	while(records)	
 	{
 		bytes = byte_read(base_address++);
 		while(bytes )
@@ -457,7 +462,7 @@ char SendFill()
 			{
 				FillTODData();
 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  	p_tx(TOD_cell, MODE2_3_CELL_SIZE);
+		  		p_tx(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
 				p_tx(&data_cell[0], byte_cnt);
@@ -468,17 +473,21 @@ char SendFill()
 		
 		// After sending a record check for the next request
 		wait_result = p_ack( records ? REQ_NEXT : REQ_LAST );
-    // If all records were sent - ignore timeout
-	  if(records == 0) 
+    	// If all records were sent - ignore timeout
+	  	if(records == 0)
+		{
 			wait_result = 0;
-    if(wait_result) 
+		}
+    	if(wait_result) 
 			break;
 	}	
+	
+	// If regular Type 2 3 fill - release the bus
 	if( p_ack == WaitDS102Req)
 	{
     	ReleaseMode23Bus();
 	}
-  return (p_ack == WaitMBITRReq) ? 2 : wait_result;	// When send to MBITR - return with DONE flag
+	return (p_ack == WaitMBITRReq) ? 2 : wait_result;	// When send to MBITR - return with DONE flag
 }
 
 
@@ -500,6 +509,6 @@ char WaitReqSendFill()
 {
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
-	if( WaitDS102Req(REQ_FIRST) < 0 ) return -1;
+	if( p_ack(REQ_FIRST) < 0 ) return -1;
 	return SendFill();
 }

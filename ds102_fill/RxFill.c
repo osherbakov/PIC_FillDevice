@@ -29,7 +29,7 @@
 //--------------------------------------------------------------
 #define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
 #define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
-#define tZ  	500	   // Query cell duration
+#define tZ  	1000   // Query cell duration
 #define tE  	3000   // End of REQ -> start fill (0ms - 2.3sec)
 
 static byte  PreviousState;
@@ -40,6 +40,7 @@ static char GetQueryByte(void)
   byte  bit_count;
   byte  Data;
   
+  ON_GND = 0;
   pinMode(PIN_B, INPUT);		// make a pin an input
   pinMode(PIN_E, INPUT);		// make a pin an input
 
@@ -74,6 +75,7 @@ static void SendEquipmentType(void)
   // Set up pins mode and levels
   delay(tB);
   
+  ON_GND = 0;
   pinMode(PIN_B, OUTPUT);		// make a pin active
   pinMode(PIN_E, OUTPUT);		// make a pin active
   digitalWrite(PIN_E, HIGH);	// Set clock to High
@@ -146,6 +148,7 @@ static byte ReceiveCell(byte *p_cell, byte count)
 
 static char SendFillRequest(byte req_type)
 {
+  ON_GND = 0;
   pinMode(PIN_C, OUTPUT);		// make a pin an output
   digitalWrite(PIN_C, LOW);
   delay(tD);
@@ -154,6 +157,7 @@ static char SendFillRequest(byte req_type)
 
 static char SendBadFillAck(void)
 {
+  ON_GND = 0;
   pinMode(PIN_B, OUTPUT);		// make a pin an output
   digitalWrite(PIN_B, LOW);
   delay(tG);
@@ -202,21 +206,19 @@ void ClearFill(byte stored_slot)
 // Type 2 or 3 request.
 char GetFillType()
 {
-	byte type;
-
-	// Setup pins
-	pinMode(PIN_B, INPUT);		// make a pin an input
-	pinMode(PIN_C, OUTPUT);		// make a pin an output
-	pinMode(PIN_D, INPUT);		// make a pin an input
-	pinMode(PIN_E, INPUT);		// make a pin an input
-	pinMode(PIN_F, INPUT);		// make a pin an input
-	digitalWrite(PIN_C, HIGH);	// Keep PTT high
+	char type;
 
 	if(CheckSerial() > 0)
 	{
 		fill_type = MODE4;
 		return fill_type;
 	}
+
+	// Setup pins
+	pinMode(PIN_C, OUTPUT);		// make a pin an output
+	pinMode(PIN_D, INPUT);		// make a pin an input
+	pinMode(PIN_F, INPUT);		// make a pin an input
+	digitalWrite(PIN_C, HIGH);	// Keep PTT high
 
 	// Wait for the Pins F and D going down
 	// Here we are waiting for some time when F and D are LOW, and then D comes back

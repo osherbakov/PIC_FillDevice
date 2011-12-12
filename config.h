@@ -94,6 +94,7 @@ typedef enum
 #define	TRIS_ZBR	TRISBbits.RB0
 #define	WPUB_ZBR	WPUBbits.WPUB0
 
+// OFFBR is used to control the strong GND
 #define	OFFBR		PORTBbits.RB1
 #define	TRIS_OFFBR	TRISBbits.RB1
 #define	WPUB_OFFBR	WPUBbits.WPUB1
@@ -144,8 +145,22 @@ typedef enum
 #define	TRIS_HQ_PIN		TRIS_PIN_C
 
 // For Have Quick operations we need ground on one of the Pins
+// Pin B is selected as GND pin
+// B1 port controls if the strong GND is applied
 #define	ON_GND 			OFFBR
 #define	TRIS_PIN_GND 	TRIS_PIN_B
+
+
+// To communicate with PC we use EUSART
+// To communicate with MBITR we do Soft UART
+// What is Tx for MBITR is Rx for PC
+// For PC RxD is PIN_D, TxD is PIN_E
+//  Here are assignments of the pins for MBITR
+#define	 TxBIT	(PIN_D)
+#define	 TRIS_Tx (TRIS_PIN_D)
+
+#define	 RxBIT	(PIN_E)
+#define	 TRIS_Rx (TRIS_PIN_E)
 
 
 #endif	// __CONFIG_H__

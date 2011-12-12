@@ -165,6 +165,7 @@ void setup_start_io()
 void setup_sleep_io()
 {
 	INTCONbits.GIE = 0;		// Disable interrupts
+	INTCONbits.PEIE = 0;
 
 	// Release I2C bus
 	SWStopI2C();

@@ -34,7 +34,7 @@ static enum
 
 
 
-#define IDLE_SECS (60)
+#define IDLE_SECS (300)
 
 int idle_counter;
 
@@ -69,9 +69,10 @@ byte TestButtonPress(void)
 // Test the resutlt of the fill and set next state.
 //   if result is 0 - go back to INIT state
 //		result = 1 - error happened - set error blink 
-//				and wait for the button press in DONE state
+//				and wait for the button press in ERROR state
 //		result = 2 - loaded sucessfully - set "Key Valid" blink 
 //				and wait for the button press in DONE state
+//		result = -1 - timeout, continue working
 void TestFillResult(char result)
 {
 	if(result == 0)					// OK return value
@@ -146,24 +147,30 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
   
-  idle_counter = seconds_counter + IDLE_SECS;
+  	idle_counter = seconds_counter + IDLE_SECS;
 
 	while(1)
 	{
-    // If no activity was detected for more than 3 minutes - shut down
-    if(idle_counter < seconds_counter)
-    {
-      setup_sleep_io();
-    }
+		// If no activity was detected for more than 3 minutes - shut down
+		if(idle_counter < seconds_counter)
+		{
+	  		setup_sleep_io();
+			while(1) 
+			{
+				INTCONbits.GIE = 0;		// Disable interrupts
+				INTCONbits.PEIE = 0;
+				Sleep();
+			};
+		}
 
 		Sleep();	// Will wake up every 10 ms
 
-	  // Check the switch position - did it change?
+	  	// Check the switch position - did it change?
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
-      // On any change bump the idle counter
-      idle_counter = seconds_counter + IDLE_SECS;
+      		// On any change bump the idle counter
+      		idle_counter = seconds_counter + IDLE_SECS;
 			prev_switch_pos = switch_pos; // Save new state
 			SetNextState(INIT);
 		}
@@ -171,8 +178,8 @@ void main()
 		power_pos = get_power_state();
 		if( power_pos != prev_power_pos )
 		{
-      // On any change bump the idle counter
-      idle_counter = seconds_counter + IDLE_SECS;
+      		// On any change bump the idle counter
+      		idle_counter = seconds_counter + IDLE_SECS;
 			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
@@ -201,7 +208,7 @@ void main()
 						// Type = 0 - empty slot
 						//		= 1 - Type 1 fill
 						//		= 2,3 - Type 2,3 fill
-						//		= 4 - PC or DES Key fill
+						//		= 4 - DES Key fill
 						if( CheckFillType(switch_pos) > 0)
 						{
 							SetNextState(FILL_TX);	// Be ready to send
@@ -232,7 +239,7 @@ void main()
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
-					fill_type == MODE3;
+					fill_type = MODE3;
 					SetNextState(TIME_TX);
 				}
 				break;
@@ -304,7 +311,8 @@ void main()
 				break;
 
 			case TIME_TX:
-				if( CheckEquipment() == MODE3 )
+				
+				if( CheckEquipment() > 0 )
 				{
 					SetNextState(TIME_TX_PROC);
 				}

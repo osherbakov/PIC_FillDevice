@@ -77,7 +77,7 @@ char CheckSerial()
 	if( RCSTA1bits.SPEN == 0)
 	{
 		TRIS_PIN_GND = INPUT;	// Make Ground
-		ON_GND = 1;				    //  on Pin B
+		ON_GND = 1;				//  on Pin B
 		open_eusart_rx();
 		start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
 	}
@@ -150,7 +150,7 @@ void close_eusart()
 	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA1bits.TXEN = 0; 	// Disable Tx	
-	RCSTA = 0;				    // Disable EUSART
+	RCSTA = 0;				// Disable EUSART
 }
 
 void PCInterface()
@@ -177,7 +177,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 		{
 			// Get data byte and save it
 			*p_data++ = RCREG1;
-		  set_timeout(RX_TIMEOUT2_PC);
+		  	set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -218,7 +218,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	TRIS_Rx = INPUT;
 	PR6 = TIMER_CMD;
-  set_timeout(RX_TIMEOUT1_MBITR);
+  	set_timeout(RX_TIMEOUT1_MBITR);
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -249,7 +249,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-  DelayMs(TX_MBITR_DELAY_MS);
+  	DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
 	PR6 = TIMER_CMD;
@@ -259,7 +259,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	{
 		TxBIT = START;        // Issue the start bit
 		data = ~(*p_data++);  // Get the symbol and advance pointer
-    // send 8 data bits and 4 stop bits
+    	// send 8 data bits and 4 stop bits
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};

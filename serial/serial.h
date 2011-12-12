@@ -16,12 +16,6 @@
 #define  START	(1)
 #define  STOP	(0)
 
-#define	 TxBIT	(PIN_D)
-#define	 TRIS_Tx (TRIS_PIN_D)
-
-#define	 RxBIT	(PIN_E)
-#define	 TRIS_Rx (TRIS_PIN_E)
-
 #define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
 #define  RX_TIMEOUT2_PC	 	(100)
 #define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
