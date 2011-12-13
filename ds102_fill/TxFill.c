@@ -317,7 +317,7 @@ char CheckEquipment()
   {
 	  ON_GND = 0;	// No ground on pin B
 	  pinMode(PIN_B, OUTPUT);
-      pinMode(PIN_C, INPUT);
+    pinMode(PIN_C, INPUT);
 	  pinMode(PIN_D, OUTPUT);
 	  pinMode(PIN_E, OUTPUT);
 	  pinMode(PIN_F, OUTPUT);
@@ -329,7 +329,7 @@ char CheckEquipment()
   }else if(fill_type == MODE4)
   {
 	  // Connect ground on PIN B
-  	  TRIS_PIN_GND = INPUT;
+  	TRIS_PIN_GND = INPUT;
 	  ON_GND = 1;
 	  if( p_ack(REQ_FIRST) == 0 )  
 	  {
@@ -427,7 +427,7 @@ char WaitMBITRReq(byte req_type)
 	}
 
 	// wait in the loop until receive the ACK character, or timeout
-  	while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? 0 : -1 ; 
 }
 
@@ -438,7 +438,7 @@ char WaitPCReq(byte req_type)
 
 	char_to_expect = KEY_ACK; 
 	// wait in the loop until receive the ACK character, or timeout
-  	while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? 0 : -1 ; 
 }
 

@@ -76,24 +76,22 @@ char CheckSerial()
 {
 	if( RCSTA1bits.SPEN == 0)
 	{
-		TRIS_PIN_GND = INPUT;	// Make Ground
-		ON_GND = 1;				//  on Pin B
 		open_eusart_rx();
-		start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
+		start_eusart_rx(SerialBuffer, 4);
 	}
 
-	if(rx_count >= sizeof(SerialBuffer))
+	if(rx_count >= 4)
 	{
-		if( is_equal(SerialBuffer, SN_REQ, sizeof(SN_REQ)) )
+		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
 			tx_eusart_buff(SN_RESP);
-			start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
-		}else if(is_equal(SerialBuffer, OPT_REQ, sizeof(OPT_REQ)))
+			start_eusart_rx(SerialBuffer, 4);
+		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
 			send_options();
-			while( tx_count || TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 			open_eusart_rxtx();
-			start_eusart_rx(SerialBuffer, sizeof(SerialBuffer));
+			start_eusart_rx(SerialBuffer, 4);
 			return MODE4;
 		}
 	}
@@ -150,28 +148,40 @@ void close_eusart()
 	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA1bits.TXEN = 0; 	// Disable Tx	
-	RCSTA = 0;				// Disable EUSART
+	RCSTA = 0;					  // Disable EUSART
 }
 
 void PCInterface()
 {
-	if( rx_eusart(&data_cell[0], 6) == 0 ) return;
+	if( RCSTA1bits.SPEN == 0)
+	{
+		open_eusart_rxtx();
+		start_eusart_rx(&data_cell[0], 6);
+	}
 
-	if( is_equal(&data_cell[0], KEY_FILL, sizeof(KEY_FILL)))
+	if(rx_count < 6) return;
+	if( is_equal(&data_cell[0], KEY_FILL, 5))
 	{
 		GetStoreFill(data_cell[5]);
-	}else if(is_equal( &data_cell[0], KEY_DUMP, sizeof(KEY_DUMP)))
+	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
 	{
 		SendStoredFill(data_cell[5]);
 	}
 }
 
 
+// Receive the specified number of characters with timeout
+// RX_TIMEOUT1_PC - timeout until 1st char received
+// RX_TIMEOUT2_PC - timeout for all consequtive chars
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
-  byte	nrcvd = 0;	
+  byte	nrcvd = 0;
+
+	// We collect chars in the loop - no need for interrupts
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+
   set_timeout(RX_TIMEOUT1_PC);
-	while( (ncount > nrcvd) && is_not_timeout() )
+	while( (nrcvd < ncount ) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
@@ -189,6 +199,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 	}
 	return nrcvd;
 }
+
 
 volatile byte *tx_data;
 volatile byte tx_count;

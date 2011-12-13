@@ -34,9 +34,9 @@ static enum
 
 
 
-#define IDLE_SECS (300)
+#define IDLE_SECS (600)
 
-int idle_counter;
+unsigned int idle_counter;
 
 
 byte 	current_state;
@@ -147,14 +147,14 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
   
-  	idle_counter = seconds_counter + IDLE_SECS;
+  idle_counter = seconds_counter + IDLE_SECS;
 
 	while(1)
 	{
 		// If no activity was detected for more than 3 minutes - shut down
 		if(idle_counter < seconds_counter)
 		{
-	  		setup_sleep_io();
+	  	setup_sleep_io();
 			while(1) 
 			{
 				INTCONbits.GIE = 0;		// Disable interrupts
@@ -169,8 +169,8 @@ void main()
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
-      		// On any change bump the idle counter
-      		idle_counter = seconds_counter + IDLE_SECS;
+      // On any change bump the idle counter
+      idle_counter = seconds_counter + IDLE_SECS;
 			prev_switch_pos = switch_pos; // Save new state
 			SetNextState(INIT);
 		}
@@ -178,8 +178,8 @@ void main()
 		power_pos = get_power_state();
 		if( power_pos != prev_power_pos )
 		{
-      		// On any change bump the idle counter
-      		idle_counter = seconds_counter + IDLE_SECS;
+      // On any change bump the idle counter
+      idle_counter = seconds_counter + IDLE_SECS;
 			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
@@ -196,6 +196,7 @@ void main()
 				ON_GND = 0;
 				hq_enabled = 0;
 				close_eusart();
+        idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
@@ -214,6 +215,8 @@ void main()
 							SetNextState(FILL_TX);	// Be ready to send
 						}else
 						{
+							TRIS_PIN_GND = INPUT;	// Make Ground
+							ON_GND = 1;				//  on Pin B
 							SetNextState(FILL_RX) ; // Receive fill
 						}
 					}
@@ -222,7 +225,6 @@ void main()
 					TRIS_PIN_GND = INPUT;			// Make Ground
 					ON_GND = 1;						//  on Pin B
 					hq_enabled = 0;
-					open_eusart_rxtx();
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive

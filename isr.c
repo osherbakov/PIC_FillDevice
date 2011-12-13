@@ -13,7 +13,7 @@ volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
 volatile signed int timeout_counter;
-volatile int seconds_counter;
+volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
 extern void CalculateHQDate(void);			
