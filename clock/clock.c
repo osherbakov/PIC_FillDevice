@@ -38,7 +38,7 @@ void UpdateClockData()
 	}else
 	{
 		/// Shift all samples 1 position to the left
-		for(i = 1; i < (NUM_SAMPLES - 1); i++)
+		for(i = 1; i < NUM_SAMPLES; i++)
 		{
 			LSB[i-1] = LSB[i];
 			MSB[i-1] = MSB[i];
