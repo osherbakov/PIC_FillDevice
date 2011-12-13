@@ -55,7 +55,8 @@ void UpdateClockData()
 void ProcessClockData()
 {
 	char	num_above, num_below;
-	char i;
+	char  i;
+	char  tune;
 
   // Not enough samples - exit
 	if(samples_number < NUM_SAMPLES)
@@ -87,14 +88,19 @@ void ProcessClockData()
 			}
 		}
 	}
+	
+	// Get the current value of the Tuning register and sign-extend it
+	tune = OSCTUNE & 0x3F;	if(tune & 0x20) tune |= 0xE0;
 	// Make sure that the difference is bigger than the margin, and only then adjust
 	if(num_above > (num_below + NUM_MARGIN))
 	{
 		// Too fast - reduce the internal osc freq
-		OSCTUNEbits.TUN--;
+		if(tune > -32) tune--;
+		OSCTUNEbits.TUN = tune;
 	}else if(num_below > (num_above + NUM_MARGIN))
 	{
-		// Too slow - reduce the internal osc freq
-		OSCTUNEbits.TUN++;
+		// Too slow - increase the internal osc freq
+		if(tune < 31) tune++;
+		OSCTUNEbits.TUN = tune;
 	}
 }
