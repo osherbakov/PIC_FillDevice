@@ -2,17 +2,17 @@
 #include "clock.h"
 
 
-static char MSB[NUM_SAMPLES];
-static int LSB[NUM_SAMPLES];
+static unsigned char MSB[NUM_SAMPLES];
+static unsigned int LSB[NUM_SAMPLES];
 static char samples_number;
-volatile char curr_msb;	// MSB for the current sample (8 bits)
-volatile int curr_lsb;	// LSB for the current sample (16 bits)
+volatile unsigned char curr_msb;	// MSB for the current sample (8 bits)
+volatile unsigned int curr_lsb;	// LSB for the current sample (16 bits)
 
 // Initialize all clock correction data
 void InitClockData(void)
 {
 	int i;
-	samples_number = -1;	// Initial value to force skipping of the first sample
+	samples_number = -2;	// Initial value to force skipping of the first sample
 	for(i = 0; i < NUM_SAMPLES; i++)
 	{
 		LSB[i] = 0;
@@ -27,7 +27,9 @@ void UpdateClockData()
 	char i;
 	if(samples_number < 0)
 	{
-		samples_number = 0;
+		samples_number++;
+		curr_lsb = 0;
+		curr_msb = 0;
 		return;
 	}
 	if(samples_number < NUM_SAMPLES)
@@ -58,7 +60,7 @@ void ProcessClockData()
 	char  i;
 	char  tune;
 
-  // Not enough samples - exit
+  	// Not enough samples - exit
 	if(samples_number < NUM_SAMPLES)
 	{
 		return;
@@ -67,7 +69,7 @@ void ProcessClockData()
 	// Calculate how many samples are above and below the ideal number
 	num_above = 0;
 	num_below = 0;
-	for(i = 1; i < NUM_SAMPLES ; i++)
+	for(i = 0; i < NUM_SAMPLES ; i++)
 	{
 		// First chack MSBs only
 		if(MSB[i] > (ONE_SEC_TICKS >> 16))

@@ -73,6 +73,7 @@ void low_interrupt ()
 //  - eusart tx interrupt
 void high_isr (void)
 {
+	byte TL, TH;
 	// Is it a 1SEC Pulse interrupt from RTC (on both Pos and Neg edges)?
 	if( INTCONbits.RBIF)
 	{
@@ -95,12 +96,13 @@ void high_isr (void)
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
       // Get statistics for the clock adjustment
-      curr_lsb = TMR0L;
-      curr_lsb += (TMR0H << 8);
+	  	TL = TMR0L;	// Read LSB first to latch the data
+	 		TH = TMR0H;
+      TMR0H = 0;  // Reset the counter - MSB first
+      TMR0L = 0;
+      curr_lsb = ((int)TH << 8) + TL;
       UpdateClockData();
       ProcessClockData();
-      TMR0H = 0;  // Reset the counter
-      TMR0L = 0;
       
       // Adjust current time
 			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms

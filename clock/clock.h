@@ -14,8 +14,8 @@
 #define	NUM_SAMPLES		(8)		// Number of samples collected
 #define NUM_MARGIN		(4)		// Margin number
 
-extern volatile char curr_msb;	// MSB for the current sample (8 bits)
-extern volatile int curr_lsb;	// LSB for the current sample (16 bits)
+extern volatile unsigned char curr_msb;	// MSB for the current sample (8 bits)
+extern volatile unsigned int curr_lsb;	// LSB for the current sample (16 bits)
 
 extern void InitClockData(void);
 extern void UpdateClockData(void);
