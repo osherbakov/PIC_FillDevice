@@ -419,12 +419,16 @@ char WaitMBITRReq(byte req_type)
 	byte char_received;
 	byte char_to_expect;
 
-	char_to_expect = KEY_EOL;
 	// This is the DES key load - send serial number request
+	char_received = 0;
 	if( req_type == REQ_FIRST )
 	{
+		char_to_expect = KEY_EOL;		// Wait for \n
 		p_tx(&CHECK_MBITR[0], 4);
-	}
+	}else
+	{
+		char_to_expect = KEY_ACK;		// Wait for 0x06
+	}	
 
 	// wait in the loop until receive the ACK character, or timeout
   while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 

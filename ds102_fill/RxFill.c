@@ -201,20 +201,12 @@ void ClearFill(byte stored_slot)
    	 byte_write(base_address, 0x00);
 }
 
-
-// Detect the fill type - if nothing happened before BTN was pressed - 
-//  that is Type 1 request.
-// If before that we got the request for the equipment type - that was
-// Type 2 or 3 request.
-char GetFillType()
+// Detect if there is Type 2/3 PIN_D and PIN_F sequence
+// Initially they must be HIGH, then PIN_D and PIN_F go LOW
+// PIN_F stays that way, but PIN_D goes HIGH after tA
+char CheckType23()
 {
 	char type;
-
-	if(CheckSerial() > 0)
-	{
-		fill_type = MODE4;
-		return fill_type;
-	}
 
 	// Setup pins
 	pinMode(PIN_C, OUTPUT);		// make a pin an output
@@ -222,10 +214,14 @@ char GetFillType()
 	pinMode(PIN_F, INPUT);		// make a pin an input
 	digitalWrite(PIN_C, HIGH);	// Keep PTT high
 
-	// Wait for the Pins F and D going down
+	NewState = digitalRead(PIN_D);
+	if( PreviousState == NewState ) return -1;
+	// Continue ONLY on PIN_D state change
+
+	PreviousState = NewState; // Save new state 
 	// Here we are waiting for some time when F and D are LOW, and then D comes back
-	// to HIGH no later than before tA timeout
-	if( (digitalRead(PIN_D) == HIGH) || (digitalRead(PIN_F) == HIGH)) return -1;
+	// to HIGH no later than tA timeout
+	if( (NewState == HIGH) || (digitalRead(PIN_F) == HIGH)) return -1;
 
 	// Both PIN_D and PIN_F are LOW - wait for PIN_D to get HIGH
 	set_timeout(tA);
@@ -245,6 +241,31 @@ char GetFillType()
 			}else
 				return -1;
 		}
+	}
+	return -1;
+}
+
+
+// Detect the fill type - if nothing happened before BTN was pressed - 
+//  that is Type 1 request.
+// If before that we got the request for the equipment type - that was
+// Type 2 or 3 request.
+char GetFillType()
+{
+	char type;
+
+	type = CheckSerial();	
+	if(type > 0)
+	{
+		fill_type = MODE4;
+		return fill_type;
+	}
+	
+	type = CheckType23();
+	if(type > 0)
+	{
+		fill_type = type;
+		return type;
 	}
 	return -1;
 }
