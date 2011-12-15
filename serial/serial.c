@@ -74,22 +74,30 @@ static unsigned char SerialBuffer[4];
 // Check serial port if there is a request to send DES keys
 char CheckSerial()
 {
+  // Coming in first time - enable eusart and setup buffer
 	if( RCSTA1bits.SPEN == 0)
 	{
 		open_eusart_rx();
 		start_eusart_rx(SerialBuffer, 4);
 	}
 
+  // Four characters are collected - check if it is 
+  //  /98 - serial number request, or
+  //  /84 - the capabilities request
 	if(rx_count >= 4)
 	{
+		
 		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
+  		// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
 			start_eusart_rx(SerialBuffer, 4);
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
+			// Options request - send all options
 			send_options();
 			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+			// Prepare to receive all next data as the Type 4 fill
 			open_eusart_rxtx();
 			start_eusart_rx(SerialBuffer, 4);
 			return MODE4;
@@ -153,18 +161,28 @@ void close_eusart()
 
 void PCInterface()
 {
+	// If entering the first time - enable eusart
+	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
 		open_eusart_rxtx();
 		start_eusart_rx(&data_cell[0], 6);
 	}
 
+	
 	if(rx_count < 6) return;
+	
+	// Six or more characters received - chaeck if
+	// this is a /DUMPN request to dump keys to PC
+	//  or it is a /FILLN request to load key from PC
 	if( is_equal(&data_cell[0], KEY_FILL, 5))
 	{
+  	// The last char in /FILLN specifies Type(high nibble) 
+  	//    and Slot Number (low nibble)
 		GetStoreFill(data_cell[5]);
 	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
 	{
+  	// The last char in /DUMPN is the slot number
 		SendStoredFill(data_cell[5]);
 	}
 }
@@ -201,12 +219,12 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 }
 
 
-volatile byte *tx_data;
-volatile byte tx_count;
+volatile byte *tx_data; // Pointer to the current output data
+volatile byte tx_count; // currect output counter
 
-volatile byte *rx_data;
-volatile byte rx_count;
-volatile byte rx_count_1;
+volatile byte *rx_data; // Pointer to the current receive data
+volatile byte rx_count; // Number of characters received
+volatile byte rx_count_1; // Max index in the buffer
 
 
 void tx_eusart(unsigned char *p_data, byte ncount)

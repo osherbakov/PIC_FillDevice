@@ -101,7 +101,7 @@ static void SendEquipmentType(void)
   pinMode(PIN_E, INPUT);		// Tristate the pin
 }
 
-static byte ReceiveCell(byte *p_cell, byte count)
+static byte ReceiveDS102Cell(byte *p_cell, byte count)
 {
   byte  bit_count;
   byte  byte_count;
@@ -201,12 +201,20 @@ void ClearFill(byte stored_slot)
    	 byte_write(base_address, 0x00);
 }
 
+typedef enum {
+  DF_INIT = 0,  // Initial state
+  DF_HIGH,      // D and F pins in high detected
+  DF_LOW        // D and F pins in low detected
+} CT23_STATES;
+
+static CT23_STATES t23_state = DF_INIT;
 // Detect if there is Type 2/3 PIN_D and PIN_F sequence
 // Initially they must be HIGH, then PIN_D and PIN_F go LOW
-// PIN_F stays that way, but PIN_D goes HIGH after tA
-char CheckType23()
+// PIN_F stays that way, but PIN_D goes HIGH before tA expires
+char CheckType23(void)
 {
 	char type;
+	char ret_val = -1;
 
 	// Setup pins
 	pinMode(PIN_C, OUTPUT);		// make a pin an output
@@ -214,42 +222,63 @@ char CheckType23()
 	pinMode(PIN_F, INPUT);		// make a pin an input
 	digitalWrite(PIN_C, HIGH);	// Keep PTT high
 
-	NewState = digitalRead(PIN_D);
-	if( PreviousState == NewState ) return -1;
-	// Continue ONLY on PIN_D state change
+  switch(t23_state)
+  {
+    case DF_INIT:
+      if((digitalRead(PIN_D) == HIGH) && (digitalRead(PIN_F) == HIGH))
+      {
+        t23_state = DF_HIGH;
+      }
+      break;
 
-	PreviousState = NewState; // Save new state 
-	// Here we are waiting for some time when F and D are LOW, and then D comes back
-	// to HIGH no later than tA timeout
-	if( (NewState == HIGH) || (digitalRead(PIN_F) == HIGH)) return -1;
+    case DF_HIGH:
+      if((digitalRead(PIN_D) == LOW) && (digitalRead(PIN_F) == LOW))
+      {
+        t23_state = DF_LOW;
+      }
+      break;
 
-	// Both PIN_D and PIN_F are LOW - wait for PIN_D to get HIGH
-	set_timeout(tA);
-	while( is_not_timeout() )
-	{
-		if( digitalRead(PIN_F) == HIGH) return -1;
-		
-		// Pin D went high - wait for query request from the fill device
-		if( digitalRead(PIN_D) == HIGH)
-		{
-			type = 	GetQueryByte();
-			if( type > 0 )  
-			{
-				SendEquipmentType();
-				fill_type = type;
-				return type;
-			}else
-				return -1;
-		}
-	}
-	return -1;
+    case DF_LOW:
+    	// Both PIN_D and PIN_F are LOW - wait for PIN_D to get HIGH
+    	// Here we are waiting for some time when F and D are LOW, and then D comes back
+	    // to HIGH no later than tA timeout
+    	set_timeout(tA);
+    	while( 1 )
+    	{
+      	// Pin F went high, or timeout expired - return back to normal
+    		if( (digitalRead(PIN_F) == HIGH) || !is_not_timeout() )
+    		{
+          t23_state = DF_INIT;
+          break;
+    		}
+ 		
+    		// Pin D went high before timeout expired - wait for query request from the fill device
+    		if( digitalRead(PIN_D) == HIGH)
+    		{
+    			type = 	GetQueryByte();
+    			if( type > 0 )  
+    			{
+    				SendEquipmentType();
+    				fill_type = type;
+    				ret_val =  type;
+    			}
+          t23_state = DF_INIT;
+          break;
+    		}
+    	}
+      break;
+     
+    default:
+      t23_state = DF_INIT;
+      break;
+  }
+	return ret_val;
 }
 
 
-// Detect the fill type - if nothing happened before BTN was pressed - 
-//  that is Type 1 request.
-// If before that we got the request for the equipment type - that was
-// Type 2 or 3 request.
+// Detect the fill type.
+// If there is a Serial port request, then it is Type 4 (DES keys)
+//  If we detect PIN_D PIN_F funny dance - that is a Type 2 or Type 3 request
 char GetFillType()
 {
 	char type;
@@ -270,17 +299,22 @@ char GetFillType()
 	return -1;
 }
 
+
+// Pointers to the functions
+// to do device-agnostic TX and RX
 void (*p_tx)(byte *, byte);
 byte (*p_rx)(byte *, byte);
 char (*p_ack)(byte);
 
-static byte key_ack;
 static unsigned int base_address;
 
+
+// ACK the received key from PC
+static byte key_ack;
 char SendSerialAck(byte ack_type)
 {
 	key_ack = KEY_ACK;
-	p_tx(&key_ack, 1);			// ACK the previous packet
+	tx_eusart(&key_ack, 1);			// ACK the previous packet
 }
 
 static byte GetFill(void)
@@ -320,6 +354,11 @@ static byte GetFill(void)
 }
 
 
+// Receive and store the fill data into the specified slot
+// The slot has the following format:
+//   TTSS
+//  TT - high nibble, if 0 - regular DS-102 fill, !=0 - fill from eusart
+//  SS - low nibble, slot number
 char GetStoreFill(byte stored_slot)
 {
 	char result = -1;
@@ -347,7 +386,7 @@ char GetStoreFill(byte stored_slot)
 		p_ack = SendSerialAck;
 	}else
 	{
-		p_rx = ReceiveCell;
+		p_rx = ReceiveDS102Cell;
 		p_ack = SendFillRequest;
 	}
 	records = GetFill();
