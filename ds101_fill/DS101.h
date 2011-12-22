@@ -60,11 +60,11 @@ extern void TxSFrame(unsigned char Cmd);
 extern void TxUFrame(unsigned char Cmd);
 extern void TxAXID(void);
 
-extern char KeyStorage[256];
+extern char KeyStorage[];
 extern int  KeyStorageIdx;
 extern int  KeyStorageSize;
 
-extern char KeyName[256];
+extern char KeyName[];
 extern int  KeyNameSize;
 
 extern char KeyType;

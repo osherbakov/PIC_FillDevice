@@ -162,5 +162,21 @@ typedef enum
 #define	 RxBIT	(PIN_E)
 #define	 TRIS_Rx (TRIS_PIN_E)
 
+// To communicate with DTD the following pins are used:
+//  PIN_C - input, PIN_D - output
+#define	 TxDTD	(PIN_D)
+#define	 TRIS_TxDTD (TRIS_PIN_D)
+
+#define	 RxDTD	(PIN_C)
+#define	 TRIS_RxDTD (TRIS_PIN_C)
+
+// To communicate with DS-101 @ 64Kbd the following pins are used:
+//  Data+  PIN_B,  Data-  PIN_E
+#define	 Data_P	(PIN_B)
+#define	 TRIS_Data_P (TRIS_PIN_B)
+
+#define	 Data_N	(PIN_E)
+#define	 TRIS_Data_N (TRIS_PIN_E)
+
 
 #endif	// __CONFIG_H__

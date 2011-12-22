@@ -4,6 +4,8 @@
 #include <HDLC.h>
 #include <DS101.h>
 
+
+
 RX_STATE hdlc_state = ST_IDLE;
 
 // Returns:
@@ -25,7 +27,6 @@ int RxData(char *p_data)
          break;
          
       ch = (char) symbol;   
-      // Serial.print(ch & 0x00FF, HEX); Serial.print(" ");
       switch(hdlc_state)
       {
         case ST_IDLE:

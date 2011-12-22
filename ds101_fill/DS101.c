@@ -5,8 +5,6 @@
 #include <DS101.h>
 
 
-//#define RX_WAIT   (1000 * 10000L)    // 1 Second
-
 char master_mode = 0;
 char master_state = MS_IDLE;
 
@@ -16,8 +14,8 @@ int	 master_number = 56;
 char slave_name[14] = "PRC152 radio";
 int	 slave_number = 56;
 
-char  Rx_buff[0x100];
-char  Tx_buff[0x100];
+char  Rx_buff[12];
+char  Tx_buff[12];
 
 unsigned char MasterNewAddress = 0x35;
 unsigned char SlaveNewAddress = 0x35;
@@ -34,11 +32,11 @@ char		  *CurrentName;
 unsigned char NewAddress;
 
 
-char KeyStorage[256];
+char KeyStorage[128];
 int KeyStorageIdx = 0;
 int KeyStorageSize = 0;
 
-char KeyName[256];
+char KeyName[40];
 int  KeyNameSize = 0;
 
 char Disconnected = TRUE;

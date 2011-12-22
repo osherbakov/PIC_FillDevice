@@ -51,5 +51,7 @@ extern void TxData(char *p_data, int n_count);
 extern void (*WriteCharDS101)(char ch);
 extern int (*ReadCharDS101)(void);
 
+
+
 #endif
 

@@ -50,6 +50,17 @@ void setup_clocks()
   INTCONbits.TMR0IE =  1;   // Enable interrupt
   T0CON = 0x88;   // Enable TIMER0, 16-bit mode,no prescaler
   
+// Set up timer 1 to count OSC_CLOCK in 16-bit mode
+//  It is used for 0.131072s timeout, when clock overflows
+  	TMR1H = 0;
+  	TMR1L = 0;	// Reset the timer
+    T1GCONbits.TMR1GE = 0;	// No gating
+    T1CON = (0x3 << 4) | (1<<1); // 8-prescalar, 16-bits
+	IPR1bits.TMR1IP = 0;	// Low priority
+	PIR1bits.TMR1IF = 0;	// Clear Interrupt
+	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
+  
+  
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
