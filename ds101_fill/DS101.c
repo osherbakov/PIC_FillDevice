@@ -50,100 +50,6 @@ unsigned char NR;      // Received Number
 unsigned char NS;      // Send Number
 unsigned char PF;      // Poll/Final Flag
 
-
-typedef enum
-{
-    ST_IDLE,
-    ST_DATA,
-    ST_ESCAPE
-}RX_STATE;
-
-// Returns:
-//   -1  - Timeout occured
-//   0   - Aborted or incorrect FCS
-//   >0  - Data received
-int RxData(char *p_data)
-{
-  char *p_Rx_buff;
-  RX_STATE state;
-  
-  state = ST_IDLE;
-  p_Rx_buff = p_data;
-
-//  unsigned long long Timeout = millis() + RX_WAIT;
-//  while(millis() <= Timeout)
-  while (1)
-  {
-    if(SerPort.available())
-    {
-//	  Timeout = millis() + RX_WAIT;	// Kick timeout
-      char ch = SerPort.read();
-      // Serial.print(ch & 0x00FF, HEX); Serial.print(" ");
-      switch(state)
-      {
-        case ST_IDLE:
-          if(ch != FLAG)
-          {
-            *p_data++ = ch;
-            state = ST_DATA;
-          }
-          break;
-        case ST_DATA:
-          if(ch == FLAG)
-          {
-            // Check the Rx_buffer for correct FCS
-            int  n_chars = p_data - p_Rx_buff;
-			state = ST_IDLE;
-
-			PrintBuff(p_Rx_buff, n_chars);
-			// Get at least 2 chars and FCS should match
-            return (  (n_chars > 2)  && 
-						CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
-							(n_chars - 2) : 0;
-          }else if(ch == ESCAPE)
-          {
-            state = ST_ESCAPE;
-          }else
-          {
-            *p_data++ = ch;
-          }
-          break;
-        case ST_ESCAPE:
-          *p_data++ = ch;
-          state = ST_DATA;
-          break;
-      }
-    }
-  }
-  return -1; 
-}
-
-void TxData(char *p_data, int n_chars)
-{
-  int  i = 0;
-
-  for(i = 0; i < 5; i++)
-  {
-      SerPort.print(FLAG);
-  }
-
-  n_chars += 2;    // Space for extra 2 chars of FCS
-  CRC16appnd((unsigned char *)p_data, n_chars);
-
-//  PrintSentData(p_data, n_chars);
-
-  while(n_chars--)
-  {
-    char ch = *p_data++;
-    if( (ch == FLAG) || (ch == ESCAPE) )
-    {
-      SerPort.print(ESCAPE);
-    }
-    SerPort.print(ch);
-  }
-  SerPort.print(FLAG);
-}
-
 void TxSFrame(unsigned char cmd)
 {
   if (PF)
@@ -225,7 +131,7 @@ void ProcessIFrame(char *pBuff, int size)
 		pBuff += 4;
 		size -= 4;		// 4 chars were processed
   }
-  PrintData(frame_FDU, frame_len, pBuff, size);
+//  PrintData(frame_FDU, frame_len, pBuff, size);
   frame_len -= size;
 
   if(master_mode)
@@ -261,7 +167,7 @@ void ProcessUFrame(char Cmd)
 	}
 }
 
-void ProcessIdle()
+void ProcessIdle(void)
 {
 	if(master_mode)
 	{
@@ -272,7 +178,7 @@ void ProcessIdle()
 	}
 }
 
-char IsValidAddressAndCommand()
+char IsValidAddressAndCommand(void)
 {
 	if(master_mode)
 	{
@@ -308,7 +214,7 @@ void loop()
 
 		// Extract the PF flag and detect the FRAME type
         PF = CurrentCommand & PMASK;      // Poll/Final flag
-		PrintCommand(CurrentCommand);
+//		PrintCommand(CurrentCommand);
 
 		// Only accept your or broadcast data, 
         if( IsValidAddressAndCommand() )

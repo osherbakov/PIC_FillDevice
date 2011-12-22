@@ -45,15 +45,15 @@ extern unsigned char PF;      // Poll/Final Flag
 extern void MasterProcessIFrame(char *buffer, int size);
 extern void MasterProcessSFrame(unsigned char Cmd);
 extern void MasterProcessUFrame(unsigned char Cmd);
-extern void MasterProcessIdle();
-extern char IsMasterValidAddressAndCommand();
+extern void MasterProcessIdle(void);
+extern char IsMasterValidAddressAndCommand(void);
 
 
 extern void SlaveProcessIFrame(char *buffer, int size);
 extern void SlaveProcessSFrame(unsigned char Cmd);
 extern void SlaveProcessUFrame(unsigned char Cmd);
-extern void SlaveProcessIdle();
-extern char IsSlaveValidAddressAndCommand();
+extern void SlaveProcessIdle(void);
+extern char IsSlaveValidAddressAndCommand(void);
 
 extern void TxIFrame(char *pdata, int n_chars);
 extern void TxSFrame(unsigned char Cmd);

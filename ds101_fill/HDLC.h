@@ -38,5 +38,18 @@
 #define  RSET (0x008F)
 #define  XID  (0x00AF)
 
+typedef enum
+{
+    ST_IDLE,
+    ST_DATA,
+    ST_ESCAPE
+}RX_STATE;
+
+extern int RxData(char *p_data);
+extern void TxData(char *p_data, int n_count);
+
+extern void (*WriteCharDS101)(char ch);
+extern int (*ReadCharDS101)(void);
+
 #endif
 
