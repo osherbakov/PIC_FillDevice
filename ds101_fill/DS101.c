@@ -14,8 +14,11 @@ int	 master_number = 56;
 char slave_name[14] = "PRC152 radio";
 int	 slave_number = 56;
 
-char  Rx_buff[12];
-char  Tx_buff[12];
+#pragma udata big_buffer   // Select large section
+char  Rx_buff[256 + 64];
+char  Tx_buff[256 + 64];
+#pragma udata               // Return to normal section
+
 
 unsigned char MasterNewAddress = 0x35;
 unsigned char SlaveNewAddress = 0x35;
@@ -32,11 +35,13 @@ char		  *CurrentName;
 unsigned char NewAddress;
 
 
-char KeyStorage[128];
+#pragma udata big_buffer   // Select large section
+char KeyStorage[256 + 64];
+char KeyName[40];
+#pragma udata
+
 int KeyStorageIdx = 0;
 int KeyStorageSize = 0;
-
-char KeyName[40];
 int  KeyNameSize = 0;
 
 char Disconnected = TRUE;
@@ -48,13 +53,20 @@ unsigned char NR;      // Received Number
 unsigned char NS;      // Send Number
 unsigned char PF;      // Poll/Final Flag
 
+void (*ProcessIFrame)(char *pBuff, int size);
+void (*ProcessSFrame)(unsigned char Cmd);
+void (*ProcessUFrame)(unsigned char Cmd);
+void (*ProcessIdle)(void);
+char (*IsValidAddressAndCommand)(void);
+
 void TxSFrame(unsigned char cmd)
 {
   if (PF)
   {
-	Tx_buff[0] = CurrentAddress;  
-    Tx_buff[1] = cmd | (NR << 5) | PF_BIT;
-    TxData(Tx_buff, 2);
+	char *p_buff = &Tx_buff[0];
+	p_buff[0] = CurrentAddress;  
+    p_buff[1] = cmd | (NR << 5) | PF_BIT;
+    TxData(p_buff, 2);
   }
 }
 
@@ -62,9 +74,10 @@ void TxUFrame(unsigned char cmd)
 {
   if (PF)
   {
-	Tx_buff[0] = CurrentAddress;  
-    Tx_buff[1] = cmd | PF_BIT;
-    TxData(Tx_buff, 2);
+	char *p_buff = &Tx_buff[0];
+	p_buff[0] = CurrentAddress;  
+    p_buff[1] = cmd | PF_BIT;
+    TxData(p_buff, 2);
   }
 }
 
@@ -73,13 +86,11 @@ void TxIFrame(char *p_data, int n_chars)
   int i;
   if (PF)
   {
-	Tx_buff[0] = CurrentAddress;  
-    Tx_buff[1] = (NR << 5) | (NS << 1) | PF_BIT;
-    for (i = 0; i < n_chars; i++)
-    {
-      Tx_buff[i + 2] = p_data[i];
-    }
-    TxData(Tx_buff, n_chars + 2);
+	char *p_buff = &Tx_buff[0];	  
+	p_buff[0] = CurrentAddress;  
+    p_buff[1] = (NR << 5) | (NS << 1) | PF_BIT;
+    memcpy((void *)&p_buff[2], (void *)p_data, n_chars);
+    TxData(p_buff, n_chars + 2);
     NS++;  NS &= 0x07;
   }
 }
@@ -120,99 +131,39 @@ void TxAXID()
     TxIFrame(&AXID_buff[0], 21);
 }
 
-void ProcessIFrame(char *pBuff, int size)
-{
-  if(frame_len == 0)	// No data left in the frame
-  {
-		frame_FDU = (((int)pBuff[0]) << 8) + (((int)pBuff[1]) & 0x00FF);
-		frame_len = (((int)pBuff[2]) << 8) + (((int)pBuff[3]) & 0x00FF);
-		pBuff += 4;
-		size -= 4;		// 4 chars were processed
-  }
-//  PrintData(frame_FDU, frame_len, pBuff, size);
-  frame_len -= size;
-
-  if(master_mode)
-  {
-	  MasterProcessIFrame(pBuff, size); 
-  }else
-  {
-	  SlaveProcessIFrame(pBuff, size ); 
-  }
-}
-
-
-void ProcessSFrame(char Cmd)
-{
-  if(master_mode)
-  {
-	MasterProcessSFrame(Cmd);
-  }else
-  {
-	SlaveProcessSFrame(Cmd);
-  }
-}
-
-
-void ProcessUFrame(char Cmd)
-{
-	if(master_mode)
-	{
-		MasterProcessUFrame(Cmd);
-	}else
-	{
-		SlaveProcessUFrame(Cmd);
-	}
-}
-
-void ProcessIdle(void)
-{
-	if(master_mode)
-	{
-		MasterProcessIdle();
-	}else
-	{
-		SlaveProcessIdle();
-	}
-}
-
-char IsValidAddressAndCommand(void)
-{
-	if(master_mode)
-	{
-		return IsMasterValidAddressAndCommand();
-	}else
-	{
-		return IsSlaveValidAddressAndCommand();
-	}
-}
-
-
 
 void loop()
 {
-  int  nSymb; 
+    int  nSymb;
+    char *p_data;
 	
-  CurrentAddress = master_mode ? MasterAddress : SlaveAddress;
-  CurrentNumber = master_mode ? master_number : slave_number;
-  CurrentName = master_mode ? master_name : slave_name;
-  NewAddress = master_mode ? MasterAddress : SlaveAddress;
+    CurrentAddress = master_mode ? MasterAddress : SlaveAddress;
+    CurrentNumber = master_mode ? master_number : slave_number;
+    CurrentName = master_mode ? master_name : slave_name;
+    NewAddress = master_mode ? MasterAddress : SlaveAddress;
+    IsValidAddressAndCommand = master_mode?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
+    ProcessIdle = master_mode ? MasterProcessIdle : SlaveProcessIdle;
+    ProcessUFrame = master_mode ? MasterProcessUFrame : SlaveProcessUFrame;
+    ProcessSFrame = master_mode ? MasterProcessSFrame : SlaveProcessSFrame ;
+    ProcessIFrame = master_mode ? MasterProcessIFrame : SlaveProcessIFrame;
 
   while(1)
   {
 
     ProcessIdle();
 
-    nSymb = RxData(Rx_buff);
+    nSymb = RxData(&Rx_buff[0]);
     if(nSymb > 0)    
     {
         // Extract all possible info from the incoming packet
-        ReceivedAddress = Rx_buff[0];
-        CurrentCommand = Rx_buff[1];
+        p_data = &Rx_buff[0];
+        ReceivedAddress = p_data[0];
+        CurrentCommand = p_data[1];
+        nSymb -= 2; p_data +=2;
+        
 
 		// Extract the PF flag and detect the FRAME type
         PF = CurrentCommand & PMASK;      // Poll/Final flag
-//		PrintCommand(CurrentCommand);
 
 		// Only accept your or broadcast data, 
         if( IsValidAddressAndCommand() )
@@ -225,8 +176,16 @@ void loop()
           {
             if( (NSR == NR) && (NRR == NS)) 
             {
-              NR = (NR + 1) & 0x07;	// Increment received frame number
-			  ProcessIFrame(&Rx_buff[2], nSymb - 2);
+                NR = (NR + 1) & 0x07;	// Increment received frame number
+                if(frame_len == 0)	// No data left in the frame
+                {
+                    frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
+                    frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
+                    p_data += 4;   nSymb -= 4;		// 4 chars were processed
+                }
+                frame_len -= nSymb;
+                
+			  ProcessIFrame(p_data, nSymb);
             }else
             {
               TxSFrame(REJ);				// Reject frame

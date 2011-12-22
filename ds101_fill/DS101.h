@@ -39,9 +39,6 @@ extern unsigned char NR;      // Received Number
 extern unsigned char NS;      // Send Number
 extern unsigned char PF;      // Poll/Final Flag
 
-//extern DebugOutput Serial;
-//extern SerialPort SerPort;
-
 extern void MasterProcessIFrame(char *buffer, int size);
 extern void MasterProcessSFrame(unsigned char Cmd);
 extern void MasterProcessUFrame(unsigned char Cmd);
