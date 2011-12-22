@@ -204,7 +204,7 @@ void ClearFill(byte stored_slot)
 // Detect if there is Type 2/3 PIN_D and PIN_F sequence
 // Initially they must be HIGH, then PIN_D and PIN_F go LOW
 // PIN_F stays that way, but PIN_D goes HIGH after tA
-char CheckType23()
+char CheckType23(void)
 {
 	char type;
 
