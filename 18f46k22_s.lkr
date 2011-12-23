@@ -48,9 +48,7 @@ DATABANK   NAME=gpr4       START=0x400             END=0x4FF
 DATABANK   NAME=gpr5       START=0x500             END=0x5FF
 DATABANK   NAME=gpr6       START=0x600             END=0x6FF
 DATABANK   NAME=gpr7       START=0x700             END=0x7FF
-DATABANK   NAME=gpr8       START=0x800             END=0x8FF
-DATABANK   NAME=gpr9       START=0x900             END=0x9FF
-DATABANK   NAME=BigBuff    START=0xA00             END=0xDFF
+DATABANK   NAME=BigBuff    START=0x800             END=0xDFF
 SECTION    NAME=big_buffer  RAM=BigBuff
 
 #IFDEF _DEBUGDATASTART

@@ -20,9 +20,6 @@ enum MASTER_STATE
 	MS_DISC
 };
 
-extern char master_mode;
-extern char master_state;
-
 extern unsigned char CurrentAddress;
 extern int			 CurrentNumber;
 extern char			*CurrentName;
@@ -55,7 +52,7 @@ extern char IsSlaveValidAddressAndCommand(void);
 extern void TxIFrame(char *pdata, int n_chars);
 extern void TxSFrame(unsigned char Cmd);
 extern void TxUFrame(unsigned char Cmd);
-extern void TxAXID(void);
+extern void TxAXID(char mode);
 
 extern char KeyStorage[];
 extern int  KeyStorageIdx;

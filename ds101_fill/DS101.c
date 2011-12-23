@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
 #include <CRC16.h>
 #include <HDLC.h>
 #include <DS101.h>
 
 
-char master_mode = 0;
-char master_state = MS_IDLE;
+
 
 char master_name[14] = "PRC152 radio";
 int	 master_number = 56;
@@ -15,8 +15,7 @@ char slave_name[14] = "PRC152 radio";
 int	 slave_number = 56;
 
 #pragma udata big_buffer   // Select large section
-char  Rx_buff[256 + 64];
-char  Tx_buff[256 + 64];
+char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
 
@@ -36,9 +35,10 @@ unsigned char NewAddress;
 
 
 #pragma udata big_buffer   // Select large section
-char KeyStorage[256 + 64];
-char KeyName[40];
+char KeyStorage[512];
 #pragma udata
+
+char KeyName[40];
 
 int KeyStorageIdx = 0;
 int KeyStorageSize = 0;
@@ -63,7 +63,7 @@ void TxSFrame(unsigned char cmd)
 {
   if (PF)
   {
-	char *p_buff = &Tx_buff[0];
+	char *p_buff = &RxTx_buff[0];
 	p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | (NR << 5) | PF_BIT;
     TxData(p_buff, 2);
@@ -74,7 +74,7 @@ void TxUFrame(unsigned char cmd)
 {
   if (PF)
   {
-	char *p_buff = &Tx_buff[0];
+	char *p_buff = &RxTx_buff[0];
 	p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | PF_BIT;
     TxData(p_buff, 2);
@@ -86,7 +86,7 @@ void TxIFrame(char *p_data, int n_chars)
   int i;
   if (PF)
   {
-	char *p_buff = &Tx_buff[0];	  
+	char *p_buff = &RxTx_buff[0];	  
 	p_buff[0] = CurrentAddress;  
     p_buff[1] = (NR << 5) | (NS << 1) | PF_BIT;
     memcpy((void *)&p_buff[2], (void *)p_data, n_chars);
@@ -95,13 +95,13 @@ void TxIFrame(char *p_data, int n_chars)
   }
 }
 
-void TxAXID()
+void TxAXID(char mode)
 {
 	char AXID_buff[21];
 	int idx; 
 
 	AXID_buff[0] = 0x00;  
-	AXID_buff[1] = master_mode ? 0x50 : 0x60;	// 0x0050 - Request, 0x0060 - reply AXID FDU 
+	AXID_buff[1] = mode ? 0x50 : 0x60;	// 0x0050 - Request, 0x0060 - reply AXID FDU 
 
     AXID_buff[2] = 0x00;    
 	AXID_buff[3] = 0x11;	// Length = 17
@@ -132,27 +132,26 @@ void TxAXID()
 }
 
 
-void loop()
+void loop(char mode)
 {
     int  nSymb;
     char *p_data;
 	
-    CurrentAddress = master_mode ? MasterAddress : SlaveAddress;
-    CurrentNumber = master_mode ? master_number : slave_number;
-    CurrentName = master_mode ? master_name : slave_name;
-    NewAddress = master_mode ? MasterAddress : SlaveAddress;
-    IsValidAddressAndCommand = master_mode?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
-    ProcessIdle = master_mode ? MasterProcessIdle : SlaveProcessIdle;
-    ProcessUFrame = master_mode ? MasterProcessUFrame : SlaveProcessUFrame;
-    ProcessSFrame = master_mode ? MasterProcessSFrame : SlaveProcessSFrame ;
-    ProcessIFrame = master_mode ? MasterProcessIFrame : SlaveProcessIFrame;
+    CurrentAddress = mode ? MasterAddress : SlaveAddress;
+    CurrentNumber = mode ? master_number : slave_number;
+    CurrentName = mode ? master_name : slave_name;
+    NewAddress = mode ? MasterAddress : SlaveAddress;
+    IsValidAddressAndCommand = mode?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
+    ProcessIdle = mode ? MasterProcessIdle : SlaveProcessIdle;
+    ProcessUFrame = mode ? MasterProcessUFrame : SlaveProcessUFrame;
+    ProcessSFrame = mode ? MasterProcessSFrame : SlaveProcessSFrame ;
+    ProcessIFrame = mode ? MasterProcessIFrame : SlaveProcessIFrame;
 
   while(1)
   {
-
     ProcessIdle();
 
-    p_data = &Rx_buff[0];
+    p_data = &RxTx_buff[0];
     nSymb = RxData(p_data);
     if(nSymb > 0)    
     {

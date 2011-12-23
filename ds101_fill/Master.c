@@ -4,7 +4,13 @@
 #include <HDLC.h>
 #include <DS101.h>
 
-char Key_buff[256];
+#pragma udata big_buffer   // Select large section
+char Key_buff[512];
+#pragma udata
+
+char master_mode = 0;
+char master_state = MS_IDLE;
+
 void TxKeyName(void)
 {
 	int	 n_chars;
@@ -216,7 +222,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 		switch(master_state)
 		{
 			case MS_CONNECT:
-				TxAXID();	// On connect ask for AXID
+				TxAXID(1);	// On connect ask for AXID
 				master_state = MS_AXID_EXCH;
 				break;
 

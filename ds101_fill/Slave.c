@@ -29,7 +29,7 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
     {
       case 0x0050:    // Get AXID
 		// Send back requested AXID
-		TxAXID();		
+		TxAXID(0);		
       break;
 
 	//*************************************************

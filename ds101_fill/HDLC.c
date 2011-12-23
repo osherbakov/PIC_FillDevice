@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
 #include <CRC16.h>
 #include <HDLC.h>
 #include <DS101.h>
-
 
 
 RX_STATE hdlc_state = ST_IDLE;
@@ -14,12 +14,12 @@ RX_STATE hdlc_state = ST_IDLE;
 //   >0  - Data received
 int RxData(char *p_data)
 {
-  char *p_Rx_buff;
-  int  symbol;
-  char ch;
-  int  n_chars;
+  	char *p_Rx_buff;
+  	int  symbol;
+  	char ch;
+  	int  n_chars;
   
-  p_Rx_buff = p_data;
+  	p_Rx_buff = p_data;
     while(1)
     {
       symbol = ReadCharDS101();
@@ -66,24 +66,37 @@ int RxData(char *p_data)
 
 void TxData(char *p_data, int n_chars)
 {
-  int  i;
+  int  n_block;
+  unsigned int crc;
 
-  for(i = 0; i < 5; i++)
-  {
-      WriteCharDS101(FLAG);
-  }
+  while( n_chars > 0 )
+  { 
+	// Send 5 flags  
+    WriteCharDS101(FLAG);
+    WriteCharDS101(FLAG);
+    WriteCharDS101(FLAG);
+    WriteCharDS101(FLAG);
+    WriteCharDS101(FLAG);
 
-  n_chars += 2;    // Space for extra 2 chars of FCS
-  CRC16appnd((unsigned char *)p_data, n_chars);
-
-  while(n_chars--)
-  {
-    char ch = *p_data++;
-    if( (ch == FLAG) || (ch == ESCAPE) )
+	// Send everything in chunks of 256 bytes max  	
+	n_block = MIN(n_chars, 256);
+  
+    CRC16ini();
+    while(n_block--)
     {
-      WriteCharDS101(ESCAPE);
+      char ch = *p_data++;
+      if( (ch == FLAG) || (ch == ESCAPE) )
+      {
+        WriteCharDS101(ESCAPE);
+      }
+      WriteCharDS101(ch);
+      CRC16nxt(ch);
     }
-    WriteCharDS101(ch);
+    // Send the CRC 16 now
+    crc = CRC16crc();
+    WriteCharDS101(crc & 0x00FF);
+    WriteCharDS101((crc >> 8) & 0x00FF);
+  	WriteCharDS101(FLAG);
+  	n_chars -= n_block;
   }
-  WriteCharDS101(FLAG);
 }
