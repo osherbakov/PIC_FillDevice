@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "delay.h"
 #include <CRC16.h>
 #include <HDLC.h>
 #include <DS101.h>
@@ -8,7 +9,6 @@
 char Key_buff[512];
 #pragma udata
 
-char master_mode = 0;
 char master_state = MS_IDLE;
 
 void TxKeyName(void)
@@ -81,8 +81,8 @@ void TxTerm(void)
     TxIFrame(&Key_buff[0], n_chars);
 }
 
-//#define TX_WAIT   (5000L * 10000L)    // 5 Second
-//unsigned long long Timeout;
+#define TX_WAIT   (5)    // 5 Second
+unsigned int Timeout;
 
 void MasterProcessIdle()
 {
@@ -97,12 +97,12 @@ void MasterProcessIdle()
 			CurrentAddress = 0xFF;
 
 			TxUFrame(SNRM);		// Request connection
-//			Timeout = millis() + TX_WAIT;
+			Timeout = seconds_counter + TX_WAIT;
 			master_state = MS_CONNECT;
 			break;
 
 		case MS_CONNECT:
-//			if(Timeout < millis())
+			if(Timeout < seconds_counter)
 			{
 				master_state = MS_IDLE;
 			}
@@ -201,8 +201,7 @@ void MasterProcessSFrame(unsigned char Cmd)
 				NR = 0;
 				NS = 0;
 
-				master_mode = 0;
-				master_state = MS_IDLE;
+				master_state = MS_DONE;
 				break;
 		}
 	}else if(Cmd == RNR)      // RNR
@@ -274,8 +273,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 				NR = 0;
 				NS = 0;
 
-				master_mode = 0;
-				master_state = MS_IDLE;
+				master_state = MS_DONE;
 				break;
 		}
 	}else if(Cmd == DISC)      // DISC
@@ -286,7 +284,6 @@ void MasterProcessUFrame(unsigned char Cmd)
 	  NR = 0;
 	  NS = 0;
 
-	  master_mode = 0;
-	  master_state = MS_IDLE;
+	  master_state = MS_DONE;
 	}
 }

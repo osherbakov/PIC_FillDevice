@@ -28,11 +28,7 @@ void UpdateClockData()
 	if(samples_number < 0)
 	{
 		samples_number++;
-		curr_lsb = 0;
-		curr_msb = 0;
-		return;
-	}
-	if(samples_number < NUM_SAMPLES)
+	}else if(samples_number < NUM_SAMPLES)
 	{
 		LSB[samples_number] = curr_lsb;
 		MSB[samples_number] = curr_msb;

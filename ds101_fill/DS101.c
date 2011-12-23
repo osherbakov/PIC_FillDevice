@@ -6,8 +6,6 @@
 #include <DS101.h>
 
 
-
-
 char master_name[14] = "PRC152 radio";
 int	 master_number = 56;
 
@@ -132,7 +130,7 @@ void TxAXID(char mode)
 }
 
 
-void loop(char mode)
+void ProcessDS101(char mode)
 {
     int  nSymb;
     char *p_data;

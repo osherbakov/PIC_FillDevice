@@ -130,7 +130,6 @@ int RxDSChar()
 }
 
 
-
 void TxDSChar(char data)
 {
 	byte 	bitcount;
@@ -142,12 +141,18 @@ void TxDSChar(char data)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 	Data_P = 0;  Data_N = 1;      // Issue the start bit
    	// send 8 data bits and 3 stop bits
-	for(bitcount = 0; bitcount < 12; bitcount++)
+	for(bitcount = 0; bitcount < 9; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 		Data_P = data & 0x01;	Data_N = !(data & 0x01);// Set the output
-		data >>= 1;				// We use the fact that 
-						        // "0" bits are STOP bits
+		data >>= 1;				
 	}
+	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
+	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+	Data_P = 1;	Data_N = 0;// Set the STOP bit 1
+
+	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
+	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+	Data_P = 1;	Data_N = 0;// Set the STOP bit 2	
 } 

@@ -17,7 +17,8 @@ enum MASTER_STATE
 	MS_KEY_ISSUE_END,
 	MS_REQ_TERM,
     MS_REQ_DISC2,
-	MS_DISC
+	MS_DISC,
+	MS_DONE
 };
 
 extern unsigned char CurrentAddress;
