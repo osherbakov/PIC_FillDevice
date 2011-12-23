@@ -106,6 +106,9 @@ void MasterProcessIdle()
 
 char IsMasterValidAddressAndCommand()
 {
+  // Valid commands for the Master mode are either broadcast (0xFF)
+  // or with the explicit address specified.
+  // Additionally, the UA means that SNRM was accepted
 	if((ReceivedAddress == 0xFF) || (ReceivedAddress == CurrentAddress))
 	{
 		return TRUE;

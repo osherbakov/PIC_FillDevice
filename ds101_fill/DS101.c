@@ -152,14 +152,14 @@ void loop()
 
     ProcessIdle();
 
-    nSymb = RxData(&Rx_buff[0]);
+    p_data = &Rx_buff[0];
+    nSymb = RxData(p_data);
     if(nSymb > 0)    
     {
         // Extract all possible info from the incoming packet
-        p_data = &Rx_buff[0];
         ReceivedAddress = p_data[0];
         CurrentCommand = p_data[1];
-        nSymb -= 2; p_data +=2;
+        p_data +=2; nSymb -= 2;  // 2 chars were processed
         
 
 		// Extract the PF flag and detect the FRAME type
