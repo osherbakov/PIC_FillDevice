@@ -27,12 +27,6 @@ static unsigned char hq_byte_counter;
 static unsigned char hq_current_bit; 
 static unsigned char hq_current_byte; 
 
-byte switch_pos;
-byte prev_switch_pos;
-
-byte power_pos;
-byte prev_power_pos;
-
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
 #define DATA_FRAME_SIZE		(112/8)		// 112 bits of actual timing data
@@ -105,7 +99,7 @@ void high_isr (void)
       ProcessClockData();
       
       // Adjust current time
-			rtc_date.MilliSeconds = 50; // At this moment we are exactly at 500 ms
+			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
     	TMR2 = 0;	          // zero out 10ms counter
       
       // Increment big timeout counter
@@ -193,7 +187,7 @@ void low_isr ()
 	if(PIR1bits.TMR2IF)	
 	{
 		timeout_counter--;
-		rtc_date.MilliSeconds++;
+		rtc_date.MilliSeconds_10++;
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{

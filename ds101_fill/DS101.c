@@ -116,7 +116,7 @@ void TxAXID(char mode)
 }
 
 
-void ProcessDS101(char mode)
+char ProcessDS101(char mode)
 {
     int  nSymb;
     char *p_data;
@@ -125,7 +125,7 @@ void ProcessDS101(char mode)
     CurrentNumber = mode ? master_number : slave_number;
     CurrentName = mode ? master_name : slave_name;
     NewAddress = mode ? MasterAddress : SlaveAddress;
-    IsValidAddressAndCommand = mode?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
+    IsValidAddressAndCommand = mode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
     ProcessIdle = mode ? MasterProcessIdle : SlaveProcessIdle;
     ProcessUFrame = mode ? MasterProcessUFrame : SlaveProcessUFrame;
     ProcessSFrame = mode ? MasterProcessSFrame : SlaveProcessSFrame ;

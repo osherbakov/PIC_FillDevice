@@ -35,5 +35,14 @@ extern void TxSFrame(unsigned char Cmd);
 extern void TxUFrame(unsigned char Cmd);
 extern void TxAXID(char mode);
 
+enum DS_MODE{
+	RX_RS232 = 0,
+	RX_RS485 = 1,
+	TX_RS232 = 2,
+	TX_RS485 = 3
+};	
+
+extern char ProcessDS101(char mode);
+
 #endif
 

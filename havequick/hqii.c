@@ -270,7 +270,8 @@ char ReceiveHQTime(void )
 		SetNextSecond();
 	} while( !rtc_date.Valid );
 
-  INTCONbits.RBIE	= 0; // Disable 1PPS interrupt
+	INTCONbits.GIE = 0;		// Disable interrupts
+	INTCONbits.PEIE = 0;
 	SetRTCDataPart1();
 	
   //	3. Find the next HQ stream rising edge
@@ -288,13 +289,14 @@ char ReceiveHQTime(void )
 	SetRTCDataPart2();
 	
   // Reset the 10 ms clock
-  rtc_date.MilliSeconds = 0;
+  rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
   InitClockData();
 
-  INTCONbits.RBIF = 0;
-  INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
-
+	INTCONbits.RBIF = 0;	// Clear bit
+	INTCONbits.GIE = 1;		// Enable interrupts
+	INTCONbits.PEIE = 1;
+	
 //  5. Get the HQ time again and compare with the current RTC
 	if( HQTime() )	return -1;
 	GetRTCData();

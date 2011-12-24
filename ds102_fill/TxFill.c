@@ -298,7 +298,7 @@ void  FillTODData(void)
 	TOD_cell[10] = rtc_date.Seconds;
 	TOD_cell[11] = 0;
 
-	ms = rtc_date.MilliSeconds;
+	ms = rtc_date.MilliSeconds_10;
 	while(ms >= 10)
 	{
 		TOD_cell[11] += 0x10;

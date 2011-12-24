@@ -2,6 +2,13 @@
 #include "controls.h"
 #include "delay.h"
 
+
+
+byte switch_pos;
+byte prev_switch_pos;
+
+byte power_pos;
+byte prev_power_pos;
 //
 // Function to get the reading of the switch
 //   Returns the position numbercurrently selected.
