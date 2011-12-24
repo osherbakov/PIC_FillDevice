@@ -8,7 +8,8 @@ typedef enum
 	MODE1 = 0x01,	// DS-102   Type 1 fill
 	MODE2 = 0x02,	// SINCGARS Type 2 fill
 	MODE3 = 0x03,	// SINCGARS Type 3 fill
-	MODE4 = 0x04	// Serial PC/MBITR fill
+	MODE4 = 0x04,	// Serial PC/MBITR fill
+	MODE5 = 0x05	// DS-101 fill
 } FILL_TYPE;
 
 typedef enum

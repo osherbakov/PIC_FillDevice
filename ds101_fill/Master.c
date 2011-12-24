@@ -4,12 +4,54 @@
 #include <CRC16.h>
 #include <HDLC.h>
 #include <DS101.h>
+#include "spi_eeprom.h"
 
 #pragma udata big_buffer   // Select large section
 char Key_buff[512];
 #pragma udata
 
+enum MASTER_STATE
+{
+    MS_IDLE,
+	MS_CONNECT,
+	MS_AXID_EXCH,
+	MS_REQ_DISC1,
+	MS_RECONNECT,
+	MS_CHECK_RR,
+	MS_SEND_DATA,
+	MS_KEY_FILL_NAME,
+	MS_KEY_FILL_DATA,
+	MS_KEY_FILL_END,
+	MS_KEY_ISSUE_NAME,
+	MS_KEY_ISSUE_DATA,
+	MS_KEY_ISSUE_END,
+	MS_REQ_TERM,
+    MS_REQ_DISC2,
+	MS_DISC,
+	MS_DONE
+};
+
+
 char master_state = MS_IDLE;
+
+static unsigned int base_address;	// Address of the current EEPROM data
+static unsigned char block_counter = 0;     // Counter for blocks sent
+
+// Get the next block from EEPROM and send it out
+void TxDataBlock(void)
+{
+	unsigned int  byte_count;
+	
+	// Read the first byte of the block - it has the size
+	byte_count = byte_read(base_address++);
+	//Adjust the count - 0 means 0x100
+	if(byte_count == 0) byte_count = 0x0100;
+	
+	// Read the block of data
+	array_read(base_address, &Key_buff[0], byte_count);
+	base_address += byte_count;
+    TxIFrame(&Key_buff[0], byte_count);
+}	
 
 void TxKeyName(void)
 {
@@ -169,6 +211,19 @@ void MasterProcessSFrame(unsigned char Cmd)
 				master_state = MS_KEY_FILL_NAME;
 				break;
 
+		   case MS_SEND_DATA:
+		   		if(block_counter)
+		   		{
+					TxDataBlock();  // Send Data block from EEPROM
+					block_counter--;
+				}else
+				{
+					// Done - request disconnect
+					TxUFrame(DISC);
+					master_state = MS_DISC;
+				}	
+				break;
+
 		   case MS_KEY_FILL_NAME:
 				TxKeyName();  // Send Key Name
 				master_state = MS_KEY_FILL_DATA;
@@ -241,6 +296,19 @@ void MasterProcessUFrame(unsigned char Cmd)
 				master_state = MS_KEY_FILL_NAME;
 				break;
 
+		   case MS_SEND_DATA:
+		   		if(block_counter)
+		   		{
+					TxDataBlock();  // Send Data block from EEPROM
+					block_counter--;
+				}else
+				{
+					// Done - request disconnect
+					TxUFrame(DISC);
+					master_state = MS_DISC;
+				}	
+				break;
+
 			case MS_KEY_FILL_NAME:
 				TxKeyName();  // Send Key Name
 				master_state = MS_KEY_FILL_DATA;
@@ -268,7 +336,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 
 			case MS_DISC:
 				// Reset all to defaults on disconnect 
-			    Disconnected =TRUE;
+			    Disconnected = TRUE;
 				frame_len = 0;
 				NR = 0;
 				NS = 0;

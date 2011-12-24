@@ -44,9 +44,6 @@ int  KeyNameSize = 0;
 
 char Disconnected = TRUE;
 
-int frame_len = 0;
-int frame_FDU;
-
 unsigned char NR;      // Received Number
 unsigned char NS;      // Send Number
 unsigned char PF;      // Poll/Final Flag
@@ -158,7 +155,6 @@ void ProcessDS101(char mode)
         CurrentCommand = p_data[1];
         p_data +=2; nSymb -= 2;  // 2 chars were processed
         
-
 		// Extract the PF flag and detect the FRAME type
         PF = CurrentCommand & PMASK;      // Poll/Final flag
 
@@ -174,15 +170,7 @@ void ProcessDS101(char mode)
             if( (NSR == NR) && (NRR == NS)) 
             {
                 NR = (NR + 1) & 0x07;	// Increment received frame number
-                if(frame_len == 0)	// No data left in the frame
-                {
-                    frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
-                    frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
-                    p_data += 4;   nSymb -= 4;		// 4 chars were processed
-                }
-                frame_len -= nSymb;
-                
-			  ProcessIFrame(p_data, nSymb);
+			    ProcessIFrame(p_data, nSymb);
             }else
             {
               TxSFrame(REJ);				// Reject frame

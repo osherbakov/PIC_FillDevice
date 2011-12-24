@@ -1,26 +1,6 @@
 #ifndef __DS101_H__
 #define __DS101_H_
 
-enum MASTER_STATE
-{
-    MS_IDLE,
-	MS_CONNECT,
-	MS_AXID_EXCH,
-	MS_REQ_DISC1,
-	MS_RECONNECT,
-	MS_CHECK_RR,
-	MS_KEY_FILL_NAME,
-	MS_KEY_FILL_DATA,
-	MS_KEY_FILL_END,
-	MS_KEY_ISSUE_NAME,
-	MS_KEY_ISSUE_DATA,
-	MS_KEY_ISSUE_END,
-	MS_REQ_TERM,
-    MS_REQ_DISC2,
-	MS_DISC,
-	MS_DONE
-};
-
 extern unsigned char CurrentAddress;
 extern int			 CurrentNumber;
 extern char			*CurrentName;
