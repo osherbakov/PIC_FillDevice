@@ -109,32 +109,20 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 	//*************************************************
 
 	  case 0x02B0:    // Key issue
-		// Save the Key
-		memcpy((void *)KeyStorage + KeyStorageIdx, (void *)p_data, n_chars);
-		KeyStorageIdx += n_chars;
 		// Send response
         TxSFrame(RR);
       break;
 
 	  case 0x0298:    // Key issue done
-		// Save Key Size and init index
-		KeyStorageSize = KeyStorageIdx;
-		KeyStorageIdx = 0;
         TxSFrame(RR);
       break;
 
       case 0x01B0:    // Key fill
-		// Save the Key
-		memcpy((void *)KeyStorage + KeyStorageIdx, (void *)p_data, n_chars);
-		KeyStorageIdx += n_chars;
 		// Send response
         TxSFrame(RR);
       break;
 
       case 0x0198:    // Key fill done
-		// Save Key Size and init index
-		KeyStorageSize = KeyStorageIdx;
-		KeyStorageIdx = 0;
         TxSFrame(RR);
       break;
 
@@ -154,17 +142,10 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 	//			KEY FILL/ISSUE NAME
 	//*************************************************
 	  case 0x0190:    // Key fill name
-		// Save the key name
-		memcpy((void *)KeyName, (void *)p_data, n_chars);
-		KeyNameSize = n_chars;
         TxSFrame(RR);
       break;
 
       case 0x0290:    // Key issue name 
-		// Save the key name
-		memcpy((void *)KeyName, (void *)p_data, n_chars);
-		KeyNameSize = n_chars;
-
         TxSFrame(RR);
       break;
 
@@ -247,7 +228,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	}else if(Cmd == UP)      // UP
 	{
 	  TxSFrame(RR);
-	}else if(Cmd == RSET)      // RSET
+	}else if(Cmd == RSET)    // RSET
 	{
 	  NR = 0;
 	  TxUFrame(UA);

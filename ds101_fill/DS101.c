@@ -31,17 +31,6 @@ int			  CurrentNumber;
 char		  *CurrentName;
 unsigned char NewAddress;
 
-
-#pragma udata big_buffer   // Select large section
-char KeyStorage[512];
-#pragma udata
-
-char KeyName[40];
-
-int KeyStorageIdx = 0;
-int KeyStorageSize = 0;
-int  KeyNameSize = 0;
-
 char Disconnected = TRUE;
 
 unsigned char NR;      // Received Number

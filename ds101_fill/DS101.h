@@ -35,14 +35,5 @@ extern void TxSFrame(unsigned char Cmd);
 extern void TxUFrame(unsigned char Cmd);
 extern void TxAXID(char mode);
 
-extern char KeyStorage[];
-extern int  KeyStorageIdx;
-extern int  KeyStorageSize;
-
-extern char KeyName[];
-extern int  KeyNameSize;
-
-extern char KeyType;
-
 #endif
 
