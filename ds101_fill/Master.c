@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
+#include "fill.h"
 #include "delay.h"
 #include <CRC16.h>
 #include <HDLC.h>
@@ -20,14 +22,31 @@ enum MASTER_STATE
 	MS_CHECK_RR,
 	MS_SEND_DATA,
 	MS_DISC,
-	MS_DONE
+	MS_DONE,
+	MS_TIMEOUT
 };
 
 
-char master_state = MS_IDLE;
+char master_state;
 
 static unsigned int base_address;	// Address of the current EEPROM data
 static unsigned char block_counter = 0;     // Counter for blocks sent
+
+void MasterStart()
+{
+	// Reset all to defaults 
+	NR = 0;
+	NS = 0;
+	PF = 1;
+	frame_len = 0;
+	master_state = MS_IDLE;	
+}	
+
+char GetMasterStatus()
+{
+	return (master_state == MS_TIMEOUT) ? ST_TIMEOUT :
+		(master_state == MS_DONE) ? ST_DONE : ST_OK; 
+}	
 
 // Get the next block from EEPROM and send it out
 void TxDataBlock(void)
@@ -40,14 +59,14 @@ void TxDataBlock(void)
 	if(byte_count == 0) byte_count = 0x0100;
 	
 	// Read the block of data
-	array_read(base_address, &Key_buff[0], byte_count);
+	array_read(base_address, (unsigned char *)&Key_buff[0], byte_count);
 	base_address += byte_count;
     TxIFrame(&Key_buff[0], byte_count);
 }	
 
 
-#define TX_WAIT   (5)    // 5 Second
-unsigned int Timeout;
+#define TX_WAIT   (3)    // 3 Seconds
+static unsigned int Timeout;
 
 void MasterProcessIdle()
 {
@@ -69,7 +88,7 @@ void MasterProcessIdle()
 		case MS_CONNECT:
 			if(Timeout < seconds_counter)
 			{
-				master_state = MS_IDLE;
+				master_state = MS_TIMEOUT;
 			}
 			break;
 	}

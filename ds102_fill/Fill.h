@@ -1,6 +1,8 @@
 #ifndef __FILL_H__
 #define __FILL_H__
 
+#include "config.h"
+
 // QUERY bytes
 typedef enum 
 {
@@ -18,6 +20,14 @@ typedef enum
 	REQ_NEXT,
 	REQ_LAST
 } REQ_TYPE;
+
+typedef enum
+{
+	ST_TIMEOUT = -1,
+	ST_OK = 0,
+	ST_ERR = 1,
+	ST_DONE = 2
+} ST_STATUS;	
 
 //--------------------------------------------------------------
 //

@@ -6,6 +6,7 @@
 #include <DS101.h>
 #include "spi_eeprom.h"
 #include "fill.h"
+#include "delay.h"
 
 
 static unsigned int base_address;	// Address of the current EEPROM data
@@ -14,6 +15,28 @@ static unsigned char block_counter = 0;     // Counter for blocks sent
 
 int frame_len = 0;
 int frame_FDU;
+char status;
+
+#define RX_WAIT   (3)    // 3 Seconds
+static unsigned int Timeout;
+
+void SlaveStart()
+{
+	// Reset all to defaults 
+	NR = 0;
+	NS = 0;
+	PF = 1;
+	frame_len = 0;
+	status = ST_OK;
+	Timeout = seconds_counter + RX_WAIT;
+}
+
+
+
+char GetSlaveStatus()
+{
+	return status;
+}	
 
 char IsSlaveValidAddressAndCommand()
 {
@@ -42,7 +65,7 @@ void SaveDataBlock(char *p_data, int n_chars)
 	base_address++;
 	
 	// Write the data block
-	array_write(base_address, p_data, n_chars);
+	array_write(base_address, (unsigned char *)p_data, n_chars);
 	base_address += n_chars;
 	
 	// update the block counter and type
@@ -214,12 +237,13 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  TxUFrame(UA);  // Send UA
 	}else if(Cmd == DISC)      // DISC
 	{
-	  // Reset all to defaults on disconnect 
+	  // Reset all to defaults on disconnect
 	  Disconnected = TRUE;
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
-
+	  status = ST_DONE; 
+	  
 	  TxUFrame(UA);
 	  // After the disconnect  - change the address
 	  CurrentAddress = NewAddress;
@@ -238,5 +262,9 @@ void SlaveProcessUFrame(unsigned char Cmd)
 
 void SlaveProcessIdle()
 {
+	if(seconds_counter > Timeout)
+	{
+		status = ST_TIMEOUT;
+	}	
 }
 

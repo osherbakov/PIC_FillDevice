@@ -361,7 +361,7 @@ static byte GetFill(void)
 //  SS - low nibble, slot number
 char GetStoreFill(byte stored_slot)
 {
-	char result = -1;
+	char result = ST_TIMEOUT;
 	byte required_fill;
 	byte records;
 	unsigned int saved_base_addrress;
@@ -395,7 +395,7 @@ char GetStoreFill(byte stored_slot)
 	{
 		byte_write(saved_base_addrress++, records);
 		byte_write(saved_base_addrress++, fill_type);
-		result = 0;
+		result = ST_OK;
 	}
    	return result;
 }

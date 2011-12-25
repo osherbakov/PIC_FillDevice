@@ -1,5 +1,6 @@
 #include "config.h"
 #include "delay.h"
+#include "HDLC.h"
 
 #define DTD_BAUDRATE  (9600)
 #define DS101_BAUDRATE	(64000)
@@ -9,10 +10,6 @@
 
 #define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 64L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
-
-// Use negative logic
-#define  START	(1)
-#define  STOP	(0)
 
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
@@ -30,7 +27,7 @@ int (*ReadCharDS101)(void);
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
-int RxDTDChar()
+int RxRS232Char()
 {
 	byte bitcount, data;
 
@@ -66,7 +63,7 @@ int RxDTDChar()
 
 
 
-void TxDTDChar(char data)
+void TxRS232Char(char data)
 {
 	byte 	bitcount;
 	
@@ -75,8 +72,8 @@ void TxDTDChar(char data)
 	PR6 = TIMER_DTD;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-	TxDTD = START;        // Issue the start bit
-	data = ~data;  		// invert sysmbol
+	TxDTD = 1;        		// Issue the start bit
+	data = ~data;  			// Invert sysmbol
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
@@ -90,11 +87,11 @@ void TxDTDChar(char data)
 
 
 //
-// Soft UART to communicate with the DS101
+// Soft UART to communicate with the DS101 via RS-485
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
-int RxDSChar()
+int RxRS485Char()
 {
 	byte bitcount, data;
 
@@ -130,7 +127,7 @@ int RxDSChar()
 }
 
 
-void TxDSChar(char data)
+void TxRS485Char(char data)
 {
 	byte 	bitcount;
 	

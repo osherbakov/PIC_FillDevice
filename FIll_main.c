@@ -6,6 +6,7 @@
 #include "gps.h"
 #include "serial.h"
 #include "Fill.h"
+#include "DS101.h"
 
 extern char ReceiveHQTime(void);
 extern void SetNextState(char nextState);
@@ -16,12 +17,16 @@ static enum
 	INIT = 0,
 	BIST,
 	BIST_ERR,
-	FILL_TX, 
-	FILL_TX_PROC, 
+	FILL_TX,
+	FILL_TX_RS232,
+	FILL_TX_RS485, 
+	FILL_TX_PROC,
 	FILL_RX,
 	FILL_RX_SG,
 	FILL_RX_PROC,
 	FILL_RX_PC,
+	FILL_RX_RS232,
+	FILL_RX_RS485,
 	ZERO_FILL,
 	HQ_TX,
 	HQ_RX,
@@ -75,13 +80,13 @@ byte TestButtonPress(void)
 //		result = -1 - timeout, continue working
 void TestFillResult(char result)
 {
-	if(result == 0)					// OK return value
+	if(result == ST_OK)					// OK return value
 	{
 		SetNextState(INIT);
-	}else if(result == 1)			// ERROR return value
+	}else if(result == ST_ERR)			// ERROR return value
 	{
 		SetNextState(ERROR);
-	}else if(result == 2 )			// DONE return value
+	}else if(result == ST_DONE )			// DONE return value
 	{
 		SetNextState(DONE);
 	}
@@ -119,6 +124,14 @@ void SetNextState(char nextState)
 		case PC_CONN:
 			set_led_state(5, 150);		// "Connect Serial" blink pattern
 			break;
+			
+		case FILL_TX_RS232:
+			set_led_state(20, 80);		// "Try Serial" blink pattern
+			break;
+		
+		case FILL_TX_RS485:
+			set_led_state(80,20);		// "Try RS485" blink pattern
+			break;
 	
 		case ERROR:
 			set_led_state(15, 5);		// "Fill error" blink pattern
@@ -138,6 +151,7 @@ void SetNextState(char nextState)
 
 void main()
 {
+	char  result;
 	setup_start_io();
 	current_state = INIT;
 
@@ -195,23 +209,31 @@ void main()
 				ON_GND = 0;
 				hq_enabled = 0;
 				close_eusart();
-        idle_counter = seconds_counter + IDLE_SECS;
+        		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				{
+					// First check the position of the ZERO switch 
 					if( power_pos == ZERO_POS)
 					{
 						SetNextState(ZERO_FILL);
-					}else
+					}else	// Zero is not active - use reqular
 					{
 						// Type = 0 - empty slot
 						//		= 1 - Type 1 fill
 						//		= 2,3 - Type 2,3 fill
 						//		= 4 - DES Key fill
+						//		= 5 - DS-101 fill
 						if( CheckFillType(switch_pos) > 0)
 						{
-							SetNextState(FILL_TX);	// Be ready to send
+							if(fill_type == MODE5)
+							{
+								SetNextState(FILL_TX_RS232);	// Be ready to send
+							}else
+							{
+								SetNextState(FILL_TX);	// Be ready to send
+							}		
 						}else
 						{
 							TRIS_PIN_GND = INPUT;	// Make Ground
@@ -244,7 +266,29 @@ void main()
 					SetNextState(TIME_TX);
 				}
 				break;
+				
+			case FILL_TX_RS232:
+				result = ProcessDS101(TX_RS232);
+				if(result < 0)
+				{
+					SetNextState(FILL_TX_RS485);	
+				}else
+				{
+					TestFillResult(result);
+				}
+				break;	
 
+			case FILL_TX_RS485:
+				result = ProcessDS101(TX_RS485);
+				if(result < 0)
+				{
+					SetNextState(FILL_TX_RS232);	
+				}else
+				{
+					TestFillResult(result);
+				}
+				break;
+					
 			case FILL_TX:
 				if( CheckEquipment() > 0 )
 				{

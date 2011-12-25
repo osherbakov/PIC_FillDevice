@@ -2,6 +2,7 @@
 #include <string.h>
 #include "config.h"
 #include <CRC16.h>
+#include "fill.h"
 #include <HDLC.h>
 #include <DS101.h>
 
@@ -42,6 +43,8 @@ void (*ProcessSFrame)(unsigned char Cmd);
 void (*ProcessUFrame)(unsigned char Cmd);
 void (*ProcessIdle)(void);
 char (*IsValidAddressAndCommand)(void);
+char (*GetStatus)(void);
+
 
 void TxSFrame(unsigned char cmd)
 {
@@ -115,23 +118,39 @@ void TxAXID(char mode)
     TxIFrame(&AXID_buff[0], 21);
 }
 
+// Select appropriate functions based on the mode requested.
+// Ideally, it would be done with virtual functions in C++
+void SetupDS101Mode(char mode)
+{
+	char TxMode = (mode == TX_RS232) || (mode == TX_RS485) ? TRUE : FALSE;
+	char RS232Mode  = (mode == TX_RS232) || (mode == RX_RS232) ? TRUE : FALSE;
+	
+    CurrentAddress = TxMode ? MasterAddress : SlaveAddress;
+    CurrentNumber = TxMode ? master_number : slave_number;
+    CurrentName = TxMode ? master_name : slave_name;
+    NewAddress = TxMode ? MasterAddress : SlaveAddress;
+    IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
+    ProcessIdle = TxMode ? MasterProcessIdle : SlaveProcessIdle;
+    ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
+    ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
+    ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
+    
+    WriteCharDS101 = RS232Mode ? TxRS232Char : TxRS485Char;
+    ReadCharDS101 = RS232Mode ? RxRS232Char : RxRS485Char;
+    if(TxMode) 
+    	MasterStart();
+    else
+    	SlaveStart();
+}	
 
 char ProcessDS101(char mode)
 {
     int  nSymb;
     char *p_data;
 	
-    CurrentAddress = mode ? MasterAddress : SlaveAddress;
-    CurrentNumber = mode ? master_number : slave_number;
-    CurrentName = mode ? master_name : slave_name;
-    NewAddress = mode ? MasterAddress : SlaveAddress;
-    IsValidAddressAndCommand = mode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
-    ProcessIdle = mode ? MasterProcessIdle : SlaveProcessIdle;
-    ProcessUFrame = mode ? MasterProcessUFrame : SlaveProcessUFrame;
-    ProcessSFrame = mode ? MasterProcessSFrame : SlaveProcessSFrame ;
-    ProcessIFrame = mode ? MasterProcessIFrame : SlaveProcessIFrame;
+	SetupDS101Mode(mode);
 
-  while(1)
+  while(GetStatus() == ST_OK)
   {
     ProcessIdle();
 
@@ -179,5 +198,6 @@ char ProcessDS101(char mode)
           }
         }
     }
-  }  
+  }
+  return GetStatus();  
 }

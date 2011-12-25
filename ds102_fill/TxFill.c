@@ -480,7 +480,7 @@ char SendFill()
     	// If all records were sent - ignore timeout
 	  	if(records == 0)
 		{
-			wait_result = 0;
+			wait_result = ST_OK;
 		}
     	if(wait_result) 
 			break;
@@ -491,7 +491,7 @@ char SendFill()
 	{
     	ReleaseMode23Bus();
 	}
-	return (p_ack == WaitMBITRReq) ? 2 : wait_result;	// When send to MBITR - return with DONE flag
+	return (p_ack == WaitMBITRReq) ? ST_DONE : wait_result;	// When send to MBITR - return with DONE flag
 }
 
 
