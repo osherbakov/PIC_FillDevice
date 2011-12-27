@@ -12,11 +12,11 @@ extern void setup_spi();
 extern void setup_start_io();
 
 #define MS_10_PER_1MHZ (10*1000L)
-#define CNT_10MS (((XTAL_FREQ / 4) * (MS_10_PER_1MHZ / 10))/16 )
+#define CNT_10MS ((((XTAL_FREQ / 4) * (MS_10_PER_1MHZ / 10))/16 ) - 1 )
 
 #define HQ_BIT_TIME_US		(600)  // 600us for one bit.
-#define TIMER_300MS_PERIOD ( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2) / 16)
-
+#define HQII_TIMER (( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2) / 16) - 1 )
+#define HQII_TIMER_CTRL (1<<2 | 2)	// 16:1 pre, on
 void setup_clocks()
 {
   OSCTUNE = 0;    // No PLL
@@ -64,14 +64,14 @@ void setup_clocks()
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
-	T2CON = 0x02 | (10 << 3) | (1 << 2);
+	T2CON = (10 << 3) | (1 << 2) | 2;
 	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
 
 // Set up the timer 4 to fire every 300us at high priority
 // for Have Quick data stream generation
-	PR4 = TIMER_300MS_PERIOD;
+	PR4 = HQII_TIMER;
 	IPR5bits.TMR4IP = 1;	// HIGH priority
 	T4CON = 0x02;			// 1:1 Post, 16 prescaler, off 
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
@@ -81,12 +81,12 @@ void setup_clocks()
 // for Have Quick data stream detection
 	PR6 = 0xFF;
 	IPR5bits.TMR6IP = 0;	// LOW priority
-	T6CON = 0x06;			// 1:1 Post, 16 prescaler, on 
+	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
 	PIE5bits.TMR6IE = 0;	// Disable TIMER6 Interrupt
 
 // Initialize the seconds counter
-  seconds_counter = 0;
+    seconds_counter = 0;
 }
 
 void setup_spi()
