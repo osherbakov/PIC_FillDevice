@@ -7,9 +7,11 @@
 
 #define TIMER_DTD 	( ( (XTAL_FREQ * 1000000L) / ( 64L * DTD_BAUDRATE)) - 1 )
 #define TIMER_DTD_START 	( -(TIMER_DTD/2) )
+#define TIMER_DTD_EDGE 	( (TIMER_DTD/2) )
 
 #define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 64L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
+#define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
 
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
@@ -58,6 +60,41 @@ int RxRS232Char()
 	}
 	return -1;
 }
+
+int RxRS232Flag()
+{
+	char data;
+  char prev, curr;
+
+	TRIS_RxDTD = INPUT;
+	PR6 = TIMER_DTD;
+      	
+  TMR1H = 0;
+  TMR1L = 0;	// Reset the timeout timer
+	PIR1bits.TMR1IF = 0;	// Clear Interrupt
+	
+  curr = prev = RxDTD;
+	while( !PIR1bits.TMR1IF )	// Loop until timeout
+	{
+		curr = RxDTD;
+		// If transition is detected - reset counter
+		if(curr != prev)
+		{
+			 prev = curr;
+			 TMR6 = TIMER_DTD_EDGE;
+			 continue;
+		}
+		// If bit counter expired - shift in the data
+		if(PIR1bits.TMR1IF)
+		{
+				data = (data << 1) | (RxDTD ? 0x00 : 0x01);
+				// Check for the FLAG + STOP bit 111111101
+				if(data == 0xFD
+		}
+	}
+	return -1;
+}
+
 
 
 
