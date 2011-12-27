@@ -55,7 +55,7 @@ void setup_clocks()
   	TMR1H = 0;
   	TMR1L = 0;	// Reset the timer
     T1GCONbits.TMR1GE = 0;	// No gating
-    T1CON = (0x3 << 4) | (1<<1); // 8-prescalar, 16-bits
+    T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
 	IPR1bits.TMR1IP = 0;	// Low priority
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt

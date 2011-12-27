@@ -35,9 +35,7 @@ int RxRS232Char()
 	PR6 = TIMER_DTD;
       	
     TMR1H = 0;
-  	TMR1L = 0;	// Reset the timer
-    T1GCONbits.TMR1GE = 0;	// No gating
-    T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
+  	TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
@@ -100,9 +98,7 @@ int RxRS485Char()
 	PR6 = TIMER_DS101;
       	
     TMR1H = 0;
-  	TMR1L = 0;	// Reset the timer
-    T1GCONbits.TMR1GE = 0;	// No gating
-    T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
+  	TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
