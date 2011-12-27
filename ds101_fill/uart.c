@@ -74,7 +74,10 @@ int RxRS232Flag()
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
+<<<<<<< HEAD
 	TMR6 = 0;
+=======
+>>>>>>> eb6eaf6d89a12e1ec18afafb16e5f84b8eac2894
       	
   	TMR1H = 0;
   	TMR1L = 0;	// Reset the timeout timer
@@ -112,7 +115,10 @@ void TxRS232Char(char data)
 	byte 	bitcount;
 	
 	TRIS_TxDTD = OUTPUT;
+<<<<<<< HEAD
 
+=======
+>>>>>>> eb6eaf6d89a12e1ec18afafb16e5f84b8eac2894
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
 	TMR6 = 0;
