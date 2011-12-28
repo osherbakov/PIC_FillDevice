@@ -66,7 +66,7 @@ int RxData(char *p_data)
 
 void TxData(char *p_data, int n_chars)
 {
-  int  n_block;
+  int  n_block, n_cnt;
   unsigned int crc;
 
   while( n_chars > 0 )
@@ -82,7 +82,8 @@ void TxData(char *p_data, int n_chars)
 	n_block = MIN(n_chars, 256);
   
     CRC16ini();
-    while(n_block--)
+		n_cnt = n_block;
+    while(n_cnt-- > 0)
     {
       char ch = *p_data++;
       if( (ch == FLAG) || (ch == ESCAPE) )

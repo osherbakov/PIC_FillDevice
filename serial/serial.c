@@ -86,7 +86,6 @@ char CheckSerial()
   //  /84 - the capabilities request
 	if(rx_count >= 4)
 	{
-		
 		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
   		// SN request - send a fake SN = 123456

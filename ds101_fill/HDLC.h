@@ -50,6 +50,7 @@ extern void TxData(char *p_data, int n_count);
 
 extern void (*WriteCharDS101)(char ch);
 extern int (*ReadCharDS101)(void);
+extern int (*WaitFlagDS101)(void);
 
 extern void TxRS232Char(char ch);
 extern int RxRS232Char(void);
@@ -58,6 +59,11 @@ extern int RxRS232Flag(void);
 extern void TxRS485Char(char ch);
 extern int RxRS485Char(void);
 extern int RxRS485Flag(void);
+
+extern void TxPC232Char(char ch);
+extern int RxPC232Char(void);
+extern int RxPC232Flag(void);
+
 
 #endif
 

@@ -167,8 +167,8 @@ typedef enum
 #define	 TxDTD	(PIN_D)
 #define	 TRIS_TxDTD (TRIS_PIN_D)
 
-#define	 RxDTD	(PIN_C)
-#define	 TRIS_RxDTD (TRIS_PIN_C)
+#define	 RxDTD	(PIN_E)
+#define	 TRIS_RxDTD (TRIS_PIN_E)
 
 // To communicate with DS-101 @ 64Kbd the following pins are used:
 //  Data+  PIN_B,  Data-  PIN_E

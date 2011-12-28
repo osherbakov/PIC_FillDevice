@@ -41,12 +41,19 @@ extern void TxAXID(char mode);
 
 enum DS_MODE{
 	RX_RS232 = 0,
-	RX_RS485 = 1,
-	TX_RS232 = 2,
-	TX_RS485 = 3
+	RX_PC232 = 1,
+	RX_RS485 = 2,
+	TX_RS232 = 3,
+	TX_PC232 = 4,
+	TX_RS485 = 5
 };	
 
-extern char ProcessDS101(char mode);
+extern char CheckRS232(void);
+extern char CheckPC232(void);
+extern char CheckRS485(void);
+
+extern char ProcessDS101(void);
+extern char SendDS101Fill(char mode);
 
 #endif
 

@@ -19,6 +19,7 @@ static enum
 	BIST_ERR,
 	FILL_TX,
 	FILL_TX_RS232,
+	FILL_TX_PC232,
 	FILL_TX_RS485, 
 	FILL_TX_PROC,
 	FILL_RX,
@@ -26,6 +27,7 @@ static enum
 	FILL_RX_PROC,
 	FILL_RX_PC,
 	FILL_RX_RS232,
+	FILL_RX_PC232,
 	FILL_RX_RS485,
 	ZERO_FILL,
 	HQ_TX,
@@ -128,6 +130,10 @@ void SetNextState(char nextState)
 		case FILL_TX_RS232:
 			set_led_state(20, 80);		// "Try Serial" blink pattern
 			break;
+
+		case FILL_TX_PC232:
+			set_led_state(50, 50);		// "Try PC" blink pattern
+			break;
 		
 		case FILL_TX_RS485:
 			set_led_state(80,20);		// "Try RS485" blink pattern
@@ -206,10 +212,11 @@ void main()
 			// This case when any switch or button changes
 			case INIT:
 				// Remove ground from pin B
+				TRIS_PIN_GND = INPUT;
 				ON_GND = 0;
 				hq_enabled = 0;
 				close_eusart();
-        		idle_counter = seconds_counter + IDLE_SECS;
+        idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
@@ -227,7 +234,7 @@ void main()
 						//		= 5 - DS-101 fill
 						if( CheckFillType(switch_pos) > 0)
 						{
-							if(fill_type == MODE5)
+							if(fill_type == MODE3)
 							{
 								SetNextState(FILL_TX_RS232);	// Be ready to send
 							}else
@@ -236,8 +243,6 @@ void main()
 							}		
 						}else
 						{
-							TRIS_PIN_GND = INPUT;	// Make Ground
-							ON_GND = 1;				//  on Pin B
 							SetNextState(FILL_RX) ; // Receive fill
 						}
 					}
@@ -250,7 +255,7 @@ void main()
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
-					TRIS_PIN_GND = INPUT;			// Make ground
+					TRIS_PIN_GND = INPUT;	// Make ground
 					ON_GND = 1;						//  on Pin B
 					hq_enabled = 0;
 					SetNextState(HQ_RX);
@@ -268,7 +273,19 @@ void main()
 				break;
 				
 			case FILL_TX_RS232:
-				result = ProcessDS101(TX_RS232);
+				result = SendDS101Fill(TX_RS232);
+				if(result < 0)
+				{
+					SetNextState(FILL_TX_PC232);	
+				}else
+				{
+					TestFillResult(result);
+				}
+				break;	
+
+
+			case FILL_TX_PC232:
+				result = SendDS101Fill(TX_PC232);
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS485);	
@@ -279,7 +296,7 @@ void main()
 				break;	
 
 			case FILL_TX_RS485:
-				result = ProcessDS101(TX_RS485);
+				result = SendDS101Fill(TX_RS485);
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS232);	
@@ -308,9 +325,13 @@ void main()
 				break;
 
 			case FILL_RX:
-				if(GetFillType() > 0)
+				result = GetFillType();
+				if(result > 0)
 				{
-					if(fill_type == MODE4)
+					if(fill_type == MODE5)
+					{
+						TestFillResult(result);
+					}else if(fill_type == MODE4)
 					{
 						SetNextState(FILL_RX_PC);
 					}else

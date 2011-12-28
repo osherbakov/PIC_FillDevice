@@ -6,7 +6,7 @@
 #include "serial.h"
 #include "Fill.h"
 #include "clock.h"
-
+#include "DS101.h"
 
 //--------------------------------------------------------------
 // Delays in ms
@@ -281,6 +281,9 @@ char GetFillType()
 {
 	char type;
 
+	TRIS_PIN_GND = INPUT;	// Make Ground
+	ON_GND = 1;						//  on Pin B
+
 	type = CheckSerial();	
 	if(type > 0)
 	{
@@ -294,6 +297,28 @@ char GetFillType()
 		fill_type = type;
 		return type;
 	}
+
+	type = CheckRS232();
+	if(type > 0)
+	{
+		fill_type = MODE5;
+		return type;
+	}
+
+	type = CheckPC232();
+	if(type > 0)
+	{
+		fill_type = MODE5;
+		return type;
+	}
+
+	type = CheckRS485();
+	if(type > 0)
+	{
+		fill_type = MODE5;
+		return type;
+	}
+
 	return -1;
 }
 

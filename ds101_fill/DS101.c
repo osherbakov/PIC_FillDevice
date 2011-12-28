@@ -122,9 +122,9 @@ void TxAXID(char mode)
 // Ideally, it would be done with virtual functions in C++
 void SetupDS101Mode(char mode)
 {
-	char TxMode = (mode == TX_RS232) || (mode == TX_RS485) ? TRUE : FALSE;
-	char RS232Mode  = (mode == TX_RS232) || (mode == RX_RS232) ? TRUE : FALSE;
-	
+		char TxMode = ((mode == TX_RS232) || 
+										(mode == TX_RS485) || 
+											(mode == TX_PC232) ) ? TRUE : FALSE;
     CurrentAddress = TxMode ? MasterAddress : SlaveAddress;
     CurrentNumber = TxMode ? master_number : slave_number;
     CurrentName = TxMode ? master_name : slave_name;
@@ -134,21 +134,43 @@ void SetupDS101Mode(char mode)
     ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
-    
-    WriteCharDS101 = RS232Mode ? TxRS232Char : TxRS485Char;
-    ReadCharDS101 = RS232Mode ? RxRS232Char : RxRS485Char;
+  	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus; 
+    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char :
+						( (mode == TX_RS232) || (mode == RX_RS232) ) ? TxRS232Char :
+								TxPC232Char ;
+    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char :
+						( (mode == TX_RS232) || (mode == RX_RS232) ) ? RxRS232Char :
+								RxPC232Char ;
+		WaitFlagDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Flag :
+						( (mode == TX_RS232) || (mode == RX_RS232) ) ? RxRS232Flag :
+								RxPC232Flag ;
+
+		TRIS_PIN_GND = INPUT;		// Remove Ground
+		if((mode == TX_RS485) || (mode == RX_RS485))
+	  {
+			ON_GND = 0;							//  from Pin B
+		}else
+		{
+			ON_GND = 1;							//  from Pin B
+		}
+
     if(TxMode) 
     	MasterStart();
     else
     	SlaveStart();
 }	
 
-char ProcessDS101(char mode)
+
+char SendDS101Fill(char mode)
+{
+	SetupDS101Mode(mode);
+	ProcessDS101();
+}
+
+char ProcessDS101()
 {
     int  nSymb;
     char *p_data;
-	
-	SetupDS101Mode(mode);
 
   while(GetStatus() == ST_OK)
   {
@@ -163,7 +185,7 @@ char ProcessDS101(char mode)
         CurrentCommand = p_data[1];
         p_data +=2; nSymb -= 2;  // 2 chars were processed
         
-		// Extract the PF flag and detect the FRAME type
+				// Extract the PF flag and detect the FRAME type
         PF = CurrentCommand & PMASK;      // Poll/Final flag
 
 		// Only accept your or broadcast data, 
@@ -200,4 +222,34 @@ char ProcessDS101(char mode)
     }
   }
   return GetStatus();  
+}
+
+char CheckRS232(void)
+{
+	SetupDS101Mode(RX_RS232);
+	if( WaitFlagDS101() == FLAG)
+	{
+		return ProcessDS101();
+	}
+	return -1;
+}
+
+char CheckPC232(void)
+{
+	SetupDS101Mode(RX_PC232);
+	if( WaitFlagDS101() == FLAG)
+	{
+		return ProcessDS101();
+	}
+	return -1;
+}
+
+char CheckRS485(void)
+{
+	SetupDS101Mode(RX_RS485);
+	if( WaitFlagDS101() == FLAG)
+	{
+		return ProcessDS101();
+	}
+	return -1;
 }
