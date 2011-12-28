@@ -4,6 +4,7 @@
 #include "rtc.h"
 #include "i2c_sw.h"
 #include "clock.h"
+#include "gps.h"
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -180,6 +181,7 @@ byte RHQD_State;
 static char HQTime(void)
 {
 	PR6 = 0xFF;
+	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 
 	RHQD_State = INIT;
 	current_pin = HQ_PIN;

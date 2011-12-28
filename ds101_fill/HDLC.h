@@ -53,9 +53,11 @@ extern int (*ReadCharDS101)(void);
 
 extern void TxRS232Char(char ch);
 extern int RxRS232Char(void);
+extern int RxRS232Flag(void);
 
 extern void TxRS485Char(char ch);
 extern int RxRS485Char(void);
+extern int RxRS485Flag(void);
 
 #endif
 

@@ -6,6 +6,7 @@
 #include "i2c_sw.h"
 #include "serial.h"
 #include "clock.h"
+#include "gps.h"
 
 extern void setup_clocks();	
 extern void setup_spi();
@@ -14,9 +15,6 @@ extern void setup_start_io();
 #define MS_10_PER_1MHZ (10*1000L)
 #define CNT_10MS ((((XTAL_FREQ / 4) * (MS_10_PER_1MHZ / 10))/16 ) - 1 )
 
-#define HQ_BIT_TIME_US		(600)  // 600us for one bit.
-#define HQII_TIMER (( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2) / 16) - 1 )
-#define HQII_TIMER_CTRL (1<<2 | 2)	// 16:1 pre, on
 void setup_clocks()
 {
   OSCTUNE = 0;    // No PLL

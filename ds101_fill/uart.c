@@ -20,7 +20,7 @@ int (*ReadCharDS101)(void);
 
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
-//  All interrupts are disabled during Tx and Rx
+//  All interrupts should be disabled during Tx and Rx at 64kBits
 //  TMR6 is used to count bits in Tx and Rx
 //  TMR1 is used as the timeout counter
 //  The biggest timeout is (8 * 2^16)/ (16M /4)= 2^(16 + 3 + 2)/2^4 = 
@@ -39,6 +39,8 @@ int RxRS232Char()
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
+	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
     TMR1H = 0;
   	TMR1L = 0;	// Reset the timeout timer
@@ -75,6 +77,7 @@ int RxRS232Flag()
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
 	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
   	TMR1H = 0;
   	TMR1L = 0;	// Reset the timeout timer
@@ -94,7 +97,7 @@ int RxRS232Flag()
 		// If bit counter expired - shift in the data
 		if(PIR5bits.TMR6IF)
 		{
-			data = (data << 1) | (RxDTD ? 0x00 : 0x01);
+			data = (data << 1) | (curr ? 0x00 : 0x01);
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag			
 			// Check for the FLAG + STOP bit 111111101
 			if(data == 0xFD)
@@ -146,6 +149,8 @@ int RxRS485Char()
 
 	PR6 = TIMER_DS101;
 	T6CON = TIMER_DS101_CTRL;
+	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
     TMR1H = 0;
   	TMR1L = 0;	// Reset the timeout timer
@@ -172,6 +177,49 @@ int RxRS485Char()
 	return -1;
 }
 
+
+int RxRS485Flag()
+{
+	char data;
+  char prev, curr;
+
+	TRIS_Data_P = INPUT;
+	TRIS_Data_N = INPUT;
+
+	PR6 = TIMER_DS101;
+	T6CON = TIMER_DS101_CTRL;
+	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+      	
+  	TMR1H = 0;
+  	TMR1L = 0;	// Reset the timeout timer
+	PIR1bits.TMR1IF = 0;	// Clear Interrupt
+	
+ 	prev = Data_P && !Data_N;
+	while( !PIR1bits.TMR1IF )	// Loop until timeout
+	{
+		curr = Data_P && !Data_N;
+		// If transition is detected - reset counter
+		if(curr != prev)
+		{
+			 prev = curr;
+			 TMR6 = TIMER_DS101_EDGE;
+			 continue;
+		}
+		// If bit counter expired - shift in the data
+		if(PIR5bits.TMR6IF)
+		{
+			data = (data << 1) | (curr ? 0x01 : 0x00);
+			PIR5bits.TMR6IF = 0;	// Clear overflow flag			
+			// Check for the FLAG + STOP bit 111111101
+			if(data == 0xFD)
+			{
+				return FLAG;
+			}	
+		}
+	}
+	return -1;
+}
 
 void TxRS485Char(char data)
 {

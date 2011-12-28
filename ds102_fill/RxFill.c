@@ -217,10 +217,8 @@ char CheckType23(void)
 	char ret_val = -1;
 
 	// Setup pins
-	pinMode(PIN_C, OUTPUT);		// make a pin an output
-	pinMode(PIN_D, INPUT);		// make a pin an input
-	pinMode(PIN_F, INPUT);		// make a pin an input
-	digitalWrite(PIN_C, HIGH);	// Keep PTT high
+	pinMode(PIN_D, INPUT);		// make pin an input
+	pinMode(PIN_F, INPUT);		// make pin an input
 
   switch(t23_state)
   {
