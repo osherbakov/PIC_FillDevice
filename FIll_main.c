@@ -216,7 +216,7 @@ void main()
 				ON_GND = 0;
 				hq_enabled = 0;
 				close_eusart();
-        idle_counter = seconds_counter + IDLE_SECS;
+        		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
@@ -250,14 +250,12 @@ void main()
 				{
 					TRIS_PIN_GND = INPUT;			// Make Ground
 					ON_GND = 1;						//  on Pin B
-					hq_enabled = 0;
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
 					TRIS_PIN_GND = INPUT;	// Make ground
 					ON_GND = 1;						//  on Pin B
-					hq_enabled = 0;
 					SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
@@ -377,7 +375,6 @@ void main()
 				break;
 
 			case TIME_TX:
-				
 				if( CheckEquipment() > 0 )
 				{
 					SetNextState(TIME_TX_PROC);

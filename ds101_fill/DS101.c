@@ -145,13 +145,13 @@ void SetupDS101Mode(char mode)
 						( (mode == TX_RS232) || (mode == RX_RS232) ) ? RxRS232Flag :
 								RxPC232Flag ;
 
-		TRIS_PIN_GND = INPUT;		// Remove Ground
+		TRIS_PIN_GND = INPUT;		// Prepare Ground
 		if((mode == TX_RS485) || (mode == RX_RS485))
 	  {
-			ON_GND = 0;							//  from Pin B
+			ON_GND = 0;							// Remove ground from Pin B
 		}else
 		{
-			ON_GND = 1;							//  from Pin B
+			ON_GND = 1;							// Set ground on Pin B
 		}
 
     if(TxMode) 
