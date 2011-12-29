@@ -2,8 +2,8 @@
 #include "delay.h"
 #include "HDLC.h"
 
-#define DTD_BAUDRATE  (9600)
-#define DS101_BAUDRATE	(64000)
+#define DTD_BAUDRATE  (2400L)
+#define DS101_BAUDRATE	(64000L)
 
 #define TIMER_DTD 	( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
 #define TIMER_DTD_START 	( -(TIMER_DTD/2) )
@@ -331,6 +331,7 @@ int RxRS485Flag()
 void TxRS485Char(char data)
 {
 	byte 	bitcount;
+	char bit_P, bit_N;
 	
 	TRIS_Data_P = OUTPUT;
 	TRIS_Data_N = OUTPUT;
@@ -341,13 +342,17 @@ void TxRS485Char(char data)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 
 	Data_P = 0;  Data_N = 1;      // Issue the start bit
+  bit_P = data & 0x01;
+  bit_N = !(data & 0x01);
    	// send 8 data bits
-	for(bitcount = 0; bitcount < 9; bitcount++)
+	for(bitcount = 0; bitcount < 8; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-		Data_P = data & 0x01;	Data_N = !(data & 0x01);// Set the output
+		Data_P = bit_P;	Data_N = bit_N;// Set the output
 		data >>= 1;				
+	  bit_P = data & 0x01;
+	  bit_N = !(data & 0x01);
 	}
 	// Delay for the last data bit
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};

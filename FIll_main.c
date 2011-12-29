@@ -234,9 +234,9 @@ void main()
 						//		= 5 - DS-101 fill
 						if( CheckFillType(switch_pos) > 0)
 						{
-							if(fill_type == MODE3)
+							if(fill_type == MODE5)
 							{
-								SetNextState(FILL_TX_RS232);	// Be ready to send
+								SetNextState(FILL_TX_RS232);	// Start with RS232
 							}else
 							{
 								SetNextState(FILL_TX);	// Be ready to send
