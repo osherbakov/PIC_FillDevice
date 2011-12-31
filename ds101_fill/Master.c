@@ -29,7 +29,9 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (3)    // 4 Seconds
+#define TX_WAIT   (4)    // 4 Seconds
+
+
 static unsigned int Timeout;
 char master_state;
 
@@ -105,7 +107,6 @@ void MasterProcessIdle()
 				master_state = MS_ERROR;
 			}
 			break;
-
 	}
 }
 

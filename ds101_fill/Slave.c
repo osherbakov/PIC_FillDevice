@@ -17,11 +17,13 @@ static char NewAddress;
 static char Disconnected;
 
 
-int frame_len = 0;
+int frame_len;
 int frame_FDU;
 char status;
 
-#define RX_WAIT   (10)    // 10 Seconds
+#define RX_WAIT   (7)    // 7 Seconds
+
+
 static unsigned int Timeout;
 
 void SlaveStart(char slot)

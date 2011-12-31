@@ -31,7 +31,6 @@ extern volatile byte rx_count;	// Number of symbols collected
 extern volatile byte rx_count_1; // Last byte index
 
 extern void PCInterface(void);
-extern char CheckSerial(void);
 
 extern void open_eusart_rxtx(void);
 extern void open_eusart_rx(void);

@@ -387,7 +387,7 @@ byte 	records;
 // Type 1, 2,3 - will be sent thru DS102 interface
 // Type 4 - will be sent thru MBITR
 // If the high byte of the parameter "stored_slot" is not 0 - send the key to PC
-byte CheckFillType(byte stored_slot)
+char CheckFillType(byte stored_slot)
 {
 	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
 	records = byte_read(base_address++); 

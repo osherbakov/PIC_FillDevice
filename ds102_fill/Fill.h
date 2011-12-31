@@ -66,13 +66,18 @@ extern void (*p_tx)(byte *, byte);
 extern byte (*p_rx)(byte *, byte);
 extern char (*p_ack)(byte);
 
-extern char GetFillType(void);
+extern char CheckFillType23(void);
+extern char CheckFillType4(void);
+extern char CheckFillRS232Type5(void);
+extern char CheckFillRS485Type5(void);
+
+
 extern char GetStoreFill(byte stored_slot);
 
 extern char CheckEquipment(void);
 
-extern void ClearFill(byte stored_slot);
-extern byte CheckFillType(byte stored_slot);
+extern char ClearFill(byte stored_slot);
+extern char CheckFillType(byte stored_slot);
 extern char SendStoredFill(byte stored_slot);
 extern char WaitReqSendFill(void);
 extern char WaitReqSendTODFill(void);

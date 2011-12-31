@@ -196,10 +196,11 @@ static void SetTimeFromCell(void)
 	}
 }
 
-void ClearFill(byte stored_slot)
+char ClearFill(byte stored_slot)
 {
 	 unsigned int base_address = ((int)stored_slot & 0x0F) << KEY_MAX_SIZE_PWR;
    	 byte_write(base_address, 0x00);
+   	 return ST_OK;
 }
 
 typedef enum {
@@ -212,7 +213,7 @@ static CT23_STATES t23_state = DF_INIT;
 // Detect if there is Type 2/3 PIN_D and PIN_F sequence
 // Initially they must be HIGH, then PIN_D and PIN_F go LOW
 // PIN_F stays that way, but PIN_D goes HIGH before tA expires
-char CheckType23(void)
+char CheckFillType23()
 {
 	char type;
 	char ret_val = -1;
@@ -272,38 +273,6 @@ char CheckType23(void)
       break;
   }
 	return ret_val;
-}
-
-
-// Detect the fill type.
-// If there is a Serial port request, then it is Type 4 (DES keys)
-//  If we detect PIN_D PIN_F funny dance - that is a Type 2 or Type 3 request
-char GetFillType()
-{
-	char type;
-
-	type = CheckSerial();	
-	if(type > 0)
-	{
-		fill_type = type;
-		return type;
-	}
-
-	type = CheckType23();
-	if(type > 0)
-	{
-		fill_type = type;
-		return type;
-	}
-
-//	type = CheckRS485();
-//	if(type > 0)
-//	{
-//		fill_type = MODE5;
-//		return type;
-//	}
-
-	return -1;
 }
 
 

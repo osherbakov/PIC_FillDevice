@@ -225,7 +225,7 @@ void main()
 						//		= 1 - Type 1 fill
 						//		= 2,3 - Type 2,3 fill
 						//		= 4 - DES Key fill
-						//		= 5 - DS-101 fill
+						//		= 5 - DS-101 fill (both RS232 and RS485)
 						if( CheckFillType(switch_pos) > 0)
 						{
 							if(fill_type == MODE5)
@@ -305,21 +305,39 @@ void main()
 				break;
 
 			case FILL_RX:
-				result = GetFillType();
+				result = CheckFillType23();
 				if(result > 0)
 				{
-					if(fill_type == MODE5)
-					{
-						SetNextState(FILL_RX_RS232);
-					}else if(fill_type == MODE4)
-					{
-						SetNextState(FILL_RX_PC);
-					}else
-					{
-						// Process Type 1, 2, and 3 fills
-						SetNextState(FILL_RX_SG);
-					}
+					// Process Type 1, 2, and 3 fills
+					fill_type = result;
+					SetNextState(FILL_RX_SG);
+					break;
 				}
+				
+				result = CheckFillType4();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_PC);
+					break;
+				}
+				
+				result = CheckFillRS232Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_RS232);
+					break;
+				}
+
+				result = CheckFillRS485Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_RS485);
+					break;
+				}
+				
 				if( TestButtonPress() )
 				{
 					fill_type = MODE1;
@@ -346,11 +364,14 @@ void main()
 				TestFillResult(GetRS232Fill(switch_pos));
 				break;
 
+			case FILL_RX_RS485:
+				TestFillResult(GetRS485Fill(switch_pos));
+				break;
+				
 			case ZERO_FILL:
 				if( TestButtonPress() )
 				{
-					ClearFill(switch_pos);
-					SetNextState(INIT);
+					TestFillResult(ClearFill(switch_pos));
 				}
 				break;
 

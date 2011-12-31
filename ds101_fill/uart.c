@@ -182,5 +182,4 @@ void TxRS485Char(char data)
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
 	INTCONbits.GIE = 1;		// Enable interrupts
-
 } 

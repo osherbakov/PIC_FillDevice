@@ -5,6 +5,7 @@
 #include "fill.h"
 #include <HDLC.h>
 #include <DS101.h>
+#include "delay.h"
 
 
 char master_name[14] = "DTD 2243";
@@ -229,4 +230,19 @@ char SendRS485Fill(char slot)
 	return ProcessDS101();
 }
 
-
+// The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
+char CheckFillRS485Type5()
+{
+	TRIS_PIN_GND = INPUT;		// Prepare Ground
+	ON_GND = 0;							// Remove ground from Pin B	
+	DelayMs(5);
+	if( Data_P && !Data_N )
+	{
+		DelayMs(5);
+		if( Data_P && !Data_N )
+		{
+			return MODE5;
+		}	
+	}	
+	return -1;
+}	

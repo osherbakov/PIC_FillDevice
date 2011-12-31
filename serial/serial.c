@@ -74,10 +74,29 @@ static void send_options(void)
 
 static unsigned char SerialBuffer[4];
 
-// Check serial port if there is a request to send DES keys
-char CheckSerial()
+char CheckFillRS232Type5()
 {
+	TRIS_PIN_GND = INPUT;	// Make Ground
+	ON_GND = 1;						//  on Pin B
 
+  // Coming in first time - enable eusart and setup buffer
+	if( RCSTA1bits.SPEN == 0)
+	{
+		open_eusart_rx();
+		start_eusart_rx(SerialBuffer, 4);
+	}
+	
+	if( (rx_count >= 4) && is_equal(SerialBuffer, HDLC_FLAGS, 4) )
+	{
+		 close_eusart();
+		 return MODE5;
+	}
+	return -1;
+}	
+
+// Check serial port if there is a request to send DES keys
+char CheckFillType4()
+{
 	TRIS_PIN_GND = INPUT;	// Make Ground
 	ON_GND = 1;						//  on Pin B
 
@@ -93,11 +112,7 @@ char CheckSerial()
   //  /84 - the capabilities request
 	if(rx_count >= 4)
 	{
-		if( is_equal(SerialBuffer, HDLC_FLAGS, 4) )
-		{
-			 close_eusart();
-			 return MODE5;
-		}else if( is_equal(SerialBuffer, SN_REQ, 4) )
+		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
   		// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
@@ -113,7 +128,7 @@ char CheckSerial()
 			return MODE4;
 		}
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -178,8 +193,8 @@ void PCInterface()
 		open_eusart_rxtx();
 		start_eusart_rx(&data_cell[0], 6);
 	}
-
 	
+	// Wait to receive 6 characters
 	if(rx_count < 6) return;
 	
 	// Six or more characters received - chaeck if
