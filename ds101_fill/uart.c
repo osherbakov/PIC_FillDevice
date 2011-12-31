@@ -17,7 +17,6 @@
 
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
-int (*WaitFlagDS101)(void);
 
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
@@ -52,6 +51,7 @@ int RxRS232Char()
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxDTD )
 		{
+			INTCONbits.GIE = 0;		// Disable interrupts
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -61,50 +61,9 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
+			INTCONbits.GIE = 1;		// Enable interrupts
  			while(RxDTD) {};	// Wait for stop bit
 			return data;
-		}
-	}
-	return -1;
-}
-
-int RxRS232Flag()
-{
-	char data;
-  	char prev, curr;
-
-	TRIS_RxDTD = INPUT;
-
-	PR6 = TIMER_DTD;
-	T6CON = TIMER_DTD_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      	
-  	TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-  	prev = RxDTD;
-	while( !PIR1bits.TMR1IF )	// Loop until timeout
-	{
-		curr = RxDTD;
-		// If transition is detected - reset counter
-		if(curr != prev)
-		{
-			 prev = curr;
-			 TMR6 = TIMER_DTD_EDGE;
-			 continue;
-		}
-		// If bit counter expired - shift in the data
-		if(PIR5bits.TMR6IF)
-		{
-			data = (data << 1) | (curr ? 0x00 : 0x01);
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag			
-			// Check for the FLAG + STOP bit 111111101
-			if(data == 0xFD)
-			{
-				return FLAG;
-			}	
 		}
 	}
 	return -1;
@@ -135,115 +94,9 @@ void TxRS232Char(char data)
 	}
 } 
 
-//
-//  The same as above, but Rx and TX reversed
-//
-int RxPC232Char()
-{
-	byte bitcount, data;
-
-	TRIS_TxDTD = INPUT;
-
-	PR6 = TIMER_DTD;
-	T6CON = TIMER_DTD_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      	
-    TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-	while( !PIR1bits.TMR1IF )	// Until timeout
-	{
-		// Start conditiona was detected - count 1.5 cell size	
-		if(TxDTD )
-		{
-			TMR6 = TIMER_DTD_START;
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-			for(bitcount = 0; bitcount < 8 ; bitcount++)
-			{
-				// Wait until timer overflows
-				while(!PIR5bits.TMR6IF){} ;
-				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (TxDTD ? 0x00 : 0x80);
-			}
- 			while(TxDTD) {};	// Wait for stop bit
-			return data;
-		}
-	}
-	return -1;
-}
-
-int RxPC232Flag()
-{
-	char data;
- 	char prev, curr;
-
-	TRIS_TxDTD = INPUT;
-
-	PR6 = TIMER_DTD;
-	T6CON = TIMER_DTD_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      	
-  	TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-  	prev = TxDTD;
-	while( !PIR1bits.TMR1IF )	// Loop until timeout
-	{
-		curr = TxDTD;
-		// If transition is detected - reset counter
-		if(curr != prev)
-		{
-			 prev = curr;
-			 TMR6 = TIMER_DTD_EDGE;
-			 continue;
-		}
-		// If bit counter expired - shift in the data
-		if(PIR5bits.TMR6IF)
-		{
-			data = (data << 1) | (curr ? 0x00 : 0x01);
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag			
-			// Check for the FLAG + STOP bit 111111101
-			if(data == 0xFD)
-			{
-				return FLAG;
-			}	
-		}
-	}
-	return -1;
-}
-
-
-void TxPC232Char(char data)
-{
-	byte 	bitcount;
-	
-	TRIS_RxDTD = OUTPUT;
-
-	PR6 = TIMER_DTD;
-	T6CON = TIMER_DTD_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-
-	RxDTD = 1;        		// Issue the start bit
-	data = ~data;  			// Invert sysmbol
-   	// send 8 data bits and 3 stop bits
-	for(bitcount = 0; bitcount < 12; bitcount++)
-	{
-		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-		RxDTD = data & 0x01;	// Set the output
-		data >>= 1;				// We use the fact that 
-						        // "0" bits are STOP bits
-	}
-} 
-
 
 //
-// Soft UART to communicate with the DS101 via RS-485
+// Soft UART to communicate with the DS101 via RS-485 at 64Kbd
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
@@ -284,50 +137,6 @@ int RxRS485Char()
 	return -1;
 }
 
-
-int RxRS485Flag()
-{
-	char data;
-  char prev, curr;
-
-	TRIS_Data_P = INPUT;
-	TRIS_Data_N = INPUT;
-
-	PR6 = TIMER_DS101;
-	T6CON = TIMER_DS101_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      	
-  	TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
- 	prev = Data_P && !Data_N;
-	while( !PIR1bits.TMR1IF )	// Loop until timeout
-	{
-		curr = Data_P && !Data_N;
-		// If transition is detected - reset counter
-		if(curr != prev)
-		{
-			 prev = curr;
-			 TMR6 = TIMER_DS101_EDGE;
-			 continue;
-		}
-		// If bit counter expired - shift in the data
-		if(PIR5bits.TMR6IF)
-		{
-			data = (data << 1) | (curr ? 0x01 : 0x00);
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag			
-			// Check for the FLAG + STOP bit 111111101
-			if(data == 0xFD)
-			{
-				return FLAG;
-			}	
-		}
-	}
-	return -1;
-}
-
 void TxRS485Char(char data)
 {
 	byte 	bitcount;
@@ -340,6 +149,8 @@ void TxRS485Char(char data)
 	T6CON = TIMER_DS101_CTRL;	
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+
+	INTCONbits.GIE = 0;		// Disable interrupts
 
 	Data_P = 0;  Data_N = 1;      // Issue the start bit
   bit_P = data & 0x01;
@@ -369,4 +180,7 @@ void TxRS485Char(char data)
 	Data_P = 1;	Data_N = 0;// Set the STOP bit 3	
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+
+	INTCONbits.GIE = 1;		// Enable interrupts
+
 } 

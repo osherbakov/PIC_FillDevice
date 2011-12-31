@@ -7,32 +7,18 @@
 #include <DS101.h>
 
 
-char master_name[14] = "PRC152 radio";
-int	 master_number = 56;
-
+char master_name[14] = "DTD 2243";
 char slave_name[14] = "PRC152 radio";
-int	 slave_number = 56;
 
 #pragma udata big_buffer   // Select large section
 char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
-
-unsigned char MasterNewAddress = 0x35;
-unsigned char SlaveNewAddress = 0x35;
-
-unsigned char MasterAddress = 0x35;
-unsigned char SlaveAddress = 0x35;
 unsigned char ReceivedAddress;
-
-
 unsigned char CurrentAddress;
 unsigned char CurrentCommand;
 int			  CurrentNumber;
 char		  *CurrentName;
-unsigned char NewAddress;
-
-char Disconnected = TRUE;
 
 unsigned char NR;      // Received Number
 unsigned char NS;      // Send Number
@@ -120,30 +106,19 @@ void TxAXID(char mode)
 
 // Select appropriate functions based on the mode requested.
 // Ideally, it would be done with virtual functions in C++
-void SetupDS101Mode(char mode)
+void SetupDS101Mode(char mode, char slot)
 {
 		char TxMode = ((mode == TX_RS232) || 
-										(mode == TX_RS485) || 
-											(mode == TX_PC232) ) ? TRUE : FALSE;
-    CurrentAddress = TxMode ? MasterAddress : SlaveAddress;
-    CurrentNumber = TxMode ? master_number : slave_number;
+										(mode == TX_RS485) ) ? TRUE : FALSE;
     CurrentName = TxMode ? master_name : slave_name;
-    NewAddress = TxMode ? MasterAddress : SlaveAddress;
     IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
     ProcessIdle = TxMode ? MasterProcessIdle : SlaveProcessIdle;
     ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
   	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus; 
-    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char :
-						( (mode == TX_RS232) || (mode == RX_RS232) ) ? TxRS232Char :
-								TxPC232Char ;
-    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char :
-						( (mode == TX_RS232) || (mode == RX_RS232) ) ? RxRS232Char :
-								RxPC232Char ;
-		WaitFlagDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Flag :
-						( (mode == TX_RS232) || (mode == RX_RS232) ) ? RxRS232Flag :
-								RxPC232Flag ;
+    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : TxRS232Char;
+    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : RxRS232Char;
 
 		TRIS_PIN_GND = INPUT;		// Prepare Ground
 		if((mode == TX_RS485) || (mode == RX_RS485))
@@ -155,19 +130,13 @@ void SetupDS101Mode(char mode)
 		}
 
     if(TxMode) 
-    	MasterStart();
+    	MasterStart(slot);
     else
-    	SlaveStart();
+    	SlaveStart(slot);
 }	
 
 
-char SendDS101Fill(char mode)
-{
-	SetupDS101Mode(mode);
-	ProcessDS101();
-}
-
-char ProcessDS101()
+char ProcessDS101(void)
 {
     int  nSymb;
     char *p_data;
@@ -224,32 +193,40 @@ char ProcessDS101()
   return GetStatus();  
 }
 
-char CheckRS232(void)
+char GetDS101Fill(char mode, char slot)
 {
-	SetupDS101Mode(RX_RS232);
-	if( WaitFlagDS101() == FLAG)
-	{
-		return ProcessDS101();
-	}
-	return -1;
+	SetupDS101Mode(mode, slot);
+	return ProcessDS101();
 }
 
-char CheckPC232(void)
+char SendDS101Fill(char mode, char slot)
 {
-	SetupDS101Mode(RX_PC232);
-	if( WaitFlagDS101() == FLAG)
-	{
-		return ProcessDS101();
-	}
-	return -1;
+	SetupDS101Mode(mode, slot);
+	return ProcessDS101();
 }
 
-char CheckRS485(void)
+char GetRS232Fill(char slot)
 {
-	SetupDS101Mode(RX_RS485);
-	if( WaitFlagDS101() == FLAG)
-	{
-		return ProcessDS101();
-	}
-	return -1;
+	SetupDS101Mode(RX_RS232, slot);
+	return ProcessDS101();
 }
+
+char GetRS485Fill(char slot)
+{
+	SetupDS101Mode(RX_RS485, slot);
+	return ProcessDS101();
+}
+
+char SendRS232Fill(char slot)
+{
+	SetupDS101Mode(TX_RS232, slot);
+	return ProcessDS101();
+}
+
+char SendRS485Fill(char slot)
+{
+	SetupDS101Mode(TX_RS485, slot);
+	return ProcessDS101();
+}
+
+

@@ -11,23 +11,35 @@
 
 static unsigned int base_address;	// Address of the current EEPROM data
 static unsigned int saved_base_address; // EEPROM block start address
-static unsigned char block_counter = 0;     // Counter for blocks sent
+static unsigned char block_counter;     // Counter for blocks sent
+
+static char NewAddress;
+static char Disconnected;
+
 
 int frame_len = 0;
 int frame_FDU;
 char status;
 
-#define RX_WAIT   (3)    // 3 Seconds
+#define RX_WAIT   (10)    // 10 Seconds
 static unsigned int Timeout;
 
-void SlaveStart()
+void SlaveStart(char slot)
 {
+	base_address = ((unsigned int)(slot & 0x0F)) << KEY_MAX_SIZE_PWR;
+	saved_base_address = base_address;
+	base_address += 2;	// Reserve memory for type and size
+
 	// Reset all to defaults 
 	NR = 0;
 	NS = 0;
 	PF = 1;
 	frame_len = 0;
 	status = ST_OK;
+	block_counter = 0;
+	CurrentAddress = SLAVE_ADDRESS;
+  CurrentNumber = SLAVE_NUMBER;
+	Disconnected = TRUE;
 	Timeout = seconds_counter + RX_WAIT;
 }
 
@@ -42,16 +54,14 @@ char IsSlaveValidAddressAndCommand()
 {
 	if((ReceivedAddress == 0xFF) || (ReceivedAddress == CurrentAddress))
 	{
-        // If no connection was established - return the DM (Disconnect Mode)
-        // Status message on every request
-        if(Disconnected )
-        {
-			if( IsIFrame(CurrentCommand) || IsSFrame(CurrentCommand) )
-			{
-              TxUFrame(DM);  // Send DM
+    // If no connection was established - return the DM (Disconnect Mode)
+    // Status message on every request
+    if(Disconnected && ( IsIFrame(CurrentCommand) || IsSFrame(CurrentCommand) ) )
+		{
+        TxUFrame(DM);  // Send DM
 			  return FALSE;
-			}
-        }
+		}
+		NewAddress = CurrentAddress; 
 		return TRUE;
 	}
 	return FALSE;
@@ -69,34 +79,34 @@ void SaveDataBlock(char *p_data, int n_chars)
 	base_address += n_chars;
 	
 	// update the block counter and type
+	block_counter++;
 	byte_write(saved_base_address, MODE5);
 	byte_write(saved_base_address + 1, block_counter);  
 }	
 
 void SlaveProcessIFrame(char *p_data, int n_chars)
 {
-	char *p_saved = p_data;
+	char *p_data_saved = p_data;
 	int  n_saved_chars = n_chars;
     if(frame_len == 0)	// No data left in the frame
     {
         frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
         frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
-        p_data += 4;   n_chars -= 4;		// 4 chars were processed
+        p_data += 4;   n_chars -= 4;		// 4 chars were processed (FDU and Length)
     }
-    frame_len -= n_chars;    
+  frame_len -= n_chars;    
 
 	//  Save all data packets except AXID FDU
 	if( (frame_FDU != 0x0050) && (frame_FDU != 0x0060) )
 	{
-		block_counter++;
-		SaveDataBlock(p_saved, n_saved_chars);
+		SaveDataBlock(p_data_saved, n_saved_chars);
 	}	
 	
     switch(frame_FDU)
     {
       case 0x0050:    // Get AXID
-		// Send back requested AXID
-		TxAXID(0);		
+		  // Send back requested AXID
+		  TxAXID(0);		
       break;
 
 	//*************************************************
@@ -206,6 +216,7 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
         TxSFrame(RR);
       break;
     }
+	Timeout = seconds_counter + RX_WAIT;
 }
 
 void SlaveProcessSFrame(unsigned char Cmd)
@@ -222,6 +233,7 @@ void SlaveProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
+	Timeout = seconds_counter + RX_WAIT;
 }
 
 void SlaveProcessUFrame(unsigned char Cmd)
@@ -242,11 +254,13 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
-	  status = ST_DONE; 
-	  
 	  TxUFrame(UA);
 	  // After the disconnect  - change the address
 	  CurrentAddress = NewAddress;
+		if(block_counter > 0)
+		{
+			status = ST_DONE;
+		}
 	}else if(Cmd == UI)      // UI
 	{
 	}else if(Cmd == UP)      // UP
@@ -257,6 +271,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  NR = 0;
 	  TxUFrame(UA);
 	}
+	Timeout = seconds_counter + RX_WAIT;
 }	
 
 

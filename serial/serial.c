@@ -25,6 +25,9 @@ static byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
  0x31, 0x32, 0x33, 0x34, 0x35, 0x0D, 					// "12345\n"
  0x4F, 0x4B, 0x0D, 0x00 };								// "OK\n"
 
+// The pattern of 2400 baud 0x7E flags as seen from 9600 baud view
+static byte HDLC_FLAGS[] = {0x80, 0x78, 0x78,0x78};
+
 // Command to request the radio capabilities
 static byte OPT_REQ[] 		= {0x2F, 0x38, 0x34, 0x0D};	// "/84\n" ;
 
@@ -74,6 +77,10 @@ static unsigned char SerialBuffer[4];
 // Check serial port if there is a request to send DES keys
 char CheckSerial()
 {
+
+	TRIS_PIN_GND = INPUT;	// Make Ground
+	ON_GND = 1;						//  on Pin B
+
   // Coming in first time - enable eusart and setup buffer
 	if( RCSTA1bits.SPEN == 0)
 	{
@@ -86,7 +93,11 @@ char CheckSerial()
   //  /84 - the capabilities request
 	if(rx_count >= 4)
 	{
-		if( is_equal(SerialBuffer, SN_REQ, 4) )
+		if( is_equal(SerialBuffer, HDLC_FLAGS, 4) )
+		{
+			 close_eusart();
+			 return MODE5;
+		}else if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
   		// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);

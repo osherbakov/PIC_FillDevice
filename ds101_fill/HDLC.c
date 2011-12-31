@@ -4,7 +4,10 @@
 #include <CRC16.h>
 #include <HDLC.h>
 #include <DS101.h>
+#include <delay.h>
 
+
+#define TX_DELAY_MS	(30)
 
 RX_STATE hdlc_state = ST_IDLE;
 
@@ -23,7 +26,7 @@ int RxData(char *p_data)
     while(1)
     {
       symbol = ReadCharDS101();
-      if(ch < 0) 
+      if(symbol < 0) 
          break;
          
       ch = (char) symbol;   
@@ -39,13 +42,14 @@ int RxData(char *p_data)
         case ST_DATA:
           if(ch == FLAG)
           {
-            // Check the Rx_buffer for correct FCS
             n_chars = p_data - p_Rx_buff;
-
-			// Get at least 2 chars and FCS should match
-            return (  (n_chars > 2)  && 
-					CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
-						(n_chars - 2) : 0;
+						if(n_chars)
+						{
+				    	// Get at least 2 chars and FCS should match
+	            return  ( (n_chars > 2)  && 
+								CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
+									(n_chars - 2) : 0;
+						}
           }else if(ch == ESCAPE)
           {
             hdlc_state = ST_ESCAPE;
@@ -66,11 +70,10 @@ int RxData(char *p_data)
 
 void TxData(char *p_data, int n_chars)
 {
-  int  n_block, n_cnt;
   unsigned int crc;
 
-  while( n_chars > 0 )
-  { 
+	DelayMs(TX_DELAY_MS);
+
 	// Send 5 flags  
     WriteCharDS101(FLAG);
     WriteCharDS101(FLAG);
@@ -78,12 +81,8 @@ void TxData(char *p_data, int n_chars)
     WriteCharDS101(FLAG);
     WriteCharDS101(FLAG);
 
-	// Send everything in chunks of 256 bytes max  	
-	n_block = MIN(n_chars, 256);
-  
     CRC16ini();
-		n_cnt = n_block;
-    while(n_cnt-- > 0)
+    while(n_chars-- > 0)
     {
       char ch = *p_data++;
       if( (ch == FLAG) || (ch == ESCAPE) )
@@ -98,6 +97,4 @@ void TxData(char *p_data, int n_chars)
     WriteCharDS101(crc & 0x00FF);
     WriteCharDS101((crc >> 8) & 0x00FF);
   	WriteCharDS101(FLAG);
-  	n_chars -= n_block;
-  }
 }

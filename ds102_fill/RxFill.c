@@ -42,8 +42,8 @@ static char GetQueryByte(void)
   byte  Data;
   
   ON_GND = 0;
-  pinMode(PIN_B, INPUT);		// make a pin an input
-  pinMode(PIN_E, INPUT);		// make a pin an input
+  pinMode(PIN_B, INPUT);		// make pin an input
+  pinMode(PIN_E, INPUT);		// make pin an input
 
   bit_count = 0;
   PreviousState = LOW;
@@ -107,9 +107,10 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   byte  byte_count;
   byte  Data;
 
-  pinMode(PIN_D, INPUT);		// make a pin an input DATA
-  pinMode(PIN_E, INPUT);		// make a pin an input CLOCK
-  pinMode(PIN_F, INPUT);		// make a pin an input MUX OVR
+  ON_GND = 0;
+  pinMode(PIN_D, INPUT);		// make pin an input DATA
+  pinMode(PIN_E, INPUT);		// make pin an input CLOCK
+  pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
 
   byte_count = 0;
   bit_count = 0;
@@ -150,7 +151,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
 static char SendFillRequest(byte req_type)
 {
   ON_GND = 0;
-  pinMode(PIN_C, OUTPUT);		// make a pin an output
+  pinMode(PIN_C, OUTPUT);		// make pin an output
   digitalWrite(PIN_C, LOW);
   delay(tD);
   digitalWrite(PIN_C, HIGH);
@@ -159,7 +160,7 @@ static char SendFillRequest(byte req_type)
 static char SendBadFillAck(void)
 {
   ON_GND = 0;
-  pinMode(PIN_B, OUTPUT);		// make a pin an output
+  pinMode(PIN_B, OUTPUT);		// make pin an output
   digitalWrite(PIN_B, LOW);
   delay(tG);
   digitalWrite(PIN_B, HIGH);
@@ -281,16 +282,13 @@ char GetFillType()
 {
 	char type;
 
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
-
 	type = CheckSerial();	
 	if(type > 0)
 	{
-		fill_type = MODE4;
-		return fill_type;
+		fill_type = type;
+		return type;
 	}
-	
+
 	type = CheckType23();
 	if(type > 0)
 	{
@@ -298,26 +296,12 @@ char GetFillType()
 		return type;
 	}
 
-	type = CheckRS232();
-	if(type > 0)
-	{
-		fill_type = MODE5;
-		return type;
-	}
-
-	type = CheckPC232();
-	if(type > 0)
-	{
-		fill_type = MODE5;
-		return type;
-	}
-
-	type = CheckRS485();
-	if(type > 0)
-	{
-		fill_type = MODE5;
-		return type;
-	}
+//	type = CheckRS485();
+//	if(type > 0)
+//	{
+//		fill_type = MODE5;
+//		return type;
+//	}
 
 	return -1;
 }
@@ -409,6 +393,7 @@ char GetStoreFill(byte stored_slot)
 		p_ack = SendSerialAck;
 	}else
 	{
+		close_eusart();
 		p_rx = ReceiveDS102Cell;
 		p_ack = SendFillRequest;
 	}

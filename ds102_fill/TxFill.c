@@ -164,8 +164,12 @@ char WaitDS102Req(byte req_type)
   byte  NewState;	
   char   Result = 0;
 
-  ON_GND = 0;
-  pinMode(PIN_B, INPUT);
+	// For MODE1 fill we keep PIN_B low and don't read it
+  if(fill_type != MODE1)
+	{
+  	ON_GND = 0;
+  	pinMode(PIN_B, INPUT);
+  }
   pinMode(PIN_C, INPUT); 
 
   if( req_type == REQ_FIRST)
@@ -340,13 +344,13 @@ char CheckEquipment()
 	  ON_GND = 0;
 	  AcquireMode23Bus();
 	  StartMode23Handshake();
-  	  SendMode23Query(MODE3);
+  	SendMode23Query(MODE3);
 	  Equipment = GetEquipmentMode23Type();
-   	  EndMode23Handshake();
+   	EndMode23Handshake();
 	  if(Equipment < 0)	// Timeout occured
 	  {
 		  ReleaseMode23Bus();
-	  }
+		}
   }
   return Equipment;
 }
@@ -398,6 +402,7 @@ byte CheckFillType(byte stored_slot)
 		p_ack = WaitPCReq;
 	}else					// Send Fill to the MBITR
 	{
+		close_eusart();
 		if(fill_type == MODE4) // DES fill mode
 		{
 			p_rx = rx_mbitr;

@@ -6,9 +6,6 @@ extern int			 CurrentNumber;
 extern char			*CurrentName;
 extern unsigned char CurrentCommand;
 extern unsigned char ReceivedAddress;
-extern unsigned char NewAddress;
-
-extern char Disconnected;
 
 extern int frame_len;
 extern int frame_FDU;
@@ -17,7 +14,7 @@ extern unsigned char NR;      // Received Number
 extern unsigned char NS;      // Send Number
 extern unsigned char PF;      // Poll/Final Flag
 
-extern void MasterStart(void);
+extern void MasterStart(char slot);
 extern void MasterProcessIFrame(char *buffer, int size);
 extern void MasterProcessSFrame(unsigned char Cmd);
 extern void MasterProcessUFrame(unsigned char Cmd);
@@ -26,7 +23,7 @@ extern char IsMasterValidAddressAndCommand(void);
 extern char GetMasterStatus(void);
 
 
-extern void SlaveStart(void);
+extern void SlaveStart(char slot);
 extern void SlaveProcessIFrame(char *buffer, int size);
 extern void SlaveProcessSFrame(unsigned char Cmd);
 extern void SlaveProcessUFrame(unsigned char Cmd);
@@ -41,19 +38,26 @@ extern void TxAXID(char mode);
 
 enum DS_MODE{
 	RX_RS232 = 0,
-	RX_PC232 = 1,
-	RX_RS485 = 2,
-	TX_RS232 = 3,
-	TX_PC232 = 4,
-	TX_RS485 = 5
+	RX_RS485 = 1,
+	TX_RS232 = 2,
+	TX_RS485 = 3
 };	
 
-extern char CheckRS232(void);
-extern char CheckPC232(void);
-extern char CheckRS485(void);
+extern char SendDS101Fill(char mode, char slot);
+extern char GetDS101Fill(char mode, char slot);
 
-extern char ProcessDS101(void);
-extern char SendDS101Fill(char mode);
+extern char SendRS232Fill(char slot);
+extern char SendRS485Fill(char slot);
+
+extern char GetRS232Fill(char slot);
+extern char GetRS485Fill(char slot);
+
+#define SLAVE_ADDRESS	(0x35)
+#define MASTER_ADDRESS	(0xFF)
+
+#define SLAVE_NUMBER	(56)
+#define MASTER_NUMBER	(56)
+
 
 #endif
 

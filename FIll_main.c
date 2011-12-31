@@ -19,7 +19,6 @@ static enum
 	BIST_ERR,
 	FILL_TX,
 	FILL_TX_RS232,
-	FILL_TX_PC232,
 	FILL_TX_RS485, 
 	FILL_TX_PROC,
 	FILL_RX,
@@ -27,7 +26,6 @@ static enum
 	FILL_RX_PROC,
 	FILL_RX_PC,
 	FILL_RX_RS232,
-	FILL_RX_PC232,
 	FILL_RX_RS485,
 	ZERO_FILL,
 	HQ_TX,
@@ -131,10 +129,6 @@ void SetNextState(char nextState)
 			set_led_state(20, 80);		// "Try Serial" blink pattern
 			break;
 
-		case FILL_TX_PC232:
-			set_led_state(50, 50);		// "Try PC" blink pattern
-			break;
-		
 		case FILL_TX_RS485:
 			set_led_state(80,20);		// "Try RS485" blink pattern
 			break;
@@ -216,7 +210,7 @@ void main()
 				ON_GND = 0;
 				hq_enabled = 0;
 				close_eusart();
-        		idle_counter = seconds_counter + IDLE_SECS;
+     		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
@@ -271,19 +265,7 @@ void main()
 				break;
 				
 			case FILL_TX_RS232:
-				result = SendDS101Fill(TX_RS232);
-				if(result < 0)
-				{
-					SetNextState(FILL_TX_PC232);	
-				}else
-				{
-					TestFillResult(result);
-				}
-				break;	
-
-
-			case FILL_TX_PC232:
-				result = SendDS101Fill(TX_PC232);
+				result = SendRS232Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS485);	
@@ -294,7 +276,7 @@ void main()
 				break;	
 
 			case FILL_TX_RS485:
-				result = SendDS101Fill(TX_RS485);
+				result = SendRS485Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS232);	
@@ -328,12 +310,13 @@ void main()
 				{
 					if(fill_type == MODE5)
 					{
-						TestFillResult(result);
+						SetNextState(FILL_RX_RS232);
 					}else if(fill_type == MODE4)
 					{
 						SetNextState(FILL_RX_PC);
 					}else
 					{
+						// Process Type 1, 2, and 3 fills
 						SetNextState(FILL_RX_SG);
 					}
 				}
@@ -357,6 +340,10 @@ void main()
 
 			case FILL_RX_PROC:
 				TestFillResult(GetStoreFill(switch_pos));
+				break;
+
+			case FILL_RX_RS232:
+				TestFillResult(GetRS232Fill(switch_pos));
 				break;
 
 			case ZERO_FILL:
