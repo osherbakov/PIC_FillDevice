@@ -29,9 +29,8 @@
 // Timeouts in ms
 //--------------------------------------------------------------
 #define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
-#define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
-#define tE  	3000   // End of REQ -> start fill (0ms - 2.3sec)
 
 static byte  PreviousState;
 static byte  NewState;	
@@ -120,12 +119,12 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   while( is_not_timeout() && 
 				(byte_count < count))
   {
-	// Check for the last fill for Mode2 and 3
-	if( ((fill_type == MODE2) || (fill_type == MODE3)) 
-			&& (digitalRead(PIN_F) == HIGH ))
-	{
-		break;	// Fill device had deasserted PIN F - exit
-	}
+		// Check for the last fill for Mode2 and 3
+		if( ((fill_type == MODE2) || (fill_type == MODE3)) 
+				&& (digitalRead(PIN_F) == HIGH ))
+		{
+			break;	// Fill device had deasserted PIN F - exit
+		}
 
     NewState = digitalRead(PIN_E);
     if( PreviousState != NewState  )
@@ -135,13 +134,13 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
       {
   	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
-		if( bit_count >= 8)
-		{
-			*p_cell++ = Data;
-			bit_count = 0;
-			byte_count++;
-		    set_timeout(tF);
-		}
+				if( bit_count >= 8)
+				{
+					*p_cell++ = Data;
+					bit_count = 0;
+					byte_count++;
+				  set_timeout(tF);
+				}
       }
     }
   }
@@ -304,7 +303,7 @@ static byte GetFill(void)
 	saved_base_address = base_address++;
 
 	p_ack(REQ_FIRST);	// REQ the first packet
-  	while(1)
+  while(1)
 	{
 		byte_cnt = p_rx(&data_cell[0], FILL_MAX_SIZE);
 		record_size += byte_cnt;
@@ -337,7 +336,7 @@ static byte GetFill(void)
 //  SS - low nibble, slot number
 char GetStoreFill(byte stored_slot)
 {
-	char result = ST_TIMEOUT;
+	char result = ST_ERR;
 	byte required_fill;
 	byte records;
 	unsigned int saved_base_addrress;
@@ -345,8 +344,8 @@ char GetStoreFill(byte stored_slot)
 	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
 	required_fill = stored_slot >> 4;
 
-	saved_base_addrress = base_address++;	// Skip the records field
-	base_address++;							// Skip the fill_type field
+	saved_base_addrress = base_address;	
+	base_address += 2;	// Skip the fill_type and records field
 											// .. to be filled at the end
 	// All data are stored in 1K bytes (8K bits) slots
 	// The first byte of the each slot has the number of the records (0 - 255)
@@ -354,7 +353,7 @@ char GetStoreFill(byte stored_slot)
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
 	
-	if(required_fill)
+	if(required_fill)	// Fill from PC
 	{
 		fill_type = required_fill;
 		p_rx = rx_eusart;
@@ -370,9 +369,9 @@ char GetStoreFill(byte stored_slot)
 	// Mark the slot as valid slot containig data
 	if( records > 0)
 	{
-		byte_write(saved_base_addrress++, records);
-		byte_write(saved_base_addrress++, fill_type);
+		byte_write(saved_base_addrress, records);
+		byte_write(saved_base_addrress + 1, fill_type);
 		result = ST_OK;
 	}
-   	return result;
+  return result;
 }

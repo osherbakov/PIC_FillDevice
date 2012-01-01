@@ -29,7 +29,7 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (4)    // 4 Seconds
+#define TX_WAIT   (3)    // 3 Seconds
 
 
 static unsigned int Timeout;

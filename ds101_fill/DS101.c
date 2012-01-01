@@ -158,19 +158,19 @@ char ProcessDS101(void)
 				// Extract the PF flag and detect the FRAME type
         PF = CurrentCommand & PMASK;      // Poll/Final flag
 
-		// Only accept your or broadcast data, 
+				// Only accept your or broadcast data, 
         if( IsValidAddressAndCommand() )
         {
           unsigned char NRR = (CurrentCommand >> 5) & 0x07;
           unsigned char NSR = (CurrentCommand >> 1) & 0x07;
 
-		  // Select the type of the frame to process
+		  		// Select the type of the frame to process
           if(IsIFrame(CurrentCommand))          // IFRAME
           {
             if( (NSR == NR) && (NRR == NS)) 
             {
                 NR = (NR + 1) & 0x07;	// Increment received frame number
-			    ProcessIFrame(p_data, nSymb);
+			    			ProcessIFrame(p_data, nSymb);
             }else
             {
               TxSFrame(REJ);				// Reject frame
@@ -179,14 +179,14 @@ char ProcessDS101(void)
           {
             if( NRR == NS ) 
             {
-				ProcessSFrame(CurrentCommand & SMASK);
-	        }else
+							ProcessSFrame(CurrentCommand & SMASK);
+	        	}else
             {
               TxSFrame(REJ);				// Reject frame
             }
           }else if(IsUFrame(CurrentCommand))    // UFRAME
           {
-			ProcessUFrame(CurrentCommand & UMASK);
+						ProcessUFrame(CurrentCommand & UMASK);
           }
         }
     }
@@ -233,16 +233,23 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-	TRIS_PIN_GND = INPUT;		// Prepare Ground
-	ON_GND = 0;							// Remove ground from Pin B	
-	DelayMs(5);
-	if( Data_P && !Data_N )
+	TRIS_PIN_GND = INPUT;	
+	ON_GND = 0;							// Set ground from Pin B	
+
+	TRIS_Data_P = INPUT;
+	TRIS_Data_N = INPUT;
+	
+	DelayUs(100);
+	
+  TMR1H = 0;
+	TMR1L = 0;	// Reset the timeout timer
+	PIR1bits.TMR1IF = 0;	// Clear Interrupt
+	while( !PIR1bits.TMR1IF )	// Until timeout
 	{
-		DelayMs(5);
-		if( Data_P && !Data_N )
+		if( !Data_P || Data_N )
 		{
-			return MODE5;
+			return -1;
 		}	
 	}	
-	return -1;
+	return MODE5;
 }	

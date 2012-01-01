@@ -51,7 +51,6 @@ int RxRS232Char()
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxDTD )
 		{
-			INTCONbits.GIE = 0;		// Disable interrupts
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -61,7 +60,6 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
-			INTCONbits.GIE = 1;		// Enable interrupts
  			while(RxDTD) {};	// Wait for stop bit
 			return data;
 		}
@@ -121,6 +119,7 @@ int RxRS485Char()
 		// Start conditiona was detected - count 1.5 cell size	
 		if(Data_N && !Data_P )
 		{
+			INTCONbits.GIE = 0;		// Disable interrupts
 			TMR6 = TIMER_DS101_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -131,6 +130,7 @@ int RxRS485Char()
 				data = (data >> 1) | ((Data_P && !Data_N) ? 0x80 : 0x00);
 			}
  			while(Data_N && !Data_P ) {};	// Wait for stop bit
+			INTCONbits.GIE = 1;		// Enable interrupts
 			return data;
 		}
 	}
@@ -169,6 +169,8 @@ void TxRS485Char(char data)
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
+	INTCONbits.GIE = 1;		// Enable interrupts
+
 	Data_P = 1;	Data_N = 0;// Set the STOP bit 1
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
@@ -180,6 +182,4 @@ void TxRS485Char(char data)
 	Data_P = 1;	Data_N = 0;// Set the STOP bit 3	
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-
-	INTCONbits.GIE = 1;		// Enable interrupts
 } 

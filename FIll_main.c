@@ -126,7 +126,7 @@ void SetNextState(char nextState)
 			break;
 			
 		case FILL_TX_RS232:
-			set_led_state(20, 80);		// "Try Serial" blink pattern
+			set_led_state(20, 80);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_TX_RS485:
@@ -228,13 +228,7 @@ void main()
 						//		= 5 - DS-101 fill (both RS232 and RS485)
 						if( CheckFillType(switch_pos) > 0)
 						{
-							if(fill_type == MODE5)
-							{
-								SetNextState(FILL_TX_RS232);	// Start with RS232
-							}else
-							{
-								SetNextState(FILL_TX);	// Be ready to send
-							}		
+							SetNextState(FILL_TX);	// Be ready to send
 						}else
 						{
 							SetNextState(FILL_RX) ; // Receive fill
@@ -266,6 +260,7 @@ void main()
 				
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
+				// On the timeout - switch to a alternative mode
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS485);	
@@ -277,6 +272,7 @@ void main()
 
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
+				// On the timeout - switch to a alternative mode
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS232);	
@@ -287,7 +283,10 @@ void main()
 				break;
 					
 			case FILL_TX:
-				if( CheckEquipment() > 0 )
+				if(fill_type == MODE5)
+				{
+					SetNextState(FILL_TX_RS232);	// Start with RS232
+				}else if( CheckEquipment() > 0 )
 				{
 					SetNextState(FILL_TX_PROC);
 				}
@@ -361,11 +360,25 @@ void main()
 				break;
 
 			case FILL_RX_RS232:
-				TestFillResult(GetRS232Fill(switch_pos));
+				result = GetRS232Fill(switch_pos);
+				if(result < 0)
+				{
+					SetNextState(FILL_RX);
+				}else
+				{
+					TestFillResult(result);
+				}
 				break;
 
 			case FILL_RX_RS485:
-				TestFillResult(GetRS485Fill(switch_pos));
+				result = GetRS485Fill(switch_pos);
+				if(result < 0)
+				{
+					SetNextState(FILL_RX);
+				}else
+				{
+					TestFillResult(result);
+				}
 				break;
 				
 			case ZERO_FILL:

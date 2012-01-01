@@ -482,12 +482,12 @@ char SendFill()
 		
 		// After sending a record check for the next request
 		wait_result = p_ack( records ? REQ_NEXT : REQ_LAST );
-    	// If all records were sent - ignore timeout
-	  	if(records == 0)
+    // If all records were sent - ignore timeout
+	  if(records == 0)
 		{
 			wait_result = ST_OK;
 		}
-    	if(wait_result) 
+    if(wait_result) 
 			break;
 	}	
 	
