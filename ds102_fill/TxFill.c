@@ -319,13 +319,13 @@ char CheckEquipment()
   char Equipment = 0;
   if((fill_type == MODE1))
   {
-	  ON_GND = 0;	// No ground on pin B
-	  pinMode(PIN_B, OUTPUT);
+	  // Connect ground on PIN B
+  	TRIS_PIN_GND = INPUT;
+	  ON_GND = 1;
     pinMode(PIN_C, INPUT);
 	  pinMode(PIN_D, OUTPUT);
 	  pinMode(PIN_E, OUTPUT);
 	  pinMode(PIN_F, OUTPUT);
-	  digitalWrite(PIN_B, LOW);
 	  digitalWrite(PIN_D, LOW);
 	  digitalWrite(PIN_E, LOW);
 	  digitalWrite(PIN_F, HIGH);

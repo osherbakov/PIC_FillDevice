@@ -149,7 +149,7 @@ void setup_start_io()
 	// Ground control - output and no pullup
 	TRIS_OFFBR = OUTPUT;	// Output
 	WPUB_OFFBR = 0;
-	ON_GND = 0;
+	OFFBR = 0;
 
 	// Push button - input with weak pullup
 	TRIS_BTN = INPUT;		// Input

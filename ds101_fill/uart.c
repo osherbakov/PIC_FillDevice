@@ -102,7 +102,6 @@ int RxRS485Char()
 {
 	byte bitcount, data;
 
-	TRIS_Data_P = INPUT;
 	TRIS_Data_N = INPUT;
 
 	PR6 = TIMER_DS101;
@@ -110,14 +109,14 @@ int RxRS485Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-    TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;
+	TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(Data_N && !Data_P )
+		if(Data_N)
 		{
 			INTCONbits.GIE = 0;		// Disable interrupts
 			TMR6 = TIMER_DS101_START;
@@ -127,9 +126,9 @@ int RxRS485Char()
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | ((Data_P && !Data_N) ? 0x80 : 0x00);
+				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
- 			while(Data_N && !Data_P ) {};	// Wait for stop bit
+ 			while(Data_N) {};	// Wait for stop bit
 			INTCONbits.GIE = 1;		// Enable interrupts
 			return data;
 		}
@@ -140,9 +139,8 @@ int RxRS485Char()
 void TxRS485Char(char data)
 {
 	byte 	bitcount;
-	char bit_P, bit_N;
+	char bit_N;
 	
-	TRIS_Data_P = OUTPUT;
 	TRIS_Data_N = OUTPUT;
 
 	PR6 = TIMER_DS101;
@@ -152,18 +150,17 @@ void TxRS485Char(char data)
 
 	INTCONbits.GIE = 0;		// Disable interrupts
 
-	Data_P = 0;  Data_N = 1;      // Issue the start bit
-  bit_P = data & 0x01;
-  bit_N = !(data & 0x01);
-   	// send 8 data bits
+	data = ~data;
+	Data_N = 1;      // Issue the start bit
+  bit_N = data & 0x01;
+ 	// send 8 data bits
 	for(bitcount = 0; bitcount < 8; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-		Data_P = bit_P;	Data_N = bit_N;// Set the output
+		Data_N = bit_N;// Set the output
 		data >>= 1;				
-	  bit_P = data & 0x01;
-	  bit_N = !(data & 0x01);
+	  bit_N = data & 0x01;
 	}
 	// Delay for the last data bit
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
@@ -171,15 +168,15 @@ void TxRS485Char(char data)
 
 	INTCONbits.GIE = 1;		// Enable interrupts
 
-	Data_P = 1;	Data_N = 0;// Set the STOP bit 1
+	Data_N = 0;// Set the STOP bit 1
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
-	Data_P = 1;	Data_N = 0;// Set the STOP bit 2	
+	Data_N = 0;// Set the STOP bit 2	
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
-	Data_P = 1;	Data_N = 0;// Set the STOP bit 3	
+	Data_N = 0;// Set the STOP bit 3	
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 } 

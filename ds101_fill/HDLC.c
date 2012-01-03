@@ -68,10 +68,23 @@ int RxData(char *p_data)
     return -1; 
 }
 
+
+char *p_data_retry;
+int n_chars_retry;
+
+void TxRetry()
+{
+	TxData(p_data_retry, n_chars_retry);
+}
+
+
 void TxData(char *p_data, int n_chars)
 {
   unsigned int crc;
 
+	p_data_retry = p_data;
+	n_chars_retry = n_chars;
+	
 	DelayMs(TX_DELAY_MS);
 
 	// Send 5 flags  

@@ -26,7 +26,9 @@ static byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
  0x4F, 0x4B, 0x0D, 0x00 };								// "OK\n"
 
 // The pattern of 2400 baud 0x7E flags as seen from 9600 baud view
-static byte HDLC_FLAGS[] = {0x80, 0x78, 0x78,0x78};
+static byte HDLC_FLAGS1[] = {0x80, 0x78};
+static byte HDLC_FLAGS2[] = {0x78, 0x78};
+static byte HDLC_FLAGS3[] = {0x78, 0xF8};
 
 // Command to request the radio capabilities
 static byte OPT_REQ[] 		= {0x2F, 0x38, 0x34, 0x0D};	// "/84\n" ;
@@ -86,7 +88,10 @@ char CheckFillRS232Type5()
 		start_eusart_rx(SerialBuffer, 4);
 	}
 	
-	if( (rx_count >= 4) && is_equal(SerialBuffer, HDLC_FLAGS, 4) )
+	if( (rx_count >= 2) && 
+			(is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
+			 	is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
+			  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
 	{
 		 close_eusart();
 		 return MODE5;

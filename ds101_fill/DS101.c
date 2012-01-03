@@ -234,19 +234,16 @@ char SendRS485Fill(char slot)
 char CheckFillRS485Type5()
 {
 	TRIS_PIN_GND = INPUT;	
-	ON_GND = 0;							// Set ground from Pin B	
+	ON_GND = 0;							// Set ground on Pin B	
 
-	TRIS_Data_P = INPUT;
 	TRIS_Data_N = INPUT;
-	
-	DelayUs(100);
-	
+
   TMR1H = 0;
 	TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	while( !PIR1bits.TMR1IF )	// Until timeout
 	{
-		if( !Data_P || Data_N )
+		if( Data_N )
 		{
 			return -1;
 		}	

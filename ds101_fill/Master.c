@@ -31,9 +31,10 @@ enum MASTER_STATE
 
 #define TX_WAIT   (3)    // 3 Seconds
 
-
 static unsigned int Timeout;
 char master_state;
+
+char	retry_flag;
 
 static unsigned int base_address;			// Address of the current EEPROM data
 static unsigned char block_counter;   // Counter for blocks sent
@@ -52,6 +53,7 @@ void MasterStart(char slot)
 	CurrentAddress = MASTER_ADDRESS;
   CurrentNumber = MASTER_NUMBER;
 	Timeout = seconds_counter + TX_WAIT;
+	retry_flag = 0;
 }	
 
 char GetMasterStatus()
@@ -104,7 +106,15 @@ void MasterProcessIdle()
 		default:
 			if(Timeout < seconds_counter)
 			{
-				master_state = MS_ERROR;
+				if(retry_flag == 0)
+				{
+					TxRetry();
+					retry_flag = 1;
+					Timeout = seconds_counter + TX_WAIT;
+				}else
+				{
+					master_state = MS_ERROR;
+				}	
 			}
 			break;
 	}
@@ -159,6 +169,7 @@ void MasterProcessIFrame(char *p_data, int n_chars)
       break;
     }
 	Timeout = seconds_counter + TX_WAIT;
+	retry_flag = 0;
 }
 
 
@@ -210,6 +221,7 @@ void MasterProcessSFrame(unsigned char Cmd)
 	{
 	}
 	Timeout = seconds_counter + TX_WAIT;
+	retry_flag = 0;
 }
 
 void MasterProcessUFrame(unsigned char Cmd)
@@ -272,4 +284,5 @@ void MasterProcessUFrame(unsigned char Cmd)
 	  master_state = MS_DONE;
 	}
 	Timeout = seconds_counter + TX_WAIT;
+	retry_flag = 0;
 }
