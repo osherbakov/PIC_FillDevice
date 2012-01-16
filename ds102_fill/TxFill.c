@@ -7,6 +7,7 @@
 #include "Fill.h"
 
 
+static void AcquireMode1Bus(void);
 static void AcquireMode23Bus(void);
 static void ReleaseMode23Bus(void);
 
@@ -133,6 +134,9 @@ char GetEquipmentMode23Type()
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
+  
+  WPUB_PIN_C = 1;
+  
   PreviousState = LOW;
   set_timeout(tB);
   while(is_not_timeout())
@@ -171,6 +175,7 @@ char WaitDS102Req(byte req_type)
   	pinMode(PIN_B, INPUT);
   }
   pinMode(PIN_C, INPUT); 
+  WPUB_PIN_C = 1;
 
   if( req_type == REQ_FIRST)
   {
@@ -235,6 +240,25 @@ void EndMode23Handshake()
   digitalWrite(PIN_E, HIGH);
 }
 
+void AcquireMode1Bus()
+{
+  ON_GND = 0;
+  pinMode(PIN_B, OUTPUT);
+  pinMode(PIN_C, INPUT);
+  pinMode(PIN_D, OUTPUT);
+  pinMode(PIN_E, OUTPUT);
+  pinMode(PIN_F, OUTPUT);
+
+  WPUB_PIN_C = 1;
+
+  digitalWrite(PIN_B, HIGH);
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_F, HIGH);
+  delay(tZ);
+}
+
+
 void AcquireMode23Bus()
 {
   ON_GND = 0;
@@ -243,6 +267,9 @@ void AcquireMode23Bus()
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
+
+  WPUB_PIN_C = 1;
+
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
@@ -263,6 +290,9 @@ void ReleaseMode23Bus()
   pinMode(PIN_D, INPUT);
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
+
+  WPUB_PIN_C = 0;
+  
   delay(tZ);
 }
 
@@ -319,16 +349,7 @@ char CheckEquipment()
   char Equipment = 0;
   if((fill_type == MODE1))
   {
-	  // Connect ground on PIN B
-  	TRIS_PIN_GND = INPUT;
-	  ON_GND = 1;
-    pinMode(PIN_C, INPUT);
-	  pinMode(PIN_D, OUTPUT);
-	  pinMode(PIN_E, OUTPUT);
-	  pinMode(PIN_F, OUTPUT);
-	  digitalWrite(PIN_D, LOW);
-	  digitalWrite(PIN_E, LOW);
-	  digitalWrite(PIN_F, HIGH);
+	  AcquireMode1Bus();
 	  Equipment = MODE1;
   }else if(fill_type == MODE4)
   {

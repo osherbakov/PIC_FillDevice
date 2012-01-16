@@ -123,7 +123,7 @@ void setup_start_io()
 	
 	// Voltage on Resistor network
 	TRIS_VRD = OUTPUT;		// Drive it
-	VRD = 0;			// Zero to save power
+	VRD = 1;						// and set to HIGH
 	
 	// Audio Connector - Inputs
 	TRIS_PIN_B = INPUT;
@@ -188,6 +188,14 @@ void setup_sleep_io()
 {
 	INTCONbits.GIE = 0;		// Disable interrupts
 	INTCONbits.PEIE = 0;
+
+	// Disable VRD
+	TRIS_VRD = OUTPUT;		// Drive it
+	VRD = 0;						  // and set to LOW
+
+	// Disable LED
+	LEDP = 0;				// LED off
+	LEDN_R = 0;
 
 	// Release I2C bus
 	SWStopI2C();

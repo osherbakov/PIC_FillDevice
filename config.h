@@ -50,6 +50,11 @@ typedef enum
 #define	TRIS_PIN_E	TRISCbits.RC6
 #define	TRIS_PIN_F	TRISCbits.RC0
 
+#define	WPUB_PIN_B	WPUBbits.WPUB4
+#define	WPUB_PIN_C	WPUBbits.WPUB3
+#define	WPUB_PIN_D	WPUBbits.WPUB7
+#define	WPUB_PIN_E	WPUBbits.WPUB6
+
 // Key selection switch
 #define	S1	RD0	
 #define	S2	RD1
