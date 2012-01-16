@@ -233,20 +233,5 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-	TRIS_PIN_GND = INPUT;	
-	ON_GND = 0;							// Set ground on Pin B	
-
-	TRIS_Data_N = INPUT;
-
-  TMR1H = 0;
-	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	while( !PIR1bits.TMR1IF )	// Until timeout
-	{
-		if( Data_N )
-		{
-			return -1;
-		}	
-	}	
-	return MODE5;
+	return -1;
 }	
