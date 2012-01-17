@@ -163,25 +163,31 @@ typedef enum
 //  Here are assignments of the pins for MBITR
 #define	 TxBIT	(PIN_D)
 #define	 TRIS_Tx (TRIS_PIN_D)
+#define	 WPUB_Tx (WPUB_PIN_D)
 
 #define	 RxBIT	(PIN_E)
 #define	 TRIS_Rx (TRIS_PIN_E)
+#define	 WPUB_Rx (WPUB_PIN_E)
 
 // To communicate with DTD the following pins are used:
 //  PIN_D - input, PIN_E - output
 #define	 TxDTD	(PIN_E)
 #define	 TRIS_TxDTD (TRIS_PIN_E)
+#define	 WPUB_TxDTD (WPUB_PIN_E)
 
 #define	 RxDTD	(PIN_D)
 #define	 TRIS_RxDTD (TRIS_PIN_D)
+#define	 WPUB_RxDTD (WPUB_PIN_D)
 
 // To communicate with DS-101 @ 64Kbd the following pins are used:
 //  Data+  PIN_B,  Data-  PIN_E
 #define	 Data_P	(PIN_B)
 #define	 TRIS_Data_P (TRIS_PIN_B)
+#define	 WPUB_Data_P (WPUB_PIN_B)
 
 #define	 Data_N	(PIN_E)
 #define	 TRIS_Data_N (TRIS_PIN_E)
+#define	 WPUB_Data_N (WPUB_PIN_E)
 
 
 #endif	// __CONFIG_H__

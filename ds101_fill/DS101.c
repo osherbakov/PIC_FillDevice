@@ -233,5 +233,12 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-	return -1;
+	TRIS_PIN_GND = INPUT;		// Prepare Ground
+	ON_GND = 0;							// Remove ground from Pin B
+
+	TRIS_Data_N	= INPUT;
+	WPUB_Data_N = 1;
+	Delay10TCY();	// Let the voltage stabilize
+	
+	return ( !Data_N ) ? MODE5 : -1;
 }	

@@ -135,7 +135,9 @@ char GetEquipmentMode23Type()
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
   
+  WPUB_PIN_B = 1;
   WPUB_PIN_C = 1;
+  WPUB_PIN_E = 1;
   
   PreviousState = LOW;
   set_timeout(tB);
@@ -173,6 +175,7 @@ char WaitDS102Req(byte req_type)
 	{
   	ON_GND = 0;
   	pinMode(PIN_B, INPUT);
+	  WPUB_PIN_B = 1;
   }
   pinMode(PIN_C, INPUT); 
   WPUB_PIN_C = 1;
@@ -291,8 +294,6 @@ void ReleaseMode23Bus()
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
 
-  WPUB_PIN_C = 0;
-  
   delay(tZ);
 }
 

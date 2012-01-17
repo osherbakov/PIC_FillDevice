@@ -81,21 +81,26 @@ char CheckFillRS232Type5()
 	TRIS_PIN_GND = INPUT;	// Make Ground
 	ON_GND = 1;						//  on Pin B
 
-  // Coming in first time - enable eusart and setup buffer
-	if( RCSTA1bits.SPEN == 0)
+	TRIS_Tx = INPUT;
+	WPUB_Tx = 1;
+	if(TxBIT == 0)
 	{
-		open_eusart_rx();
-		start_eusart_rx(SerialBuffer, 4);
-	}
-	
-	if( (rx_count >= 2) && 
-			(is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
-			 	is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
-			  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
-	{
-		 close_eusart();
-		 return MODE5;
-	}
+	  // Coming in first time - enable eusart and setup buffer
+		if( RCSTA1bits.SPEN == 0)
+		{
+			open_eusart_rx();
+			start_eusart_rx(SerialBuffer, 4);
+		}
+		
+		if( (rx_count >= 2) && 
+				(is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
+				 	is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
+				  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
+		{
+			 close_eusart();
+			 return MODE5;
+		}
+	}	
 	return -1;
 }	
 
@@ -105,32 +110,37 @@ char CheckFillType4()
 	TRIS_PIN_GND = INPUT;	// Make Ground
 	ON_GND = 1;						//  on Pin B
 
-  // Coming in first time - enable eusart and setup buffer
-	if( RCSTA1bits.SPEN == 0)
+	TRIS_Tx = INPUT;
+	WPUB_Tx = 1;
+	if(TxBIT == 0)
 	{
-		open_eusart_rx();
-		start_eusart_rx(SerialBuffer, 4);
-	}
-
-  // Four characters are collected - check if it is 
-  //  /98 - serial number request, or
-  //  /84 - the capabilities request
-	if(rx_count >= 4)
-	{
-		if( is_equal(SerialBuffer, SN_REQ, 4) )
+	  // Coming in first time - enable eusart and setup buffer
+		if( RCSTA1bits.SPEN == 0)
 		{
-  		// SN request - send a fake SN = 123456
-			tx_eusart_buff(SN_RESP);
+			open_eusart_rx();
 			start_eusart_rx(SerialBuffer, 4);
-		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
+		}
+	
+	  // Four characters are collected - check if it is 
+	  //  /98 - serial number request, or
+	  //  /84 - the capabilities request
+		if(rx_count >= 4)
 		{
-			// Options request - send all options
-			send_options();
-			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
-			// Prepare to receive all next data as the Type 4 fill
-			open_eusart_rxtx();
-			start_eusart_rx(SerialBuffer, 4);
-			return MODE4;
+			if( is_equal(SerialBuffer, SN_REQ, 4) )
+			{
+	  		// SN request - send a fake SN = 123456
+				tx_eusart_buff(SN_RESP);
+				start_eusart_rx(SerialBuffer, 4);
+			}else if(is_equal(SerialBuffer, OPT_REQ, 4))
+			{
+				// Options request - send all options
+				send_options();
+				while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+				// Prepare to receive all next data as the Type 4 fill
+				open_eusart_rxtx();
+				start_eusart_rx(SerialBuffer, 4);
+				return MODE4;
+			}
 		}
 	}
 	return -1;

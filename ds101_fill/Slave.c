@@ -21,7 +21,7 @@ int frame_len;
 int frame_FDU;
 char status;
 
-#define RX_WAIT   (7)    // 7 Seconds
+#define RX_WAIT   (10)    // 10 Seconds
 
 
 static unsigned int Timeout;

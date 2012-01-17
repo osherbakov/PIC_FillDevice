@@ -43,6 +43,8 @@ static char GetQueryByte(void)
   ON_GND = 0;
   pinMode(PIN_B, INPUT);		// make pin an input
   pinMode(PIN_E, INPUT);		// make pin an input
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
 
   bit_count = 0;
   PreviousState = LOW;
@@ -110,6 +112,9 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin an input DATA
   pinMode(PIN_E, INPUT);		// make pin an input CLOCK
   pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
+  WPUB_PIN_D = 1;
+  WPUB_PIN_E = 1;
+  
 
   byte_count = 0;
   bit_count = 0;
@@ -220,6 +225,7 @@ char CheckFillType23()
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin an input
 	pinMode(PIN_F, INPUT);		// make pin an input
+  WPUB_PIN_D = 1;
 
   switch(t23_state)
   {
@@ -371,7 +377,7 @@ char GetStoreFill(byte stored_slot)
 	{
 		byte_write(saved_base_addrress, records);
 		byte_write(saved_base_addrress + 1, fill_type);
-		result = ST_OK;
+		result = ST_DONE;
 	}
   return result;
 }
