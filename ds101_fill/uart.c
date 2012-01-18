@@ -27,11 +27,78 @@ int (*ReadCharDS101)(void);
 //  2^17/1M = 0.131072 sec 
 
 //
-// Soft UART to communicate with DTD
+// Soft UART to communicate with RS232 port
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
 int RxRS232Char()
+{
+	byte bitcount, data;
+
+	TRIS_RxPC = INPUT;
+
+	PR6 = TIMER_DTD;
+	T6CON = TIMER_DTD_CTRL;
+	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+      	
+    TMR1H = 0;
+  	TMR1L = 0;	// Reset the timeout timer
+	PIR1bits.TMR1IF = 0;	// Clear Interrupt
+	
+	while( !PIR1bits.TMR1IF )	// Until timeout
+	{
+		// Start conditiona was detected - count 1.5 cell size	
+		if(RxPC )
+		{
+			TMR6 = TIMER_DTD_START;
+			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+			for(bitcount = 0; bitcount < 8 ; bitcount++)
+			{
+				// Wait until timer overflows
+				while(!PIR5bits.TMR6IF){} ;
+				PIR5bits.TMR6IF = 0;	// Clear overflow flag
+				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
+			}
+ 			while(RxPC) {};	// Wait for stop bit
+			return data;
+		}
+	}
+	return -1;
+}
+
+
+void TxRS232Char(char data)
+{
+	byte 	bitcount;
+	
+	TRIS_TxPC = OUTPUT;
+
+	PR6 = TIMER_DTD;
+	T6CON = TIMER_DTD_CTRL;
+	TMR6 = 0;
+	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+
+	TxPC = 1;        		// Issue the start bit
+	data = ~data;  			// Invert sysmbol
+   	// send 8 data bits and 3 stop bits
+	for(bitcount = 0; bitcount < 12; bitcount++)
+	{
+		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
+		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+		TxPC = data & 0x01;	// Set the output
+		data >>= 1;				// We use the fact that 
+						          // "0" bits are STOP bits
+	}
+} 
+
+
+//
+// Soft UART to communicate with another DTD
+// Returns:
+//  -1  - if no symbol within timeout
+//  >=0 - if symbol was detected 
+int RxDTDChar()
 {
 	byte bitcount, data;
 
@@ -68,7 +135,7 @@ int RxRS232Char()
 }
 
 
-void TxRS232Char(char data)
+void TxDTDChar(char data)
 {
 	byte 	bitcount;
 	

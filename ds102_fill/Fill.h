@@ -69,6 +69,7 @@ extern char (*p_ack)(byte);
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);
 extern char CheckFillRS232Type5(void);
+extern char CheckFillDTD232Type5(void);
 extern char CheckFillRS485Type5(void);
 
 

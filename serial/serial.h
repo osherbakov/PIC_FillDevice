@@ -35,12 +35,16 @@ extern void PCInterface(void);
 extern void open_eusart_rxtx(void);
 extern void open_eusart_rx(void);
 extern void start_eusart_rx(unsigned char *, byte );
-
-extern void close_eusart(void);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern void tx_eusart(unsigned char *p_data, byte ncount);
+extern void close_eusart(void);
 
+
+extern void open_mbitr_rxtx(void);
+extern void open_mbitr_rx(void);
+extern void start_mbitr_rx(unsigned char *, byte );
 extern byte rx_mbitr(unsigned char *p_data, byte ncount);
 extern void tx_mbitr(unsigned char *p_data, byte ncount);
+extern void close_mbitr(void);
 
 #endif	// __SERIAL_H__

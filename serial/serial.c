@@ -76,14 +76,35 @@ static void send_options(void)
 
 static unsigned char SerialBuffer[4];
 
+char CheckFillDTD232Type5()
+{
+	TRIS_PIN_GND = INPUT;	// Make Ground
+	ON_GND = 1;						//  on Pin B
+
+	TRIS_RxDTD = INPUT;
+	WPUB_RxDTD = 1;
+	Delay10TCY();	// Let the voltage stabilize
+	
+	// Only process data when in SPACE
+	if(RxDTD == 0)
+	{
+		 return MODE5;
+	}	
+	return -1;
+}	
+
+
 char CheckFillRS232Type5()
 {
 	TRIS_PIN_GND = INPUT;	// Make Ground
 	ON_GND = 1;						//  on Pin B
 
-	TRIS_Tx = INPUT;
-	WPUB_Tx = 1;
-	if(TxBIT == 0)
+	TRIS_RxPC = INPUT;
+	WPUB_RxPC = 1;
+	Delay10TCY();	// Let the voltage stabilize
+	
+	// Only process data when in SPACE
+	if(RxPC == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
 		if( RCSTA1bits.SPEN == 0)
@@ -110,9 +131,12 @@ char CheckFillType4()
 	TRIS_PIN_GND = INPUT;	// Make Ground
 	ON_GND = 1;						//  on Pin B
 
-	TRIS_Tx = INPUT;
-	WPUB_Tx = 1;
-	if(TxBIT == 0)
+	TRIS_RxPC = INPUT;
+	WPUB_RxPC = 1;
+	Delay10TCY();	    // Let the voltage stabilize
+	
+	// only process when line is in SPACE
+	if(RxPC == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
 		if( RCSTA1bits.SPEN == 0)
@@ -150,7 +174,7 @@ char CheckFillType4()
 // Open EUSART for reading only, TX is not affected
 void open_eusart_rx()
 {
-	TRIS_Tx = INPUT;
+	TRIS_RxPC = INPUT;
 
 	SPBRGH1 = 0x00;
 	SPBRG1 = BRREG_CMD;
@@ -165,8 +189,8 @@ void open_eusart_rx()
 
 void open_eusart_rxtx()
 {
-	TRIS_Rx = INPUT;
-	TRIS_Tx = INPUT;
+	TRIS_RxPC = INPUT;
+	TRIS_TxPC = INPUT;
 
 	SPBRGH1 = 0x00;
 	SPBRG1 = BRREG_CMD;
@@ -285,15 +309,15 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	byte bitcount, data;
 	byte	nrcvd = 0;	
 
-	TRIS_Rx = INPUT;
+	TRIS_RxMBITR = INPUT;
 	T6CON = TIMER_MBITR_CTRL;
 	PR6 = TIMER_MBITR;
-  	set_timeout(RX_TIMEOUT1_MBITR);
+ 	set_timeout(RX_TIMEOUT1_MBITR);
 	
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(RxBIT )
+		if(RxMBITR )
 		{
 			TMR6 = TIMER_MBITR_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
@@ -302,12 +326,12 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (RxBIT ? 0x80 : 0x00);
+				data = (data >> 1) | (RxMBITR ? 0x80 : 0x00);
 			}
 			*p_data++ = ~data;
 			nrcvd++;
-		    set_timeout(RX_TIMEOUT2_MBITR);
-			while(RxBIT) {};	// Wait for stop bit
+		  set_timeout(RX_TIMEOUT2_MBITR);
+			while(RxMBITR) {};	// Wait for stop bit
 		}
 	}
 	return nrcvd;
@@ -320,9 +344,9 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-    DelayMs(TX_MBITR_DELAY_MS);
+  DelayMs(TX_MBITR_DELAY_MS);
 	
-	TRIS_Tx = OUTPUT;
+	TRIS_TxMBITR = OUTPUT;
 	PR6 = TIMER_MBITR;
 	T6CON = TIMER_MBITR_CTRL;
 	
@@ -330,14 +354,14 @@ void tx_mbitr(byte *p_data, byte ncount)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 	while(ncount-- )
 	{
-		TxBIT = START;        // Issue the start bit
+		TxMBITR = START;        // Issue the start bit
 		data = ~(*p_data++);  // Get the symbol and advance pointer
     	// send 8 data bits and 4 stop bits
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-			TxBIT = data & 0x01;	// Set the output
+			TxMBITR = data & 0x01;	// Set the output
 			data >>= 1;				// We use the fact that 
 									      // "0" bits are STOP bits
 		}

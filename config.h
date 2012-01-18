@@ -39,21 +39,21 @@ typedef enum
 
 // Audio/FILL connector
 #define	PIN_B	PORTBbits.RB4
-#define	PIN_C	PORTBbits.RB3
+#define	PIN_C	PORTBbits.RB6
 #define	PIN_D	PORTCbits.RC7
-#define	PIN_E	PORTCbits.RC6
+#define	PIN_E	PORTCbits.RC3
 #define	PIN_F	PORTCbits.RC0
 
 #define	TRIS_PIN_B	TRISBbits.RB4
-#define	TRIS_PIN_C	TRISBbits.RB3
+#define	TRIS_PIN_C	TRISBbits.RB6
 #define	TRIS_PIN_D	TRISCbits.RC7
-#define	TRIS_PIN_E	TRISCbits.RC6
+#define	TRIS_PIN_E	TRISCbits.RC3
 #define	TRIS_PIN_F	TRISCbits.RC0
 
 #define	WPUB_PIN_B	WPUBbits.WPUB4
-#define	WPUB_PIN_C	WPUBbits.WPUB3
+#define	WPUB_PIN_C	WPUBbits.WPUB6
 #define	WPUB_PIN_D	WPUBbits.WPUB7
-#define	WPUB_PIN_E	WPUBbits.WPUB6
+#define	WPUB_PIN_E	WPUBbits.WPUB3
 
 // Key selection switch
 #define	S1	RD0	
@@ -94,7 +94,7 @@ typedef enum
 #define	LAT_LEDP	LATEbits.LATE1
 
 
-// Power and button press
+// Zeroizing switch
 #define	ZBR			PORTBbits.RB0
 #define	TRIS_ZBR	TRISBbits.RB0
 #define	WPUB_ZBR	WPUBbits.WPUB0
@@ -104,6 +104,7 @@ typedef enum
 #define	TRIS_OFFBR	TRISBbits.RB1
 #define	WPUB_OFFBR	WPUBbits.WPUB1
 
+// Button press
 #define	BTN			PORTBbits.RB2
 #define	TRIS_BTN	TRISBbits.RB2
 #define	WPUB_BTN	WPUBbits.WPUB2
@@ -142,12 +143,12 @@ typedef enum
 #define	TRIS_GPS_DATA	TRIS_PIN_D
 
 // NMEA 1PPS GPS pulse
-#define	GPS_1PPS		PIN_C
-#define	TRIS_GPS_1PPS	TRIS_PIN_C
+#define	GPS_1PPS		PIN_B
+#define	TRIS_GPS_1PPS	TRIS_PIN_B
 
 // Have quick pin
-#define	HQ_PIN			PIN_C
-#define	TRIS_HQ_PIN		TRIS_PIN_C
+#define	HQ_PIN			PIN_E
+#define	TRIS_HQ_PIN		TRIS_PIN_E
 
 // For Have Quick operations we need ground on one of the Pins
 // Pin B is selected as GND pin
@@ -158,26 +159,37 @@ typedef enum
 
 // To communicate with PC we use EUSART
 // To communicate with MBITR we do Soft UART
-// What is Tx for MBITR is Rx for PC
-// For PC RxD is PIN_D, TxD is PIN_E
+
 //  Here are assignments of the pins for MBITR
-#define	 TxBIT	(PIN_D)
-#define	 TRIS_Tx (TRIS_PIN_D)
-#define	 WPUB_Tx (WPUB_PIN_D)
+#define	 TxMBITR	(PIN_D)
+#define	 TRIS_TxMBITR (TRIS_PIN_D)
+#define	 WPUB_TxMBITR (WPUB_PIN_D)
 
-#define	 RxBIT	(PIN_E)
-#define	 TRIS_Rx (TRIS_PIN_E)
-#define	 WPUB_Rx (WPUB_PIN_E)
+#define	 RxMBITR	(PIN_C)
+#define	 TRIS_RxMBITR (TRIS_PIN_C)
+#define	 WPUB_RxMBITR (WPUB_PIN_C)
 
-// To communicate with DTD the following pins are used:
-//  PIN_D - input, PIN_E - output
-#define	 TxDTD	(PIN_E)
-#define	 TRIS_TxDTD (TRIS_PIN_E)
-#define	 WPUB_TxDTD (WPUB_PIN_E)
+// To communicate with PC the following pins are used:
+//  PIN_D - input, PIN_C - output
+#define	 TxPC	(PIN_C)
+#define	 TRIS_TxPC (TRIS_PIN_C)
+#define	 WPUB_TxPC (WPUB_PIN_C)
 
-#define	 RxDTD	(PIN_D)
-#define	 TRIS_RxDTD (TRIS_PIN_D)
-#define	 WPUB_RxDTD (WPUB_PIN_D)
+#define	 RxPC	(PIN_D)
+#define	 TRIS_RxPC (TRIS_PIN_D)
+#define	 WPUB_RxPC (WPUB_PIN_D)
+
+// To communicate with another DTD the following pins are used:
+//  PIN_C - input, PIN_D - output
+#define	 TxDTD	(PIN_D)
+#define	 TRIS_TxDTD (TRIS_PIN_D)
+#define	 WPUB_TxDTD (WPUB_PIN_D)
+
+#define	 RxDTD	(PIN_C)
+#define	 TRIS_RxDTD (TRIS_PIN_C)
+#define	 WPUB_RxDTD (WPUB_PIN_C)
+
+
 
 // To communicate with DS-101 @ 64Kbd the following pins are used:
 //  Data+  PIN_B,  Data-  PIN_E

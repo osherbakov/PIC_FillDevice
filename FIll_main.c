@@ -19,6 +19,7 @@ static enum
 	BIST_ERR,
 	FILL_TX,
 	FILL_TX_RS232,
+	FILL_TX_DTD232,
 	FILL_TX_RS485, 
 	FILL_TX_PROC,
 	FILL_RX,
@@ -26,6 +27,7 @@ static enum
 	FILL_RX_PROC,
 	FILL_RX_PC,
 	FILL_RX_RS232,
+	FILL_RX_DTD232,
 	FILL_RX_RS485,
 	ZERO_FILL,
 	HQ_TX,
@@ -263,6 +265,18 @@ void main()
 				// On the timeout - switch to a alternative mode
 				if(result < 0)
 				{
+					SetNextState(FILL_TX_DTD232);	
+				}else
+				{
+					TestFillResult(result);
+				}
+				break;	
+
+			case FILL_TX_DTD232:
+				result = SendDTD232Fill(switch_pos);
+				// On the timeout - switch to a alternative mode
+				if(result < 0)
+				{
 					SetNextState(FILL_TX_RS485);	
 				}else
 				{
@@ -329,6 +343,14 @@ void main()
 					break;
 				}
 
+				result = CheckFillDTD232Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_DTD232);
+					break;
+				}
+
 				result = CheckFillRS485Type5();
 				if(result > 0)
 				{
@@ -361,6 +383,17 @@ void main()
 
 			case FILL_RX_RS232:
 				result = GetRS232Fill(switch_pos);
+				if(result < 0)
+				{
+					SetNextState(FILL_RX);
+				}else
+				{
+					TestFillResult(result);
+				}
+				break;
+
+			case FILL_RX_DTD232:
+				result = GetDTD232Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);

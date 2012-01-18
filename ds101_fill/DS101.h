@@ -40,16 +40,20 @@ enum DS_MODE{
 	RX_RS232 = 0,
 	RX_RS485 = 1,
 	TX_RS232 = 2,
-	TX_RS485 = 3
+	TX_RS485 = 3,
+	RX_DTD232 = 4,
+	TX_DTD232 = 5
 };	
 
 extern char SendDS101Fill(char mode, char slot);
 extern char GetDS101Fill(char mode, char slot);
 
 extern char SendRS232Fill(char slot);
+extern char SendDTD232Fill(char slot);
 extern char SendRS485Fill(char slot);
 
 extern char GetRS232Fill(char slot);
+extern char GetDTD232Fill(char slot);
 extern char GetRS485Fill(char slot);
 
 #define SLAVE_ADDRESS	(0x35)

@@ -110,7 +110,7 @@ void TxAXID(char mode)
 void SetupDS101Mode(char mode, char slot)
 {
 		char TxMode = ((mode == TX_RS232) || 
-										(mode == TX_RS485) ) ? TRUE : FALSE;
+										(mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
     CurrentName = TxMode ? master_name : slave_name;
     IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
     ProcessIdle = TxMode ? MasterProcessIdle : SlaveProcessIdle;
@@ -118,8 +118,10 @@ void SetupDS101Mode(char mode, char slot)
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
   	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus; 
-    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : TxRS232Char;
-    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : RxRS232Char;
+    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : 
+        ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
+    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
+        ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
 		TRIS_PIN_GND = INPUT;		// Prepare Ground
 		if((mode == TX_RS485) || (mode == RX_RS485))
@@ -212,6 +214,12 @@ char GetRS232Fill(char slot)
 	return ProcessDS101();
 }
 
+char GetDTD232Fill(char slot)
+{
+	SetupDS101Mode(RX_DTD232, slot);
+	return ProcessDS101();
+}
+
 char GetRS485Fill(char slot)
 {
 	SetupDS101Mode(RX_RS485, slot);
@@ -221,6 +229,12 @@ char GetRS485Fill(char slot)
 char SendRS232Fill(char slot)
 {
 	SetupDS101Mode(TX_RS232, slot);
+	return ProcessDS101();
+}
+
+char SendDTD232Fill(char slot)
+{
+	SetupDS101Mode(TX_DTD232, slot);
 	return ProcessDS101();
 }
 
