@@ -112,7 +112,6 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin an input DATA
   pinMode(PIN_E, INPUT);		// make pin an input CLOCK
   pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
-  WPUB_PIN_D = 1;
   WPUB_PIN_E = 1;
   
 
@@ -182,21 +181,19 @@ static void  ExtractTODData(void)
 	rtc_date.Hours		= data_cell[8];
 	rtc_date.Minutes	= data_cell[9];
 	rtc_date.Seconds	= data_cell[10];
+	CalculateWeekDay();
 }
 
 static void SetTimeFromCell(void)
 {
 	ExtractTODData();
-	SetNextSecond();
+	CalculateNextSecond();
 	if( !rtc_date.Valid )
 	{
 		SendBadFillAck();
 	}else
 	{
-		char ms_100 =  10 - data_cell[11] >> 4 ; 
-		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
-    InitClockData();
 	}
 }
 
@@ -225,7 +222,6 @@ char CheckFillType23()
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin an input
 	pinMode(PIN_F, INPUT);		// make pin an input
-  WPUB_PIN_D = 1;
 
   switch(t23_state)
   {

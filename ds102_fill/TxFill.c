@@ -136,7 +136,6 @@ char GetEquipmentMode23Type()
   pinMode(PIN_E, INPUT);
   
   WPUB_PIN_B = 1;
-  WPUB_PIN_C = 1;
   WPUB_PIN_E = 1;
   
   PreviousState = LOW;
@@ -178,7 +177,6 @@ char WaitDS102Req(byte req_type)
 	  WPUB_PIN_B = 1;
   }
   pinMode(PIN_C, INPUT); 
-  WPUB_PIN_C = 1;
 
   if( req_type == REQ_FIRST)
   {
@@ -252,8 +250,6 @@ void AcquireMode1Bus()
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
 
-  WPUB_PIN_C = 1;
-
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, LOW);
@@ -270,8 +266,6 @@ void AcquireMode23Bus()
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-
-  WPUB_PIN_C = 1;
 
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);

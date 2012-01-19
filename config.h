@@ -39,20 +39,18 @@ typedef enum
 
 // Audio/FILL connector
 #define	PIN_B	PORTBbits.RB4
-#define	PIN_C	PORTBbits.RB6
+#define	PIN_C	PORTCbits.RC6
 #define	PIN_D	PORTCbits.RC7
-#define	PIN_E	PORTCbits.RC3
+#define	PIN_E	PORTBbits.RB3
 #define	PIN_F	PORTCbits.RC0
 
 #define	TRIS_PIN_B	TRISBbits.RB4
-#define	TRIS_PIN_C	TRISBbits.RB6
+#define	TRIS_PIN_C	TRISCbits.RC6
 #define	TRIS_PIN_D	TRISCbits.RC7
-#define	TRIS_PIN_E	TRISCbits.RC3
+#define	TRIS_PIN_E	TRISBbits.RB3
 #define	TRIS_PIN_F	TRISCbits.RC0
 
 #define	WPUB_PIN_B	WPUBbits.WPUB4
-#define	WPUB_PIN_C	WPUBbits.WPUB6
-#define	WPUB_PIN_D	WPUBbits.WPUB7
 #define	WPUB_PIN_E	WPUBbits.WPUB3
 
 // Key selection switch
@@ -163,31 +161,25 @@ typedef enum
 //  Here are assignments of the pins for MBITR
 #define	 TxMBITR	(PIN_D)
 #define	 TRIS_TxMBITR (TRIS_PIN_D)
-#define	 WPUB_TxMBITR (WPUB_PIN_D)
 
 #define	 RxMBITR	(PIN_C)
 #define	 TRIS_RxMBITR (TRIS_PIN_C)
-#define	 WPUB_RxMBITR (WPUB_PIN_C)
 
 // To communicate with PC the following pins are used:
 //  PIN_D - input, PIN_C - output
 #define	 TxPC	(PIN_C)
 #define	 TRIS_TxPC (TRIS_PIN_C)
-#define	 WPUB_TxPC (WPUB_PIN_C)
 
 #define	 RxPC	(PIN_D)
 #define	 TRIS_RxPC (TRIS_PIN_D)
-#define	 WPUB_RxPC (WPUB_PIN_D)
 
 // To communicate with another DTD the following pins are used:
 //  PIN_C - input, PIN_D - output
 #define	 TxDTD	(PIN_D)
 #define	 TRIS_TxDTD (TRIS_PIN_D)
-#define	 WPUB_TxDTD (WPUB_PIN_D)
 
 #define	 RxDTD	(PIN_C)
 #define	 TRIS_RxDTD (TRIS_PIN_C)
-#define	 WPUB_RxDTD (WPUB_PIN_C)
 
 
 

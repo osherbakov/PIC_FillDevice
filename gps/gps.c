@@ -3,13 +3,12 @@
 #include "rtc.h"
 #include "delay.h"
 #include "i2c_sw.h"
-#include "clock.h"
+#include "fill.h"
 
 enum {
 	INIT = 0,
 	SENTENCE,
 	TIME_SEC,
-	TIME_MSEC,
 	VALID,
 	DELIMITERS,
 	DATE,
@@ -51,10 +50,10 @@ static void  ExtractGPSDate(void)
 	p = (byte *) &gps_date;
 	rtc_date.Century	= 0x20;
 	rtc_date.Year		= *p++;
-	rtc_date.Month		= *p++;
+	rtc_date.Month	= *p++;
 	rtc_date.Day		= *p++;
-
-	rtc_date.Valid = 1;
+  CalculateJulianDay();
+  CalculateWeekDay();
 }
 
 static void process_gps_symbol(byte new_symbol)
@@ -130,7 +129,7 @@ static void process_gps_symbol(byte new_symbol)
 	}
 }
 
-static char GPSTime(void)
+static char GetGPSTime(void)
 {
 	// Configure the EUSART module
 	SPBRGH1 = 0x00;
@@ -193,11 +192,13 @@ char ReceiveGPSTime()
 	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	do{
 	//	1. Find the 1PPS rising edge
-		if(FindRisingEdge()) return -1;
+		if(FindRisingEdge()) 
+		  return ST_TIMEOUT;
 	//  2. Start collecting GPS time/date
-		if( GPSTime() )	return -1;
+		if( GetGPSTime() )	
+		  return ST_TIMEOUT;
 	//  3. Calculate the next current time.
-		SetNextSecond();
+		CalculateNextSecond();
 	}while(!rtc_date.Valid);
 	
 	INTCONbits.GIE = 0;		// Disable interrupts
@@ -221,14 +222,15 @@ char ReceiveGPSTime()
   // Reset the 10 ms clock
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
-  InitClockData();
 
 	INTCONbits.RBIF = 0;	// Clear bit
 	INTCONbits.GIE = 1;		// Enable interrupts
 	INTCONbits.PEIE = 1;
   
 //  6. Get the GPS time again and compare with the current RTC
-	if( GPSTime() )	return -1;
+	if( GetGPSTime() )	
+	  return ST_TIMEOUT;
+	  
 	GetRTCData();
 	p_time = (byte *) &gps_time;
 	p_date = (byte *) &gps_date;
@@ -236,11 +238,9 @@ char ReceiveGPSTime()
 	if(rtc_date.Hours)
 	return ( 
 		(*p_date++ == rtc_date.Year) &&
-		(*p_date++ == rtc_date.Month) &&
-		(*p_date++ == rtc_date.Day) &&
-		(*p_time++ == rtc_date.Seconds) &&
-		(*p_time++ == rtc_date.Minutes) &&
-		(*p_time++ == rtc_date.Hours)  ) ? 0 : 1;
+  		(*p_date++ == rtc_date.Month) &&
+	    	(*p_date++ == rtc_date.Day) &&
+      		(*p_time++ == rtc_date.Seconds) &&
+        		(*p_time++ == rtc_date.Minutes) &&
+          		(*p_time++ == rtc_date.Hours)  ) ? ST_DONE : ST_ERR;
 }
-
-

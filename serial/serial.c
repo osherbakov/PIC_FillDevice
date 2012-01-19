@@ -82,7 +82,6 @@ char CheckFillDTD232Type5()
 	ON_GND = 1;						//  on Pin B
 
 	TRIS_RxDTD = INPUT;
-	WPUB_RxDTD = 1;
 	Delay10TCY();	// Let the voltage stabilize
 	
 	// Only process data when in SPACE
@@ -100,7 +99,6 @@ char CheckFillRS232Type5()
 	ON_GND = 1;						//  on Pin B
 
 	TRIS_RxPC = INPUT;
-	WPUB_RxPC = 1;
 	Delay10TCY();	// Let the voltage stabilize
 	
 	// Only process data when in SPACE
@@ -132,7 +130,6 @@ char CheckFillType4()
 	ON_GND = 1;						//  on Pin B
 
 	TRIS_RxPC = INPUT;
-	WPUB_RxPC = 1;
 	Delay10TCY();	    // Let the voltage stabilize
 	
 	// only process when line is in SPACE

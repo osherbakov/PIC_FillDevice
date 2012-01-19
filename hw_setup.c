@@ -134,10 +134,7 @@ void setup_start_io()
 
 	// Apply weak pull ups
 	WPUB_PIN_B = 1;
-	WPUB_PIN_C = 1;
-	WPUB_PIN_D = 1;
 	WPUB_PIN_E = 1;
-
 	
 
 	// LED controls
@@ -176,9 +173,6 @@ void setup_start_io()
 	setup_spi();
 	SetupRTC();
 
-  //Setup HS clock adjustment
-  InitClockData();
-  
 	// Setup and disable USART
 	// Configure the EUSART module
 	IPR1bits.TX1IP = 1;		// High priority TX

@@ -3,8 +3,8 @@
 #include "controls.h"
 #include "rtc.h"
 #include "i2c_sw.h"
-#include "clock.h"
 #include "gps.h"
+#include "fill.h"
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -35,9 +35,12 @@ unsigned char hamming_table[] =
 	0b00111001		// 9
 };
 
-static char HQ_Hours;
-static char HQ_Minutes;
-static char HQ_Seconds;
+static unsigned char HQ_Hours;
+static unsigned char HQ_Minutes;
+static unsigned char HQ_Seconds;
+static unsigned char HQ_JulianDayH;
+static unsigned char HQ_JulianDayL;
+static unsigned char HQ_Year;
 
 
 #define SYNC_PATTERN		(0x11e9)
@@ -108,6 +111,20 @@ static void ExtractHQDate(void)
 	HQ_Minutes = (DecodeByte(hq_data[4]) << 4) | DecodeByte(hq_data[5]);
 	// Seconda
 	HQ_Seconds = (DecodeByte(hq_data[6]) << 4) | DecodeByte(hq_data[7]);
+  // 3 digits of Julian day
+	HQ_JulianDayH = DecodeByte(hq_data[8]);
+	HQ_JulianDayL = (DecodeByte(hq_data[9]) << 4) | DecodeByte(hq_data[10]);
+  // Year
+	HQ_Year = (DecodeByte(hq_data[11]) << 4) | DecodeByte(hq_data[12]);
+
+	rtc_date.Hours = HQ_Hours;
+	rtc_date.Minutes = HQ_Minutes;
+	rtc_date.Seconds = HQ_Seconds;
+	rtc_date.Century = 0x20;
+	rtc_date.Year = HQ_Year;
+	
+  CalculateMonthAndDay();
+  CalculateWeekDay();
 }
 
 
@@ -178,7 +195,7 @@ enum
 
 byte RHQD_State;
 
-static char HQTime(void)
+static char GetHQTime(void)
 {
 	PR6 = 0xFF;
 	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
@@ -235,13 +252,14 @@ static char HQTime(void)
 			if(bit_count >= 8)
 			{
 				hq_data[byte_count++] = data_byte;
-				bit_count = 0;
-				data_byte = 0;
+				// All data collected - return
 				if(byte_count >= MIN_DATA_FRAME_SIZE)
 				{
 					ExtractHQDate();
 					return 0;
 				}
+				bit_count = 0;
+				data_byte = 0;
  			}
 			break;
 		}
@@ -259,17 +277,13 @@ char ReceiveHQTime(void )
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
 	do
 	{
-		GetRTCData();	// Prefill some of the fields - HQ does not provide the Month and Day
-							    // Just the Julian day
   //	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-		if( HQTime() )	return -1;
+		if( GetHQTime() )	
+		  return ST_TIMEOUT;
 	
-	//  2. Find the next time that we will have HQ train
-		rtc_date.Hours = HQ_Hours;
-		rtc_date.Minutes = HQ_Minutes;
-		rtc_date.Seconds = HQ_Seconds;
-		SetNextSecond();
+	//  2. Find the next time that we will have HQ stream
+		CalculateNextSecond();
 	} while( !rtc_date.Valid );
 
 	INTCONbits.GIE = 0;		// Disable interrupts
@@ -278,8 +292,8 @@ char ReceiveHQTime(void )
 	
   //	3. Find the next HQ stream rising edge
 	while ( WaitTimer(0xF0) >= 0 ) {};	// Wait until IDLE
-	while(HQ_PIN);		// look for the rising edge
-	while(!HQ_PIN);		
+	while(HQ_PIN) {};		// look for the rising edge
+	while(!HQ_PIN){};		
 
   //  4. Finally, set up the RTC clock on the rising edge
 	CLOCK_LOW();
@@ -293,19 +307,23 @@ char ReceiveHQTime(void )
   // Reset the 10 ms clock
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
-  InitClockData();
 
 	INTCONbits.RBIF = 0;	// Clear bit
 	INTCONbits.GIE = 1;		// Enable interrupts
 	INTCONbits.PEIE = 1;
 	
 //  5. Get the HQ time again and compare with the current RTC
-	if( HQTime() )	return -1;
+	if( GetHQTime() )	
+	  return ST_TIMEOUT;
+	  
 	GetRTCData();
 	return ( 
   (HQ_Hours == rtc_date.Hours) &&
 		(HQ_Minutes == rtc_date.Minutes) &&
-		  (HQ_Seconds == rtc_date.Seconds)) ? 
-        0 : 1;
+		  (HQ_Seconds == rtc_date.Seconds) && 
+  		  (HQ_JulianDayH == rtc_date.JulianDayH) && 
+    		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
+    		    (HQ_Year == rtc_date.Year) 
+		    ) ? ST_DONE : ST_ERR;
 }
 

@@ -109,7 +109,7 @@ void high_isr (void)
 			if( hq_enabled )
 			{
 				GetRTCData();     // Get current time and data from RTC
-				SetNextSecond();  // Calculate what time it will be on the next 1PPS
+				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
 				CalculateHQDate();// Convert into the HQ date format
 				TRIS_HQ_PIN = OUTPUT;
 				HQ_PIN = 0;
