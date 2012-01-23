@@ -39,8 +39,6 @@ typedef enum
 #define digitalWrite(pin, value) pin = value
 #define pinMode(pin, mode) TRIS_##pin = mode
 
-#define KEY_MAX_SIZE_PWR	(11)	// Max_size = 2^(N)
-
 #define FILL_MAX_SIZE (64)
 #define MODE2_3_CELL_SIZE (16)
 

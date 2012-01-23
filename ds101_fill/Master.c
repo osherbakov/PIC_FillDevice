@@ -36,12 +36,12 @@ char master_state;
 
 char	retry_flag;
 
-static unsigned int base_address;			// Address of the current EEPROM data
+static unsigned short long base_address;			// Address of the current EEPROM data
 static unsigned char block_counter;   // Counter for blocks sent
 
 void MasterStart(char slot)
 {
-	base_address = ((unsigned int)(slot & 0x0F)) << KEY_MAX_SIZE_PWR;
+	base_address = get_eeprom_address(slot & 0x0F);
 	base_address++;		// Skip the Fill type byte
 	block_counter = byte_read(base_address++); 
 	// Reset all to defaults 

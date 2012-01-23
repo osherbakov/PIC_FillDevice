@@ -199,7 +199,7 @@ static void SetTimeFromCell(void)
 
 char ClearFill(byte stored_slot)
 {
-	 unsigned int base_address = ((int)stored_slot & 0x0F) << KEY_MAX_SIZE_PWR;
+	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
    	 byte_write(base_address, 0x00);
    	 return ST_OK;
 }
@@ -283,7 +283,7 @@ void (*p_tx)(byte *, byte);
 byte (*p_rx)(byte *, byte);
 char (*p_ack)(byte);
 
-static unsigned int base_address;
+static unsigned short long base_address;
 
 
 // ACK the received key from PC
@@ -297,7 +297,7 @@ char SendSerialAck(byte ack_type)
 static byte GetFill(void)
 {
 	byte records, byte_cnt, record_size;
-	unsigned int saved_base_address;
+	unsigned short long saved_base_address;
 
 	records = 0;
 	record_size = 0;
@@ -341,9 +341,9 @@ char GetStoreFill(byte stored_slot)
 	char result = ST_ERR;
 	byte required_fill;
 	byte records;
-	unsigned int saved_base_addrress;
+	unsigned short int saved_base_addrress;
 
-	base_address = ((unsigned int)(stored_slot & 0x0F)) << KEY_MAX_SIZE_PWR;
+	base_address = get_eeprom_address(stored_slot & 0x0F);
 	required_fill = stored_slot >> 4;
 
 	saved_base_addrress = base_address;	

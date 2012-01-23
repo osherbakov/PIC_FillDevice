@@ -9,8 +9,8 @@
 #include "delay.h"
 
 
-static unsigned int base_address;	// Address of the current EEPROM data
-static unsigned int saved_base_address; // EEPROM block start address
+static unsigned short long base_address;	// Address of the current EEPROM data
+static unsigned short long saved_base_address; // EEPROM block start address
 static unsigned char block_counter;     // Counter for blocks sent
 
 static char NewAddress;
@@ -28,7 +28,7 @@ static unsigned int Timeout;
 
 void SlaveStart(char slot)
 {
-	base_address = ((unsigned int)(slot & 0x0F)) << KEY_MAX_SIZE_PWR;
+	base_address = get_eeprom_address(slot & 0x0F);
 	saved_base_address = base_address;
 	base_address += 2;	// Reserve memory for type and size
 

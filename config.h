@@ -133,8 +133,6 @@ typedef enum
 #define	TRIS_SPI_SDI	TRISCbits.RC4
 #define	TRIS_SPI_SDO	TRISCbits.RC5
 
-#define	EEPROM_PAGE_SIZE	128
-#define	EEPROM_PAGE_MASK	((EEPROM_PAGE_SIZE) - 1)
 
 // NMEA Serial GPS Data
 #define	GPS_DATA		PIN_D
