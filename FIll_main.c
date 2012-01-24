@@ -154,8 +154,14 @@ void SetNextState(char nextState)
 void main()
 {
 	char  result;
+	
+  // Perform BIST (self-test)
+  TestRTCFunctions();  
+
+	
 	setup_start_io();
 	current_state = INIT;
+
 
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();

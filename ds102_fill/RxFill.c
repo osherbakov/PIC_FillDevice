@@ -193,6 +193,9 @@ static void SetTimeFromCell(void)
 		SendBadFillAck();
 	}else
 	{
+		// The time is in chunks of 1/10 sec
+		char ms_100 =  (10 - (data_cell[11] >> 4) ) & 0x0F; 
+		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
 	}
 }
