@@ -126,7 +126,7 @@ void CalculateNextSecond()
   byte hour;
 
 	// Use current time
-  sec = rtc_date.Seconds;
+    sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
 
@@ -225,6 +225,9 @@ void SetRTCData()
 
 void SetRTCDataPart1()
 {
+      // Stop adjusting XTAL because RTC will be reset soon
+	  InitClockData();
+
 	SWStartI2C();
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
@@ -262,13 +265,13 @@ void SetRTCDataPart2()
 	SWAckI2C(READ);
 
 	SWStopI2C();
-
-  InitClockData();
 }
 
 
 void SetupRTC()
 {
+	InitClockData();
+
 	SWStartI2C();
 
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
@@ -284,7 +287,5 @@ void SetupRTC()
 	SWAckI2C(READ);
 
 	SWStopI2C();
-
-  InitClockData();
 }
 
