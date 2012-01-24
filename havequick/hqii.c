@@ -293,7 +293,6 @@ char ReceiveHQTime(void )
   // Reset the 10 ms clock
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
-  InitClockData();
 
 	INTCONbits.RBIF = 0;	// Clear bit
 	INTCONbits.GIE = 1;		// Enable interrupts

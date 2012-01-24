@@ -237,8 +237,9 @@ char CheckFillRS485Type5()
 	ON_GND = 0;							// Remove ground from Pin B
 
 	TRIS_Data_N	= INPUT;
-	WPUB_Data_N = 1;
+	TRIS_Data_P	= INPUT;
+	WPUB_Data_P = 1;
 	Delay10TCY();	// Let the voltage stabilize
 	
-	return ( !Data_N ) ? MODE5 : -1;
+	return ( Data_P && !Data_N ) ? MODE5 : -1;
 }	

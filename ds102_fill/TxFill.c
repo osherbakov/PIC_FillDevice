@@ -137,7 +137,6 @@ char GetEquipmentMode23Type()
   
   WPUB_PIN_B = 1;
   WPUB_PIN_C = 1;
-  WPUB_PIN_E = 1;
   
   PreviousState = LOW;
   set_timeout(tB);

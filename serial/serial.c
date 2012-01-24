@@ -82,7 +82,6 @@ char CheckFillRS232Type5()
 	ON_GND = 1;						//  on Pin B
 
 	TRIS_Tx = INPUT;
-	WPUB_Tx = 1;
 	if(TxBIT == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
@@ -111,7 +110,6 @@ char CheckFillType4()
 	ON_GND = 1;						//  on Pin B
 
 	TRIS_Tx = INPUT;
-	WPUB_Tx = 1;
 	if(TxBIT == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer

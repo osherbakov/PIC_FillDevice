@@ -44,8 +44,7 @@ static char GetQueryByte(void)
   pinMode(PIN_B, INPUT);		// make pin an input
   pinMode(PIN_E, INPUT);		// make pin an input
   WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
-
+  
   bit_count = 0;
   PreviousState = LOW;
   set_timeout(tZ);
@@ -112,9 +111,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin an input DATA
   pinMode(PIN_E, INPUT);		// make pin an input CLOCK
   pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
-  WPUB_PIN_D = 1;
-  WPUB_PIN_E = 1;
-  
+
 
   byte_count = 0;
   bit_count = 0;
@@ -196,7 +193,6 @@ static void SetTimeFromCell(void)
 		char ms_100 =  10 - data_cell[11] >> 4 ; 
 		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
-    InitClockData();
 	}
 }
 
@@ -225,7 +221,6 @@ char CheckFillType23()
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin an input
 	pinMode(PIN_F, INPUT);		// make pin an input
-  WPUB_PIN_D = 1;
 
   switch(t23_state)
   {
@@ -321,6 +316,13 @@ static byte GetFill(void)
 		{
 			array_write(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
+			// Check if the cell that we received is the 
+			// TOD cell - Extrtact Time and set RTC
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+			{
+         SetTimeFromCell();
+			}		
 		}
 		if(byte_cnt < FILL_MAX_SIZE)
 		{

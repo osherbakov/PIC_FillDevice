@@ -1,6 +1,8 @@
 #include "config.h"
 #include "rtc.h"
 #include "i2c_sw.h"
+#include "clock.h"
+
 
 #define RTC_I2C_ADDRESS			(0xD0)
 #define RTC_I2C_CONTROL_REG		(0x0E)
@@ -163,6 +165,9 @@ void SetRTCData()
 
 void SetRTCDataPart1()
 {
+  // Disable clock adjustments because we are about to reset RTC
+  InitClockData();
+  
 	SWStartI2C();
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }

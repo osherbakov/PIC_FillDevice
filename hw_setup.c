@@ -135,10 +135,7 @@ void setup_start_io()
 	// Apply weak pull ups
 	WPUB_PIN_B = 1;
 	WPUB_PIN_C = 1;
-	WPUB_PIN_D = 1;
-	WPUB_PIN_E = 1;
 
-	
 
 	// LED controls
 	TRIS_LEDP = OUTPUT;		// Drive it
