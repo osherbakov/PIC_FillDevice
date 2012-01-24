@@ -173,9 +173,7 @@ void setup_start_io()
 	setup_spi();
 	SetupRTC();
 
-  //Setup HS clock adjustment
-  InitClockData();
-  
+
 	// Setup and disable USART
 	// Configure the EUSART module
 	IPR1bits.TX1IP = 1;		// High priority TX

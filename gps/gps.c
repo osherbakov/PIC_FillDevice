@@ -54,7 +54,8 @@ static void  ExtractGPSDate(void)
 	rtc_date.Month		= *p++;
 	rtc_date.Day		= *p++;
 
-	rtc_date.Valid = 1;
+  CalculateJulianDay();
+  CalculateWeekDay();
 }
 
 static void process_gps_symbol(byte new_symbol)
@@ -130,7 +131,7 @@ static void process_gps_symbol(byte new_symbol)
 	}
 }
 
-static char GPSTime(void)
+static char GetGPSTime(void)
 {
 	// Configure the EUSART module
 	SPBRGH1 = 0x00;
@@ -195,7 +196,7 @@ char ReceiveGPSTime()
 	//	1. Find the 1PPS rising edge
 		if(FindRisingEdge()) return -1;
 	//  2. Start collecting GPS time/date
-		if( GPSTime() )	return -1;
+		if( GetGPSTime() )	return -1;
 	//  3. Calculate the next current time.
 		CalculateNextSecond();
 	}while(!rtc_date.Valid);
@@ -227,7 +228,7 @@ char ReceiveGPSTime()
 	INTCONbits.PEIE = 1;
   
 //  6. Get the GPS time again and compare with the current RTC
-	if( GPSTime() )	return -1;
+	if( GetGPSTime() )	return -1;
 	GetRTCData();
 	p_time = (byte *) &gps_time;
 	p_date = (byte *) &gps_date;

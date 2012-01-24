@@ -3,55 +3,40 @@
 #include "i2c_sw.h"
 #include "clock.h"
 
-
 #define RTC_I2C_ADDRESS			(0xD0)
 #define RTC_I2C_CONTROL_REG		(0x0E)
 
-static unsigned int month_day[] =  {0, 31, 59, 90,120,151,181,212,243,273,304,334};
-static unsigned char week_day[] =  {0,  3,  3,  6,  1,  4,  6,  2,  5,  0,  3,  5};
+static unsigned int month_day[] =  {0, 31, 59, 90,120,151,181,212,243,273,304,334,365};
+static unsigned char week_day[] =  {0,  3,  3,  6,  1,  4,  6,  2,  5,  0,  3,  5,  0};
 
-static unsigned char month, day, year;
-void CalculateDay(void)
+
+void CalculateWeekDay()
 {
-	unsigned int day;
+	unsigned int julianday;
+  unsigned char month, year;
 	unsigned char weekday, day10;
-	day = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
-	month = (rtc_date.Month & 0x0F); if(rtc_date.Month & 0x10) month += 10;
+	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
+	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
 	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
 	
-	weekday = 6 + day + year + (year >> 2);
+	weekday = 6 + julianday + year + (year >> 2);
 
-	day += month_day[month-1];
-	weekday += week_day[month-1];
+	julianday += month_day[month - 1];
+	weekday += week_day[month - 1];
 
 	// Check for the leap year
 	if ( (year & 0x03) == 0)
 	{
 		if(month > 2)
 		{
-			day++;
+			julianday++;
 		}else
 		{
 			weekday--;
 		}
 	}
-	// Calculate the Julian Day
-	rtc_date.JulianDayH = 0;
-	while (day >= 100)
-	{
-		day -= 100;
-		rtc_date.JulianDayH++;
-	}
-  // Present the Julian day in BCD format
-	day10 = 0;
-	while (day >= 10)
-	{
-		day -= 10;
-		day10 += 0x10;
-	}
-	rtc_date.JulianDayL =   (day10 + (byte) day);
-	
-  // caclulat weekday as number from 1 to 7
+
+  // Caclulate weekday as number from 1 to 7
   while( weekday > 7 )
 	{
 		weekday -= 7;
@@ -59,17 +44,94 @@ void CalculateDay(void)
 	rtc_date.WeekDay = weekday;
 }
 
-void SetNextSecond()
+void CalculateMonthAndDay()
+{
+	unsigned int julianday, curr_days, prev_days;
+  unsigned char month, day, year;
+  
+  julianday = rtc_date.JulianDayH * 100 + 
+          (rtc_date.JulianDayL >> 4) * 10 + 
+            (rtc_date.JulianDayL & 0x0F);
+  day = 0;
+	prev_days = 0;
+	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
+  
+  // find the month on which the day falls
+  for(month = 1; month <= 12; month++)
+  {
+    curr_days = month_day[month];
+    if( curr_days >= julianday)
+    {
+      day = (unsigned char) (julianday - prev_days);
+      break;
+    }else
+    {
+    	// Check for the leap year - February has one more day, i.e. 29 FEB
+    	if ( ((year & 0x03) == 0) && (month >= 2) )
+    	{
+    			curr_days++;
+    	}
+      prev_days = curr_days;
+    }
+  }
+}
+
+void CalculateJulianDay()
+{
+	unsigned int julianday;
+  unsigned char month, year;
+	unsigned char weekday, day10;
+	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
+	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
+	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
+	
+	weekday = 6 + julianday + year + (year >> 2);
+
+	julianday += month_day[month - 1];
+	weekday += week_day[month - 1];
+
+	// Check for the leap year
+	if ( (year & 0x03) == 0)
+	{
+		if(month > 2)
+		{
+			julianday++;
+		}else
+		{
+			weekday--;
+		}
+	}
+	// Calculate the Julian Day
+	rtc_date.JulianDayH = 0;
+	while (julianday >= 100)
+	{
+		julianday -= 100;
+		rtc_date.JulianDayH++;
+	}
+  // Present the Julian day in BCD format
+	day10 = 0;
+	while (julianday >= 10)
+	{
+		julianday -= 10;
+		day10 += 0x10;
+	}
+	rtc_date.JulianDayL =   (day10 + (byte) julianday);
+}
+
+void CalculateNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
-	  byte sec;
-    byte min;
-    byte hour;
+	byte sec;
+  byte min;
+  byte hour;
 
 	// Use current time
   sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
+
+  // Mark the time as valid
+	rtc_date.Valid = 1;
 
 	if(sec >= 0x59)
 	{
@@ -151,9 +213,7 @@ void GetRTCData()
 
 	SWStopI2C();
 
-	CalculateDay();
-	// mark date as valid
-	rtc_date.Valid = 1;
+	CalculateJulianDay();
 }
 
 void SetRTCData()
@@ -165,7 +225,7 @@ void SetRTCData()
 
 void SetRTCDataPart1()
 {
-  // Disable clock adjustments because we are about to reset RTC
+  // Stop adjusting XTAL because RTC will be reset soon
   InitClockData();
   
 	SWStartI2C();
@@ -210,6 +270,8 @@ void SetRTCDataPart2()
 
 void SetupRTC()
 {
+  InitClockData();
+
 	SWStartI2C();
 
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
