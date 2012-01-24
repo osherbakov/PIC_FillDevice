@@ -307,7 +307,12 @@ static byte GetFill(void)
 	p_ack(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
+  	
 		byte_cnt = p_rx(&data_cell[0], FILL_MAX_SIZE);
+		// We can get byte_cnt
+		//  = 0  - no data received --> finish everything
+		//  == FILL_MAX_SIZE --> record and continue
+		//  0 < byte_cnt < FILL_MAX_SIZE --> record and issue new request
 		record_size += byte_cnt;
 		if(record_size == 0)
 		{
@@ -324,6 +329,13 @@ static byte GetFill(void)
 			records++; 
 			record_size = 0;
 			saved_base_address = base_address++;
+			// Check if the cell that we received is the 
+			// TOD cell - set up time
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+			{
+				SetTimeFromCell();
+			}
 			p_ack(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}
