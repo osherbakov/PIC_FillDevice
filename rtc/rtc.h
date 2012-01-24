@@ -25,6 +25,10 @@ extern void GetRTCData(void);
 extern void SetRTCData(void);
 extern void SetRTCDataPart1(void);
 extern void SetRTCDataPart2(void);
-extern void SetNextSecond(void);
+
+extern void CalculateJulianDay(void);
+extern void CalculateMonthAndDay(void);
+extern void CalculateNextSecond(void);
+extern void CalculateWeekDay(void);
 
 #endif		// __RTC_H_

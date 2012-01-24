@@ -197,7 +197,7 @@ char ReceiveGPSTime()
 	//  2. Start collecting GPS time/date
 		if( GPSTime() )	return -1;
 	//  3. Calculate the next current time.
-		SetNextSecond();
+		CalculateNextSecond();
 	}while(!rtc_date.Valid);
 	
 	INTCONbits.GIE = 0;		// Disable interrupts

@@ -184,7 +184,7 @@ static void  ExtractTODData(void)
 static void SetTimeFromCell(void)
 {
 	ExtractTODData();
-	SetNextSecond();
+	CalculateNextSecond();
 	if( !rtc_date.Valid )
 	{
 		SendBadFillAck();

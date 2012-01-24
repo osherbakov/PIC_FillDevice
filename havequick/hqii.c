@@ -269,7 +269,7 @@ char ReceiveHQTime(void )
 		rtc_date.Hours = HQ_Hours;
 		rtc_date.Minutes = HQ_Minutes;
 		rtc_date.Seconds = HQ_Seconds;
-		SetNextSecond();
+		CalculateNextSecond();
 	} while( !rtc_date.Valid );
 
 	INTCONbits.GIE = 0;		// Disable interrupts
