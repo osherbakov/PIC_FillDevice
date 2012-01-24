@@ -4,6 +4,7 @@
 #include "delay.h"
 #include "i2c_sw.h"
 #include "clock.h"
+#include "fill.h"
 
 enum {
 	INIT = 0,
@@ -240,7 +241,7 @@ char ReceiveGPSTime()
 		(*p_date++ == rtc_date.Day) &&
 		(*p_time++ == rtc_date.Seconds) &&
 		(*p_time++ == rtc_date.Minutes) &&
-		(*p_time++ == rtc_date.Hours)  ) ? 0 : 1;
+		(*p_time++ == rtc_date.Hours)  ) ? ST_DONE : ST_ERR;
 }
 
 

@@ -5,6 +5,7 @@
 #include "i2c_sw.h"
 #include "clock.h"
 #include "gps.h"
+#include "fill.h"
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -320,6 +321,6 @@ char ReceiveHQTime(void )
   		  (HQ_JulianDayH == rtc_date.JulianDayH) && 
     		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
     		    (HQ_Year == rtc_date.Year) 
-        ) ?  0 : 1;
+        ) ?  ST_DONE : ST_ERR;
 }
 
