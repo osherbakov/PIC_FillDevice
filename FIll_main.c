@@ -155,9 +155,10 @@ void main()
 {
 	char  result;
 	
+#ifdef  DO_TEST
   // Perform BIST (self-test)
   TestRTCFunctions();  
-
+#endif
 	
 	setup_start_io();
 	current_state = INIT;
