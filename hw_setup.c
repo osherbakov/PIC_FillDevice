@@ -19,7 +19,7 @@ void setup_clocks()
 {
   OSCTUNE = 0;    // No PLL
 	// Wait until HF Oscillator is stable 
-	while(!OSCCONbits.HFIOFS) ;
+//	while(!OSCCONbits.HFIOFS) ;
 	OSCCONbits.IDLEN = 1; 	// On Sleep() enter IDLE
 
 	// Select appropriate clock source
