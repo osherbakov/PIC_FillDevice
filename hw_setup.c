@@ -50,6 +50,7 @@ void setup_clocks()
   
 // Set up timer 1 to count OSC_CLOCK in 16-bit mode
 //  It is used for 0.131072s timeout, when clock overflows
+// Used for timeouts in RS-232 and RS-485 soft USART
   	TMR1H = 0;
   	TMR1L = 0;	// Reset the timer
     T1GCONbits.TMR1GE = 0;	// No gating
@@ -58,7 +59,8 @@ void setup_clocks()
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
   
-  
+
+//  TIMER 2 - 10 ms heartbeat timer
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
@@ -117,14 +119,18 @@ void setup_start_io()
 	ANSELD = 0x00;
 	ANSELE = 0x00;
 
-	// Switch S1 - S16 settings
+        // Apply power to PIN_A
+        TRIS_PIN_A_PWR = OUTPUT;
+        PIN_A_PWR = 1;
+
+        // Apply no power to PIN_F
+        TRIS_PIN_F_PWR = OUTPUT;
+        PIN_F_PWR = 0;
+
+        // Switch S1 - S16 settings
 	TRIS_S1_8 = 0xFF;	// Inputs
 	TRIS_S9_16 = 0xFF;	// Inputs
-	
-	// Voltage on Resistor network
-	TRIS_VRD = OUTPUT;		// Drive it
-	VRD = 1;						// and set to HIGH
-	
+		
 	// Audio Connector - Inputs
 	TRIS_PIN_B = INPUT;
 	TRIS_PIN_C = INPUT;
@@ -139,21 +145,13 @@ void setup_start_io()
 
 	// LED controls
 	TRIS_LEDP = OUTPUT;		// Drive it
-	TRIS_LEDN_R = OUTPUT;	// Drive it
 	LEDP = 0;				// LED off
-	LEDN_R = 0;
 
 	// Button and Power sensors
 	INTCON2bits.RBPU = 0;	// Enable Weak Pull Ups
 
 	// Zero button - input and no pullup
 	TRIS_ZBR = INPUT;		// Input
-	WPUB_ZBR = 0;			// Turn off Weak pull-up
-
-	// Ground control - output and no pullup
-	TRIS_OFFBR = OUTPUT;	// Output
-	WPUB_OFFBR = 0;
-	OFFBR = 0;
 
 	// Push button - input with weak pullup
 	TRIS_BTN = INPUT;		// Input
@@ -190,15 +188,19 @@ void setup_sleep_io()
 	INTCONbits.GIE = 0;		// Disable interrupts
 	INTCONbits.PEIE = 0;
 
-	// Disable VRD
-	TRIS_VRD = OUTPUT;		// Drive it
-	VRD = 0;						  // and set to LOW
-
 	// Disable LED
 	LEDP = 0;				// LED off
-	LEDN_R = 0;
 
-	// Release I2C bus
+        // Apply power to PIN_A
+        TRIS_PIN_A_PWR = OUTPUT;
+        PIN_A_PWR = 1;
+
+        // Apply no power to PIN_F
+        TRIS_PIN_F_PWR = OUTPUT;
+        PIN_F_PWR = 0;
+
+
+        // Release I2C bus
 	SWStopI2C();
 
 	// Use all ports as Analog In

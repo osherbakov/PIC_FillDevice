@@ -17,9 +17,8 @@ byte prev_power_pos;
 byte get_switch_state()
 {
 	byte data;
-	TRIS_VRD = OUTPUT;
-	VRD = HIGH;		// Keep it high
-	Delay10TCY();	// Let the voltage stabilize
+	TRIS_S1_8 = INPUT;
+        TRIS_S9_16 = INPUT;
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -37,7 +36,6 @@ byte get_switch_state()
 			data = -1;
 		}
 	}
-	TRIS_VRD = INPUT;
 	return data + 1;
 }
 
@@ -45,16 +43,40 @@ byte get_switch_state()
 
 byte get_power_state()
 {
-	TRIS_ZBR = OUTPUT;	// Drive the pin low for 1 cycle
-	ZBR = LOW;		// Put LOW on the pin
-	Delay1TCY();	// Let the voltage stabilize
 	TRIS_ZBR = INPUT;	// Go back to the Input state
-	Delay10TCY();	// Let the voltage stabilize
 	if(ZBR) return ZERO_POS;
 	return ON_POS;
 }
 
 byte get_button_state()
 {
-	return (BTN) ? UP_POS : DOWN_POS;
+    TRIS_BTN = INPUT;
+   	return (BTN) ? UP_POS : DOWN_POS;
 }
+
+void set_pin_a_as_gnd()
+{
+    TRIS_PIN_A_PWR = OUTPUT;
+    PIN_A_PWR = 0;
+}
+
+void set_pin_a_as_power()
+{
+    TRIS_PIN_A_PWR = OUTPUT;
+    PIN_A_PWR = 1;
+}
+
+void set_pin_f_as_io()
+{
+    TRIS_PIN_F_PWR = OUTPUT;
+    PIN_F_PWR = 0;
+    TRIS_PIN_F = INPUT;
+}
+
+void set_pin_f_as_power()
+{
+    TRIS_PIN_F = INPUT;
+    TRIS_PIN_F_PWR = OUTPUT;
+    PIN_F_PWR = 1;
+}
+

@@ -7,6 +7,7 @@
 #include "Fill.h"
 #include "clock.h"
 #include "DS101.h"
+#include "controls.h"
 
 //--------------------------------------------------------------
 // Delays in ms
@@ -40,7 +41,7 @@ static char GetQueryByte(void)
   byte  bit_count;
   byte  Data;
   
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, INPUT);		// make pin an input
   pinMode(PIN_E, INPUT);		// make pin an input
   WPUB_PIN_B = 1;
@@ -77,7 +78,7 @@ static void SendEquipmentType(void)
   // Set up pins mode and levels
   delay(tB);
   
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, OUTPUT);		// make a pin active
   pinMode(PIN_E, OUTPUT);		// make a pin active
   digitalWrite(PIN_E, HIGH);	// Set clock to High
@@ -108,7 +109,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   byte  byte_count;
   byte  Data;
 
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_D, INPUT);		// make pin an input DATA
   pinMode(PIN_E, INPUT);		// make pin an input CLOCK
   pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
@@ -153,7 +154,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
 
 static char SendFillRequest(byte req_type)
 {
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_C, OUTPUT);		// make pin an output
   digitalWrite(PIN_C, LOW);
   delay(tD);
@@ -162,7 +163,7 @@ static char SendFillRequest(byte req_type)
 
 static char SendBadFillAck(void)
 {
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, OUTPUT);		// make pin an output
   digitalWrite(PIN_B, LOW);
   delay(tG);

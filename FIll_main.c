@@ -214,9 +214,8 @@ void main()
 		{
 			// This case when any switch or button changes
 			case INIT:
-				// Remove ground from pin B
-				TRIS_PIN_GND = INPUT;
-				ON_GND = 0;
+				// Remove ground from pin A
+				  set_pin_a_as_power();
 				hq_enabled = 0;
 				close_eusart();
      		idle_counter = seconds_counter + IDLE_SECS;
@@ -245,23 +244,21 @@ void main()
 					}
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
-					TRIS_PIN_GND = INPUT;			// Make Ground
-					ON_GND = 1;						//  on Pin B
+					  set_pin_a_as_gnd();						//  on Pin A
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
-					TRIS_PIN_GND = INPUT;	// Make ground
-					ON_GND = 1;						//  on Pin B
-					SetNextState(HQ_RX);
+					  set_pin_a_as_gnd();
+                                          SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
-					TRIS_PIN_GND = INPUT;
-					ON_GND = 1;						// Make ground on Pin B
+					  set_pin_a_as_gnd();						// Make ground on Pin B
 					hq_enabled = 1;					// Enable HQ output
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
+                                          set_pin_a_as_power();
 					fill_type = MODE3;
 					SetNextState(TIME_TX);
 				}

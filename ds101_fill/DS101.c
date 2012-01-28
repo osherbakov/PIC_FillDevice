@@ -6,6 +6,7 @@
 #include <HDLC.h>
 #include <DS101.h>
 #include "delay.h"
+#include "controls.h"
 
 
 char master_name[14] = "DTD 2243";
@@ -123,14 +124,7 @@ void SetupDS101Mode(char mode, char slot)
     ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
-		TRIS_PIN_GND = INPUT;		// Prepare Ground
-		if((mode == TX_RS485) || (mode == RX_RS485))
-	  {
-			ON_GND = 0;							// Remove ground from Pin B
-		}else
-		{
-			ON_GND = 1;							// Set ground on Pin B
-		}
+    set_pin_a_as_gnd();
 
     if(TxMode) 
     	MasterStart(slot);
@@ -247,12 +241,12 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-	TRIS_PIN_GND = INPUT;		// Prepare Ground
-	ON_GND = 0;							// Remove ground from Pin B
-
+        set_pin_a_as_gnd();
 	TRIS_Data_N	= INPUT;
 	WPUB_Data_N = 1;
+	TRIS_Data_P	= INPUT;
+	WPUB_Data_P = 1;
 	Delay10TCY();	// Let the voltage stabilize
 	
-	return ( !Data_N ) ? MODE5 : -1;
+	return ( Data_P && !Data_N ) ? MODE5 : -1;
 }	

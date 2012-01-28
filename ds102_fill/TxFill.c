@@ -5,6 +5,7 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
+#include "controls.h"
 
 
 static void AcquireMode1Bus(void);
@@ -55,7 +56,7 @@ void SendMode23Query(byte Data)
 {
   byte i;
   // Set up pins mode and levels
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, OUTPUT);    // make pin active
   pinMode(PIN_E, OUTPUT);    // make pin active
   digitalWrite(PIN_E, HIGH);  // Set clock to High
@@ -130,7 +131,7 @@ char GetEquipmentMode23Type()
   byte  NewState;	
 
   i = 0;
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
@@ -171,19 +172,19 @@ char WaitDS102Req(byte req_type)
 
 	// For MODE1 fill we keep PIN_B low and don't read it
   if(fill_type != MODE1)
-	{
-  	ON_GND = 0;
+  {
+        set_pin_a_as_power();
   	pinMode(PIN_B, INPUT);
-	  WPUB_PIN_B = 1;
+	WPUB_PIN_B = 1;
   }
   pinMode(PIN_C, INPUT); 
 
   if( req_type == REQ_FIRST)
   {
-	  set_timeout(tD);	// Return every 500 ms to check for switch position
+	set_timeout(tD);	// Return every 500 ms to check for switch position
   }else
   {
-	  set_timeout(tF);	// If not first - wait 3 seconds until timeout
+        set_timeout(tF);	// If not first - wait 3 seconds until timeout
   }
 
   PreviousState = HIGH;
@@ -243,7 +244,7 @@ void EndMode23Handshake()
 
 void AcquireMode1Bus()
 {
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -260,7 +261,7 @@ void AcquireMode1Bus()
 
 void AcquireMode23Bus()
 {
-  ON_GND = 0;
+  set_pin_a_as_power();
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -277,7 +278,7 @@ void AcquireMode23Bus()
 
 void ReleaseMode23Bus()
 {
-  ON_GND = 0;
+  set_pin_a_as_power();
   delayMicroseconds(tL);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_F, HIGH);
@@ -348,16 +349,15 @@ char CheckEquipment()
 	  Equipment = MODE1;
   }else if(fill_type == MODE4)
   {
-	  // Connect ground on PIN B
-  	TRIS_PIN_GND = INPUT;
-	  ON_GND = 1;
+	  // Connect ground on PIN A
+        set_pin_a_as_gnd();
 	  if( p_ack(REQ_FIRST) == 0 )  
 	  {
 		  Equipment = MODE4;
 	  }
   }else		// MODE 2 or MODE 3
   {
-	  ON_GND = 0;
+	  set_pin_a_as_power();
 	  AcquireMode23Bus();
 	  StartMode23Handshake();
   	SendMode23Query(MODE3);
@@ -366,7 +366,7 @@ char CheckEquipment()
 	  if(Equipment < 0)	// Timeout occured
 	  {
 		  ReleaseMode23Bus();
-		}
+	  }
   }
   return Equipment;
 }

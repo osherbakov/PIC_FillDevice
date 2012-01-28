@@ -38,20 +38,20 @@ typedef enum
 
 
 // Audio/FILL connector
-#define	PIN_B	PORTBbits.RB4
+#define	PIN_B	PORTBbits.RB1
 #define	PIN_C	PORTCbits.RC6
 #define	PIN_D	PORTCbits.RC7
-#define	PIN_E	PORTBbits.RB3
+#define	PIN_E	PORTBbits.RB2
 #define	PIN_F	PORTCbits.RC0
 
-#define	TRIS_PIN_B	TRISBbits.RB4
+#define	TRIS_PIN_B	TRISBbits.RB1
 #define	TRIS_PIN_C	TRISCbits.RC6
 #define	TRIS_PIN_D	TRISCbits.RC7
-#define	TRIS_PIN_E	TRISBbits.RB3
+#define	TRIS_PIN_E	TRISBbits.RB2
 #define	TRIS_PIN_F	TRISCbits.RC0
 
-#define	WPUB_PIN_B	WPUBbits.WPUB4
-#define	WPUB_PIN_E	WPUBbits.WPUB3
+#define	WPUB_PIN_B	WPUBbits.WPUB1
+#define	WPUB_PIN_E	WPUBbits.WPUB2
 
 // Key selection switch
 #define	S1	RD0	
@@ -68,7 +68,7 @@ typedef enum
 #define	S12	RA3
 #define	S13	RA4
 #define	S14	RA5
-#define	S15 RA6
+#define	S15     RA6
 #define	S16	RA7
 
 // Rotary switch ports - the position is indicated
@@ -79,42 +79,40 @@ typedef enum
 #define TRIS_S1_8 TRISD
 #define TRIS_S9_16 TRISA
 
-// Resistor Voltage Control
-#define	VRD			PORTEbits.RE0
-#define	TRIS_VRD	TRISEbits.RE0
 
 // LED control
-#define	LEDP	PORTEbits.RE1
-#define	LEDN_R	PORTEbits.RE2
+#define	LEDP        PORTEbits.RE1
+
 
 #define	TRIS_LEDP	TRISEbits.RE1
-#define	TRIS_LEDN_R	TRISEbits.RE2
 #define	LAT_LEDP	LATEbits.LATE1
 
 
 // Zeroizing switch
-#define	ZBR			PORTBbits.RB0
-#define	TRIS_ZBR	TRISBbits.RB0
-#define	WPUB_ZBR	WPUBbits.WPUB0
-
-// OFFBR is used to control the strong GND
-#define	OFFBR		PORTBbits.RB1
-#define	TRIS_OFFBR	TRISBbits.RB1
-#define	WPUB_OFFBR	WPUBbits.WPUB1
+#define	ZBR		PORTEbits.RE2
+#define	TRIS_ZBR	TRISEbits.RE2
 
 // Button press
-#define	BTN			PORTBbits.RB2
-#define	TRIS_BTN	TRISBbits.RB2
-#define	WPUB_BTN	WPUBbits.WPUB2
+#define	BTN		PORTBbits.RB0
+#define	TRIS_BTN	TRISBbits.RB0
+#define	WPUB_BTN	WPUBbits.WPUB0
+
+// PIN_A_PWR is used to control the Pin A coonection
+#define	PIN_A_PWR	PORTCbits.RC1
+#define	TRIS_PIN_A_PWR	TRISCbits.RC1
+
+// PIN_F_PWR is used to control the Pin F power
+#define	PIN_F_PWR	PORTEbits.RE0
+#define	TRIS_PIN_F_PWR	TRISEbits.RE0
 
 // Software I2C bit-banging
-#define  DATA_LOW()   TRISAbits.TRISA2 = 0  // define macro for data pin output
-#define  DATA_HI()    TRISAbits.TRISA2 = 1  // define macro for data pin input
-#define  DATA_PIN()   PORTAbits.RA2         // define macro for data pin
+#define  DATA_LOW()   TRISBbits.TRISB4 = 0  // define macro for data pin output
+#define  DATA_HI()    TRISBbits.TRISB4 = 1  // define macro for data pin input
+#define  DATA_PIN()   PORTBbits.RB4         // define macro for data pin
 
-#define  CLOCK_LOW()  TRISAbits.TRISA3 = 0  // define macro for clock pin output
-#define  CLOCK_HI()   TRISAbits.TRISA3 = 1  // define macro for clock pin input
-#define  SCLK_PIN()   PORTAbits.RA3         // define macro for clock pin
+#define  CLOCK_LOW()  TRISBbits.TRISB3 = 0  // define macro for clock pin output
+#define  CLOCK_HI()   TRISBbits.TRISB3 = 1  // define macro for clock pin input
+#define  SCLK_PIN()   PORTBbits.RB3         // define macro for clock pin
 
 // RTC 1 PULSE_PER_SEC pin
 // Will generate Interrupt On Change (IOC)
@@ -128,29 +126,24 @@ typedef enum
 #define	SPI_SCK		PORTCbits.RC3
 #define	SPI_SDI		PORTCbits.RC4
 #define	SPI_SDO		PORTCbits.RC5
-#define	TRIS_SPI_CS		TRISCbits.RC2
+#define	TRIS_SPI_CS	TRISCbits.RC2
 #define	TRIS_SPI_SCK	TRISCbits.RC3
 #define	TRIS_SPI_SDI	TRISCbits.RC4
 #define	TRIS_SPI_SDO	TRISCbits.RC5
 
 
 // NMEA Serial GPS Data
-#define	GPS_DATA		PIN_D
+#define	GPS_DATA	PIN_D
 #define	TRIS_GPS_DATA	TRIS_PIN_D
 
 // NMEA 1PPS GPS pulse
-#define	GPS_1PPS		PIN_B
-#define	TRIS_GPS_1PPS	TRIS_PIN_B
+#define	GPS_1PPS	PIN_E
+#define	TRIS_GPS_1PPS	TRIS_PIN_E
 
 // Have quick pin
-#define	HQ_PIN			PIN_E
-#define	TRIS_HQ_PIN		TRIS_PIN_E
+#define	HQ_PIN		PIN_B
+#define	TRIS_HQ_PIN	TRIS_PIN_B
 
-// For Have Quick operations we need ground on one of the Pins
-// Pin B is selected as GND pin
-// B1 port controls if the strong GND is applied
-#define	ON_GND 			OFFBR
-#define	TRIS_PIN_GND 	TRIS_PIN_B
 
 
 // To communicate with PC we use EUSART

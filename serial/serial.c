@@ -78,8 +78,7 @@ static unsigned char SerialBuffer[4];
 
 char CheckFillDTD232Type5()
 {
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
+	  set_pin_a_as_gnd();						//  on Pin B
 
 	TRIS_RxDTD = INPUT;
 	Delay10TCY();	// Let the voltage stabilize
@@ -95,8 +94,7 @@ char CheckFillDTD232Type5()
 
 char CheckFillRS232Type5()
 {
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
+	  set_pin_a_as_gnd();
 
 	TRIS_RxPC = INPUT;
 	Delay10TCY();	// Let the voltage stabilize
@@ -126,8 +124,7 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
+	  set_pin_a_as_power();						//  on Pin B
 
 	TRIS_RxPC = INPUT;
 	Delay10TCY();	    // Let the voltage stabilize

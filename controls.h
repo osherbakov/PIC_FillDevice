@@ -41,6 +41,11 @@ extern byte get_switch_state(void);
 extern byte get_power_state(void);
 extern byte get_button_state(void);
 
+extern void set_pin_a_as_gnd(void);
+extern void set_pin_a_as_power(void);
+extern void set_pin_f_as_io(void);
+extern void set_pin_f_as_power(void);
+
 //-------------------------------------------------
 //  LED support fucntions
 //------------------------------------------------
