@@ -68,7 +68,7 @@ typedef enum
 #define	S12	RA3
 #define	S13	RA4
 #define	S14	RA5
-#define	S15     RA6
+#define	S15 RA6
 #define	S16	RA7
 
 // Rotary switch ports - the position is indicated

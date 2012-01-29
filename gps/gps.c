@@ -4,6 +4,7 @@
 #include "delay.h"
 #include "i2c_sw.h"
 #include "fill.h"
+#include "controls.h"
 
 enum {
 	INIT = 0,

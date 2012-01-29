@@ -54,6 +54,18 @@ byte get_button_state()
    	return (BTN) ? UP_POS : DOWN_POS;
 }
 
+char is_bootloader_active()
+{
+  // Switch S16 pin to be a digital input
+  ANSELA = 0;  
+  TRISAbits.RA7  = INPUT;
+  
+  ANSELC = 0;
+  TRIS_RxPC = INPUT;
+  
+  return !PORTAbits.RA7 && !RxPC;
+}
+
 void set_pin_a_as_gnd()
 {
     TRIS_PIN_A_PWR = OUTPUT;
