@@ -17,8 +17,8 @@ byte prev_power_pos;
 byte get_switch_state()
 {
 	byte data;
-	TRIS_S1_8 = INPUT;
-        TRIS_S9_16 = INPUT;
+	TRIS_S1_8 = 0xFF;
+  TRIS_S9_16 = 0xFF;
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -58,12 +58,15 @@ char is_bootloader_active()
 {
   // Check if the switch S16 is selected
   //  and the RxD is in break state  (MARK)
-  ANSELA = 0;  
-  TRISAbits.RA7  = INPUT;  // That is a S16 pin
-  
+  ANSELA = 0; 
   ANSELC = 0;
-  TRIS_RxPC = INPUT;
+  ANSELD = 0;
   
+  TRIS_S1_8 = 0xFF;
+  TRIS_S9_16 = 0xFF;   
+  TRISAbits.RA7  = INPUT;  // That is a S16 pin
+  TRIS_RxPC = INPUT;
+ 
   //Switch is tied to the GND and Rx is LOW (START)
   return (!PORTAbits.RA7 && RxPC);
 }

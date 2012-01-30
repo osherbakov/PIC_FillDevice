@@ -246,9 +246,12 @@ void main()
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
 					// Check for the bootloader activity
-					if(RxPC)
+					if( is_bootloader_active() )
 				  {
-  				  BootloadMode();
+  				  set_led_state(0, 100);	// Turn off LED
+    				INTCONbits.GIE = 0;		// Disable interrupts
+    				INTCONbits.PEIE = 0;
+   				  BootloadMode();
 				  }	
 					SetNextState(PC_CONN);
 				}
