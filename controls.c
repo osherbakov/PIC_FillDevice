@@ -17,6 +17,10 @@ byte prev_power_pos;
 byte get_switch_state()
 {
 	byte data;
+
+	TRIS_S1_8 = 0xFF;	// Inputs
+	TRIS_S9_16 = 0xFF;	// Inputs
+	
 	TRIS_VRD = OUTPUT;
 	VRD = HIGH;		// Keep it high
 	Delay10TCY();	// Let the voltage stabilize
@@ -58,3 +62,23 @@ byte get_button_state()
 {
 	return (BTN) ? UP_POS : DOWN_POS;
 }
+
+char is_bootloader_active()
+{
+	ANSELA = 0x00;
+	ANSELC = 0x00;
+	ANSELD = 0x00;
+	
+  TRIS_Rx = INPUT;
+  TRIS_Tx = INPUT;
+	
+	// Ground control - output and no pullup
+	TRIS_OFFBR = OUTPUT;	// Output
+	WPUB_OFFBR = 0;
+	OFFBR = 0;
+
+	TRIS_PIN_GND = INPUT;
+	ON_GND = 1;						// Make ground on Pin B
+	
+	return ( (get_switch_state() == PC_POS) && TxBIT );  
+}  

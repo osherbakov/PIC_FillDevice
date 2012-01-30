@@ -48,11 +48,6 @@ byte 	current_state;
 byte 	button_pos;
 byte 	prev_button_pos;
 
-#define MAX_NUM_POS (10)
-#define HQ_TIME_POS (14)
-#define SG_TIME_POS (15)
-#define PC_POS 		(16)
-
 
 //
 // Test if the button was depressed and released
@@ -238,6 +233,11 @@ void main()
 				{
 					TRIS_PIN_GND = INPUT;			// Make Ground
 					ON_GND = 1;						//  on Pin B
+					
+					if(is_bootloader_active())
+					{
+  					BootloadMode();
+  			  }		
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive

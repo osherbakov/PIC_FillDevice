@@ -29,6 +29,10 @@ typedef enum
 	DOWN_POS = 1
 } BUTTON_POS;
 
+#define MAX_NUM_POS (10)
+#define HQ_TIME_POS (14)
+#define SG_TIME_POS (15)
+#define PC_POS 		  (16)
 
 extern byte switch_pos;
 extern byte prev_switch_pos;
@@ -40,6 +44,8 @@ extern byte prev_power_pos;
 extern byte get_switch_state(void);
 extern byte get_power_state(void);
 extern byte get_button_state(void);
+extern char is_bootloader_active(void);
+extern void BootloadMode(void);
 
 //-------------------------------------------------
 //  LED support fucntions
