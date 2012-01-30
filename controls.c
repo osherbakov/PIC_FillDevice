@@ -76,9 +76,10 @@ char is_bootloader_active()
 	TRIS_OFFBR = OUTPUT;	// Output
 	WPUB_OFFBR = 0;
 	OFFBR = 0;
-
+  
+  // Make ground on Pin B
 	TRIS_PIN_GND = INPUT;
-	ON_GND = 1;						// Make ground on Pin B
+	ON_GND = 1;						
 	
 	return ( (get_switch_state() == PC_POS) && TxBIT );  
 }  

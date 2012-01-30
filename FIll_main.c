@@ -236,7 +236,10 @@ void main()
 					
 					if(is_bootloader_active())
 					{
-  					BootloadMode();
+   				  set_led_state(0, 100);	// Turn off LED
+    				INTCONbits.GIE = 0;		// Disable interrupts
+    				INTCONbits.PEIE = 0;
+   					BootloadMode();
   			  }		
 					SetNextState(PC_CONN);
 				}
