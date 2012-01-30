@@ -185,9 +185,9 @@ void main()
 			};
 		}
 
-		Sleep();	// Will wake up every 10 ms
+//		Sleep();	// Will wake up every 10 ms
 
-	  	// Check the switch position - did it change?
+	  // Check the switch position - did it change?
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
@@ -215,7 +215,7 @@ void main()
 			// This case when any switch or button changes
 			case INIT:
 				// Remove ground from pin A
-				  set_pin_a_as_power();
+				set_pin_a_as_power();
 				hq_enabled = 0;
 				close_eusart();
      		idle_counter = seconds_counter + IDLE_SECS;
@@ -244,21 +244,26 @@ void main()
 					}
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
-					  set_pin_a_as_gnd();						//  on Pin A
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+					// Check for the bootloader activity
+					if(RxPC)
+				  {
+  				  BootloadMode();
+				  }	
 					SetNextState(PC_CONN);
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
 					  set_pin_a_as_gnd();
-                                          SetNextState(HQ_RX);
+            SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
-					  set_pin_a_as_gnd();						// Make ground on Pin B
+					set_pin_a_as_gnd();			// Make ground on Pin A
 					hq_enabled = 1;					// Enable HQ output
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
-                                          set_pin_a_as_power();
+          set_pin_a_as_power();
 					fill_type = MODE3;
 					SetNextState(TIME_TX);
 				}

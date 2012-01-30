@@ -56,14 +56,16 @@ byte get_button_state()
 
 char is_bootloader_active()
 {
-  // Switch S16 pin to be a digital input
+  // Check if the switch S16 is selected
+  //  and the RxD is in break state  (MARK)
   ANSELA = 0;  
-  TRISAbits.RA7  = INPUT;
+  TRISAbits.RA7  = INPUT;  // That is a S16 pin
   
   ANSELC = 0;
   TRIS_RxPC = INPUT;
   
-  return !PORTAbits.RA7 && !RxPC;
+  //Switch is tied to the GND and Rx is LOW (START)
+  return (!PORTAbits.RA7 && RxPC);
 }
 
 void set_pin_a_as_gnd()

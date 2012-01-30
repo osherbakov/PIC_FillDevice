@@ -46,6 +46,10 @@ extern void set_pin_a_as_power(void);
 extern void set_pin_f_as_io(void);
 extern void set_pin_f_as_power(void);
 
+extern char is_bootloader_active(void);
+
+extern void BootloadMode(void);
+
 //-------------------------------------------------
 //  LED support fucntions
 //------------------------------------------------

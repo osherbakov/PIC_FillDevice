@@ -24,19 +24,19 @@ void setup_clocks()
 
 	// Select appropriate clock source
 #if XTAL_FREQ == 16MHZ
-	OSCCONbits.IRCF = 0x7;	// 8MHz
+	OSCCONbits.IRCF = 0x7;	// 16MHz
 #endif
 #if XTAL_FREQ == 8MHZ
 	OSCCONbits.IRCF = 0x6;	// 8MHz
 #endif
 #if XTAL_FREQ == 4MHZ
-	OSCCONbits.IRCF = 0x5;	// 8MHz
+	OSCCONbits.IRCF = 0x5;	// 4MHz
 #endif
 #if XTAL_FREQ == 2MHZ
-	OSCCONbits.IRCF = 0x4;	// 8MHz
+	OSCCONbits.IRCF = 0x4;	// 2MHz
 #endif
 #if XTAL_FREQ == 1MHZ
-	OSCCONbits.IRCF = 0x3;	// 8MHz
+	OSCCONbits.IRCF = 0x3;	// 1MHz
 #endif
 	OSCCONbits.SCS = 0x02;	// Internal
 
@@ -119,15 +119,15 @@ void setup_start_io()
 	ANSELD = 0x00;
 	ANSELE = 0x00;
 
-        // Apply power to PIN_A
-        TRIS_PIN_A_PWR = OUTPUT;
-        PIN_A_PWR = 1;
+  // Apply power to PIN_A
+  TRIS_PIN_A_PWR = OUTPUT;
+  PIN_A_PWR = 1;
 
-        // Apply no power to PIN_F
-        TRIS_PIN_F_PWR = OUTPUT;
-        PIN_F_PWR = 0;
+  // Apply no power to PIN_F
+  TRIS_PIN_F_PWR = OUTPUT;
+  PIN_F_PWR = 0;
 
-        // Switch S1 - S16 settings
+  // Switch S1 - S16 settings
 	TRIS_S1_8 = 0xFF;	// Inputs
 	TRIS_S9_16 = 0xFF;	// Inputs
 		
@@ -191,16 +191,16 @@ void setup_sleep_io()
 	// Disable LED
 	LEDP = 0;				// LED off
 
-        // Apply power to PIN_A
-        TRIS_PIN_A_PWR = OUTPUT;
-        PIN_A_PWR = 1;
+  // Apply power to PIN_A
+  TRIS_PIN_A_PWR = OUTPUT;
+  PIN_A_PWR = 1;
 
-        // Apply no power to PIN_F
-        TRIS_PIN_F_PWR = OUTPUT;
-        PIN_F_PWR = 0;
+  // Apply no power to PIN_F
+  TRIS_PIN_F_PWR = OUTPUT;
+  PIN_F_PWR = 0;
 
 
-        // Release I2C bus
+  // Release I2C bus
 	SWStopI2C();
 
 	// Use all ports as Analog In
