@@ -17,6 +17,9 @@ byte prev_power_pos;
 byte get_switch_state()
 {
 	byte data;
+
+  ANSELA = 0; 
+  ANSELD = 0;
 	TRIS_S1_8 = 0xFF;
   TRIS_S9_16 = 0xFF;
 	
@@ -44,8 +47,7 @@ byte get_switch_state()
 byte get_power_state()
 {
 	TRIS_ZBR = INPUT;	// Go back to the Input state
-	if(ZBR) return ZERO_POS;
-	return ON_POS;
+	return (ZBR)? ZERO_POS : ON_POS;
 }
 
 byte get_button_state()
@@ -60,14 +62,11 @@ char is_bootloader_active()
   //  and the RxD is in break state  (MARK)
   ANSELA = 0; 
   ANSELC = 0;
-  ANSELD = 0;
   
-  TRIS_S1_8 = 0xFF;
-  TRIS_S9_16 = 0xFF;   
   TRISAbits.RA7  = INPUT;  // That is a S16 pin
   TRIS_RxPC = INPUT;
  
-  //Switch is tied to the GND and Rx is LOW (START)
+  //Switch is tied to the GND and Rx is (START)
   return (!PORTAbits.RA7 && RxPC);
 }
 
@@ -75,19 +74,23 @@ void set_pin_a_as_gnd()
 {
     TRIS_PIN_A_PWR = OUTPUT;
     PIN_A_PWR = 0;
+    Delay10TCY();
 }
 
 void set_pin_a_as_power()
 {
     TRIS_PIN_A_PWR = OUTPUT;
     PIN_A_PWR = 1;
+    Delay10TCY();
 }
 
 void set_pin_f_as_io()
 {
+    TRIS_PIN_F = INPUT;
+
     TRIS_PIN_F_PWR = OUTPUT;
     PIN_F_PWR = 0;
-    TRIS_PIN_F = INPUT;
+    Delay10TCY();
 }
 
 void set_pin_f_as_power()
@@ -95,5 +98,6 @@ void set_pin_f_as_power()
     TRIS_PIN_F = INPUT;
     TRIS_PIN_F_PWR = OUTPUT;
     PIN_F_PWR = 1;
+    Delay10TCY();
 }
 

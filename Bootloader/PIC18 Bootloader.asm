@@ -166,8 +166,8 @@ DATA_COUNTH         equ 0x0B        ; only for certain commands
     ORG     BOOTLOADER_ADDRESS
 BootloaderStart:
 
-		EXTERN 	is_bootloader_active
-		GLOBAL	BootloadMode
+	EXTERN 	is_bootloader_active
+	GLOBAL	BootloadMode
 		
 ; *****************************************************************************
 ; Determine if the application is supposed to be started or if we should
@@ -176,9 +176,9 @@ BootloaderStart:
 ; If RX pin is in BREAK state when we come out of MCLR reset, immediately 
 ; enter bootloader mode, even if there exists some application firmware in 
 ; program memory.
-		call		is_bootloader_active
-		iorlw		0
-		bnz			BootloadMode		
+	call		is_bootloader_active
+	iorlw		0
+	bnz			BootloadMode		
 
 GotoAppVector:
     goto    AppVector           ; no BREAK state, attempt to start application
