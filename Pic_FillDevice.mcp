@@ -61,6 +61,8 @@ file_033=.
 file_034=.
 file_035=.
 file_036=.
+file_037=.
+file_038=.
 [GENERATED_FILES]
 file_000=no
 file_001=no
@@ -99,6 +101,8 @@ file_033=no
 file_034=no
 file_035=no
 file_036=no
+file_037=no
+file_038=no
 [OTHER_FILES]
 file_000=no
 file_001=no
@@ -137,6 +141,8 @@ file_033=no
 file_034=no
 file_035=no
 file_036=no
+file_037=no
+file_038=no
 [FILE_INFO]
 file_000=controls.c
 file_001=FIll_main.c
@@ -174,10 +180,12 @@ file_032=clock\clock.h
 file_033=ds101_fill\CRC16.h
 file_034=ds101_fill\HDLC.h
 file_035=ds101_fill\DS101.h
-file_036=18f46k22_s.lkr
+file_036=Bootloader\bootconfig.inc
+file_037=Bootloader\preprocess.inc
+file_038=18f46k22_s.lkr
 [SUITE_INFO]
 suite_guid={5B7D72DD-9861-47BD-9F60-2BE967BF8416}
-suite_state=extended-mode
+suite_state=
 [TOOL_SETTINGS]
 TS{DD2213A8-6310-47B1-8376-9430CDFC013F}=
 TS{BFD27FBA-4A02-4C0E-A5E5-B812F3E7707C}=/m"$(BINDIR_)$(TARGETBASE).map" /w /o"$(BINDIR_)$(TARGETBASE).cof"

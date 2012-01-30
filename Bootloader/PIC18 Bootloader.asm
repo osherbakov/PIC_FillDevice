@@ -167,6 +167,7 @@ DATA_COUNTH         equ 0x0B        ; only for certain commands
 BootloaderStart:
 
 		EXTERN 	is_bootloader_active
+		EXTERN 	_startup
 		GLOBAL	BootloadMode
 		
 ; *****************************************************************************
@@ -176,9 +177,11 @@ BootloaderStart:
 ; If RX pin is in BREAK state when we come out of MCLR reset, immediately 
 ; enter bootloader mode, even if there exists some application firmware in 
 ; program memory.
-		call		is_bootloader_active
-		iorlw		0
-		bnz			BootloadMode		
+;		call		is_bootloader_active
+;		iorlw		0
+;		bnz			BootloadMode		
+GotoCRuntime:
+	call	_startup
 
 GotoAppVector:
     goto    AppVector           ; no BREAK state, attempt to start application
@@ -298,18 +301,18 @@ RetryAutoBaud:
     btfsc   INTCON, TMR0IF      ; if TMR0 overflowed, we did not get a good baud capture
     bra     RetryAutoBaud       ; try again
 
-    #ifdef BRG16
+  #ifdef BRG16
     ; save new baud rate generator value
     movff   TMR0L, UxSPBRG      ; warning: must read TMR0L before TMR0H holds real data
     movff   TMR0H, UxSPBRGH
-    #else 
+  #else 
     movff   TMR0L, UxSPBRG      ; warning: must read TMR0L before TMR0H holds real data
     ; TMR0H:TMR0L holds (p / 16).
     rrcf    TMR0H, w            ; divide by 2
     rrcf    UxSPBRG, F            
     btfss   STATUS, C           ; rounding
     decf    UxSPBRG, F    
-    #endif
+  #endif
 
     bsf     UxRCSTA, CREN       ; start receiving
 

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "controls.h"
+#include "serial.h"
 #include "delay.h"
 
 
@@ -23,7 +24,6 @@ byte get_switch_state()
 	
 	TRIS_VRD = OUTPUT;
 	VRD = HIGH;		// Keep it high
-	Delay10TCY();	// Let the voltage stabilize
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -41,7 +41,6 @@ byte get_switch_state()
 			data = -1;
 		}
 	}
-	TRIS_VRD = INPUT;
 	return data + 1;
 }
 
@@ -69,17 +68,23 @@ char is_bootloader_active()
 	ANSELC = 0x00;
 	ANSELD = 0x00;
 	
-  TRIS_Rx = INPUT;
-  TRIS_Tx = INPUT;
-	
 	// Ground control - output and no pullup
 	TRIS_OFFBR = OUTPUT;	// Output
 	WPUB_OFFBR = 0;
 	OFFBR = 0;
-  
   // Make ground on Pin B
 	TRIS_PIN_GND = INPUT;
 	ON_GND = 1;						
+
+	Delay10TCY();	// Let the voltage stabilize
 	
+	// Keep the bit low to release static
+	TRIS_Tx = OUTPUT;
+	TxBIT = 0;
+	Delay1TCY();	// Let the voltage stabilize		
+
+	TRIS_Rx = INPUT;
+	TRIS_Tx = INPUT;
+
 	return ( (get_switch_state() == PC_POS) && TxBIT );  
 }  
