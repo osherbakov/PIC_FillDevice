@@ -43,6 +43,8 @@ DigitalInput macro
     #ifdef ANSC7
         banksel ANSELC		; ANSELC is in non-access bank 0x0F on PIC18F46K22 family
         bcf     ANSELC, ANSC7	; Digital input enable on RC7/RX pin for PIC18F46K22 family
+        banksel TRISC
+        bsf		TRISC, TRISC7
     #endif
 #endif
     endm        

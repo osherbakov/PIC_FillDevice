@@ -154,6 +154,15 @@ DATA_COUNTH         equ 0x0B        ; only for certain commands
   #endif
 #endif
 
+; *****************************************************************************
+;		Externals and exported functions	
+; *****************************************************************************
+
+	EXTERN 	is_bootloader_active
+	EXTERN 	_startup
+	GLOBAL	BootloaderStart
+	GLOBAL	BootloadMode
+
 #ifndef AppVector
     ; The application startup GOTO instruction will be written just before the Boot Block,
     ; courtesy of the host PC bootloader application.
@@ -161,15 +170,9 @@ DATA_COUNTH         equ 0x0B        ; only for certain commands
 #endif
 ; *****************************************************************************
 
- 
 ; *****************************************************************************
     ORG     BOOTLOADER_ADDRESS
 BootloaderStart:
-
-		EXTERN 	is_bootloader_active
-		EXTERN 	_startup
-		GLOBAL	BootloadMode
-		
 ; *****************************************************************************
 ; Determine if the application is supposed to be started or if we should
 ; go into bootloader mode.

@@ -19,7 +19,7 @@ filter_lib=*.lib
 filter_lkr=*.lkr
 [CAT_SUBFOLDERS]
 subfolder_src=Bootloader;DS101;DS102
-subfolder_inc=
+subfolder_inc=Bootloader
 subfolder_obj=
 subfolder_lib=
 subfolder_lkr=
@@ -60,9 +60,10 @@ file_032=.
 file_033=.
 file_034=.
 file_035=.
-file_036=.
-file_037=.
-file_038=.
+file_036=Bootloader
+file_037=Bootloader
+file_038=Bootloader
+file_039=.
 [GENERATED_FILES]
 file_000=no
 file_001=no
@@ -103,6 +104,7 @@ file_035=no
 file_036=no
 file_037=no
 file_038=no
+file_039=no
 [OTHER_FILES]
 file_000=no
 file_001=no
@@ -143,6 +145,7 @@ file_035=no
 file_036=no
 file_037=no
 file_038=no
+file_039=no
 [FILE_INFO]
 file_000=controls.c
 file_001=FIll_main.c
@@ -182,7 +185,8 @@ file_034=ds101_fill\HDLC.h
 file_035=ds101_fill\DS101.h
 file_036=Bootloader\bootconfig.inc
 file_037=Bootloader\preprocess.inc
-file_038=18f46k22_s.lkr
+file_038=Bootloader\devices.inc
+file_039=18f46k22_s.lkr
 [SUITE_INFO]
 suite_guid={5B7D72DD-9861-47BD-9F60-2BE967BF8416}
 suite_state=

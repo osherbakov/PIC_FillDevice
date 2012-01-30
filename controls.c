@@ -19,6 +19,9 @@ byte get_switch_state()
 {
 	byte data;
 
+	ANSELA = 0x00;
+	ANSELD = 0x00;
+
 	TRIS_S1_8 = 0xFF;	// Inputs
 	TRIS_S9_16 = 0xFF;	// Inputs
 	
@@ -53,8 +56,7 @@ byte get_power_state()
 	Delay1TCY();	// Let the voltage stabilize
 	TRIS_ZBR = INPUT;	// Go back to the Input state
 	Delay10TCY();	// Let the voltage stabilize
-	if(ZBR) return ZERO_POS;
-	return ON_POS;
+	return (ZBR) ? ZERO_POS : ON_POS;
 }
 
 byte get_button_state()
@@ -64,9 +66,8 @@ byte get_button_state()
 
 char is_bootloader_active()
 {
-	ANSELA = 0x00;
+	ANSELB = 0x00;
 	ANSELC = 0x00;
-	ANSELD = 0x00;
 	
 	// Ground control - output and no pullup
 	TRIS_OFFBR = OUTPUT;	// Output
@@ -81,7 +82,7 @@ char is_bootloader_active()
 	// Keep the bit low to release static
 	TRIS_Tx = OUTPUT;
 	TxBIT = 0;
-	Delay1TCY();	// Let the voltage stabilize		
+	Delay10TCY();	// Let the voltage stabilize		
 
 	TRIS_Rx = INPUT;
 	TRIS_Tx = INPUT;
