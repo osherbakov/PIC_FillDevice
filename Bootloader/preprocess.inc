@@ -43,11 +43,16 @@ DigitalInput macro
     #ifdef ANSC7
         banksel ANSELC		; ANSELC is in non-access bank 0x0F on PIC18F46K22 family
         bcf     ANSELC, ANSC7	; Digital input enable on RC7/RX pin for PIC18F46K22 family
-        banksel TRISC
-        bsf		TRISC, TRISC7
+        bsf		  TRISC, TRISC7
     #endif
 #endif
     endm        
+
+InputSwitch macro
+      bsf		  TRISA, TRISA7
+    endm        
+
+
 
 pmwtpi macro                        ; tblwt*+ macro for PIC18Fxx20 bug
 #ifdef TBLWT_BUG
@@ -149,3 +154,24 @@ pmwtpi macro                        ; tblwt*+ macro for PIC18Fxx20 bug
         #define BOOTLOADER_ADDRESS  (END_FLASH - BOOTBLOCKSIZE)
     #endif
 #endif
+
+#ifndef AppVector
+    ; The application startup GOTO instruction will be written just before the Boot Block,
+    ; courtesy of the host PC bootloader application.
+    #define AppVector (BOOTLOADER_ADDRESS - .4)
+#endif
+
+#ifdef USE_SOFTBOOTWP
+  #ifndef SOFTWP
+    #define SOFTWP
+  #endif
+#endif
+
+#ifdef USE_SOFTCONFIGWP
+  #ifdef CONFIG_AS_FLASH
+    #ifndef SOFTWP
+      #define SOFTWP
+    #endif
+  #endif
+#endif
+

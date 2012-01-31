@@ -140,35 +140,17 @@ DATA_COUNTH         equ 0x0B        ; only for certain commands
 ; *****************************************************************************
     errorlevel -311                 ; don't warn on HIGH() operator values >16-bits
 
-#ifdef USE_SOFTBOOTWP
-  #ifndef SOFTWP
-    #define SOFTWP
-  #endif
-#endif
+	EXTERN  _startup
+	GLOBAL	BootloadMode
 
-#ifdef USE_SOFTCONFIGWP
-  #ifdef CONFIG_AS_FLASH
-    #ifndef SOFTWP
-      #define SOFTWP
-    #endif
-  #endif
-#endif
-
-#ifndef AppVector
-    ; The application startup GOTO instruction will be written just before the Boot Block,
-    ; courtesy of the host PC bootloader application.
-    #define AppVector (BootloaderStart-.4)
-#endif
+; *****************************************************************************
+    ORG     AppVector
+    goto    _startup
 ; *****************************************************************************
 
- 
-; *****************************************************************************
+
     ORG     BOOTLOADER_ADDRESS
 BootloaderStart:
-
-	EXTERN 	is_bootloader_active
-	GLOBAL	BootloadMode
-		
 ; *****************************************************************************
 ; Determine if the application is supposed to be started or if we should
 ; go into bootloader mode.
@@ -176,19 +158,27 @@ BootloaderStart:
 ; If RX pin is in BREAK state when we come out of MCLR reset, immediately 
 ; enter bootloader mode, even if there exists some application firmware in 
 ; program memory.
-	call		is_bootloader_active
-	iorlw		0
-	bnz			BootloadMode		
-
+  DigitalInput                ; set RX pin as digital input on certain parts
+  InputSwitch                 ; Set the A7 pin to be input (S16 switch)
+#ifdef INVERT_UART
+    btfss   RXPORT, RXPIN
 GotoAppVector:
     goto    AppVector           ; no BREAK state, attempt to start application
+#else
+    btfsc   RXPORT, RXPIN
+GotoAppVector:
+    goto    AppVector           ; no BREAK state, attempt to start application
+#endif
 
+; Check the switch position S16
+    btfsc   PORTA, .7
+    goto    AppVector           ; no BREAK state, attempt to start application
+  
 BootloadMode:
-    DigitalInput                ; set RX pin as digital input on certain parts
     lfsr    FSR2, 0             ; for compatibility with Extended Instructions mode.
 
 #ifdef USE_MAX_INTOSC
-    movlw   b'01110000'         ; set INTOSC to maximum speed (usually 8MHz)
+    movlw   b'01110000'         ; set INTOSC to maximum speed (16 MHz)
     iorwf   OSCCON, f
 #endif
 
@@ -418,12 +408,12 @@ CheckCommand:
     bra     DoAutoBaud          ; invalid command - reset baud generator to re-sync with host
 
     ; This jump table must exist entirely within one 256 byte block of program memory.
-;#if ($ & 0xFF) > (0xFF - .24)
+; #if ($ & 0xFF) > (0xFF - .24)
     ; Too close to the end of a 256 byte boundary, push address forward to get code
     ; into the next 256 byte block.
 ;    messg   "Wasting some code space to ensure jump table is aligned."
 ;    ORG     $+(0x100 - ($ & 0xFF))
-;#endif
+; #endif
 JUMPTABLE_BEGIN:
     movf    PCL, w              ; 0 do a read of PCL to set PCLATU:PCLATH to current program counter.
     rlncf   COMMAND, W          ; 2 multiply COMMAND by 2 (each BRA instruction takes 2 bytes on PIC18)
