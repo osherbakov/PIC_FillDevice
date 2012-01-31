@@ -51,9 +51,6 @@
 ;#define BAUDRG .12              ; 19.2Kbps from 4MHz, 115.2Kbps from 24MHz (BRG16 = 0, BRGH = 1)
 ;#define BAUDRG .10              ; 115.2Kbps from 19.6608MHz (BRG16 = 0, BRGH = 1)
 
-; #define BAUDRG .68              
-
-
 ; Bootloader must start at the beginning of a FLASH Erase Block. If unspecified,
 ; bootloader will automatically be located at the end of program memory address space.
 ;#define BOOTLOADER_ADDRESS   0  ; bootloader at beginning, application start/ISR vectors require remapping
