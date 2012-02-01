@@ -93,16 +93,16 @@ typedef enum
 
 
 // Power and button press
-#define	ZBR			PORTBbits.RB0
+#define	ZBR			  PORTBbits.RB0
 #define	TRIS_ZBR	TRISBbits.RB0
 #define	WPUB_ZBR	WPUBbits.WPUB0
 
 // OFFBR is used to control the strong GND
-#define	OFFBR		PORTBbits.RB1
+#define	OFFBR		    PORTBbits.RB1
 #define	TRIS_OFFBR	TRISBbits.RB1
 #define	WPUB_OFFBR	WPUBbits.WPUB1
 
-#define	BTN			PORTBbits.RB2
+#define	BTN			  PORTBbits.RB2
 #define	TRIS_BTN	TRISBbits.RB2
 #define	WPUB_BTN	WPUBbits.WPUB2
 

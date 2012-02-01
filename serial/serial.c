@@ -78,10 +78,9 @@ static unsigned char SerialBuffer[4];
 
 char CheckFillRS232Type5()
 {
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
-
+  make_gnd_pin_b();
 	TRIS_Tx = INPUT;
+	
 	if(TxBIT == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
@@ -106,10 +105,9 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-	TRIS_PIN_GND = INPUT;	// Make Ground
-	ON_GND = 1;						//  on Pin B
-
+  make_gnd_pin_b();
 	TRIS_Tx = INPUT;
+
 	if(TxBIT == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer

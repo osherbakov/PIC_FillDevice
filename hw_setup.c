@@ -122,6 +122,7 @@ void setup_start_io()
 	TRIS_S9_16 = 0xFF;	// Inputs
 	
 	// Voltage on Resistor network
+  // Pull-up resistors on S1-S16 rotary switch
 	TRIS_VRD = OUTPUT;		// Drive it
 	VRD = 1;						// and set to HIGH
 	
@@ -177,7 +178,7 @@ void setup_start_io()
 	// Setup and disable USART
 	// Configure the EUSART module
 	IPR1bits.TX1IP = 1;		// High priority TX
-	TXSTA1 = 0x00;			// Disable TX
+	TXSTA1 = 0x00;			  // Disable TX
 	IPR1bits.RC1IP = 0;		// Low priority RX
 	RCSTA1bits.SPEN = 0;	// Disable EUSART
 

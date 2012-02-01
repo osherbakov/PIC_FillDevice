@@ -2,6 +2,7 @@
 #include "controls.h"
 #include "serial.h"
 #include "delay.h"
+#include "gps.h"
 
 
 
@@ -12,7 +13,7 @@ byte power_pos;
 byte prev_power_pos;
 //
 // Function to get the reading of the switch
-//   Returns the position numbercurrently selected.
+//   Returns the position number currently selected.
 //  Works by:
 // 	- reading from S1_8 and S9_16 ports
 byte get_switch_state()
@@ -26,7 +27,7 @@ byte get_switch_state()
 	TRIS_S9_16 = 0xFF;	// Inputs
 	
 	TRIS_VRD = OUTPUT;
-	VRD = HIGH;		// Keep it high
+	VRD = 1;		// Keep it high
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -88,4 +89,30 @@ char is_bootloader_active()
 	TRIS_Tx = INPUT;
 
 	return ( (get_switch_state() == PC_POS) && TxBIT );  
+}  
+
+void remove_gnd_pin_b()
+{
+	TRIS_OFFBR = OUTPUT;	// Output
+	// Remove ground from pin B
+	ON_GND = 0;
+}
+
+void make_gnd_pin_b()
+{
+	TRIS_PIN_GND = INPUT;
+	TRIS_OFFBR = OUTPUT;	// Output
+  // Make ground on Pin B
+	ON_GND = 1;						
+}
+
+void disable_tx_hqii()
+{
+  hq_enabled = 0;
+}
+
+
+void enable_tx_hqii()
+{
+  hq_enabled = 1;
 }  

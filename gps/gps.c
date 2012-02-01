@@ -5,6 +5,7 @@
 #include "i2c_sw.h"
 #include "clock.h"
 #include "fill.h"
+#include "controls.h"
 
 enum {
 	INIT = 0,
@@ -189,8 +190,7 @@ char ReceiveGPSTime()
 	TRIS_GPS_1PPS = INPUT;
 	
 	// Apply Ground to pin B
-	TRIS_PIN_GND = INPUT;
-	ON_GND = 1;
+  make_gnd_pin_b();
 
 	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	do{

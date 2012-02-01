@@ -271,8 +271,7 @@ char ReceiveHQTime(void )
 {
 	// Config pin as input, set pin B as Ground
 	TRIS_HQ_PIN = INPUT;
-	TRIS_PIN_GND = INPUT;
-	ON_GND = 1;
+  make_gnd_pin_b();
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
 	do

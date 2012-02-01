@@ -52,4 +52,13 @@ extern void BootloadMode(void);
 //------------------------------------------------
 extern void set_led_state(char on_time, char off_time);
 
+// Control PIN B as Ground
+extern void remove_gnd_pin_b(void);
+extern void make_gnd_pin_b(void);
+
+// Enable/disable HQII timestream
+extern void enable_tx_hqii(void);
+extern void disable_tx_hqii(void);
+
+
 #endif	// __CONTROLS_H__

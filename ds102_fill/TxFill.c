@@ -5,6 +5,7 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
+#include "controls.h"
 
 
 static void AcquireMode1Bus(void);
@@ -55,7 +56,7 @@ void SendMode23Query(byte Data)
 {
   byte i;
   // Set up pins mode and levels
-  ON_GND = 0;
+  remove_gnd_pin_b();
   pinMode(PIN_B, OUTPUT);    // make pin active
   pinMode(PIN_E, OUTPUT);    // make pin active
   digitalWrite(PIN_E, HIGH);  // Set clock to High
@@ -130,7 +131,7 @@ char GetEquipmentMode23Type()
   byte  NewState;	
 
   i = 0;
-  ON_GND = 0;
+  remove_gnd_pin_b();
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
@@ -172,7 +173,7 @@ char WaitDS102Req(byte req_type)
 	// For MODE1 fill we keep PIN_B low and don't read it
   if(fill_type != MODE1)
 	{
-  	ON_GND = 0;
+    remove_gnd_pin_b();
   	pinMode(PIN_B, INPUT);
 	  WPUB_PIN_B = 1;
   }
@@ -244,7 +245,7 @@ void EndMode23Handshake()
 
 void AcquireMode1Bus()
 {
-  ON_GND = 0;
+  remove_gnd_pin_b();
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -263,7 +264,7 @@ void AcquireMode1Bus()
 
 void AcquireMode23Bus()
 {
-  ON_GND = 0;
+  remove_gnd_pin_b();
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -282,7 +283,7 @@ void AcquireMode23Bus()
 
 void ReleaseMode23Bus()
 {
-  ON_GND = 0;
+  remove_gnd_pin_b();
   delayMicroseconds(tL);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_F, HIGH);
@@ -354,15 +355,14 @@ char CheckEquipment()
   }else if(fill_type == MODE4)
   {
 	  // Connect ground on PIN B
-  	TRIS_PIN_GND = INPUT;
-	  ON_GND = 1;
+    make_gnd_pin_b();
 	  if( p_ack(REQ_FIRST) == 0 )  
 	  {
 		  Equipment = MODE4;
 	  }
   }else		// MODE 2 or MODE 3
   {
-	  ON_GND = 0;
+    remove_gnd_pin_b();
 	  AcquireMode23Bus();
 	  StartMode23Handshake();
   	SendMode23Query(MODE3);
@@ -397,7 +397,7 @@ char WaitReqSendTODFill()
 	  WaitDS102Req(pos == NUM_TYPE3_CELLS ? REQ_LAST : REQ_NEXT);
   }
   ReleaseMode23Bus();
-  return 0;
+  return ST_DONE;
 }
 
 static unsigned int base_address;
@@ -506,7 +506,7 @@ char SendFill()
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_OK;
+			wait_result = ST_DONE;
 		}
     if(wait_result) 
 			break;

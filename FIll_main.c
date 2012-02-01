@@ -8,9 +8,7 @@
 #include "Fill.h"
 #include "DS101.h"
 
-extern char ReceiveHQTime(void);
 extern void SetNextState(char nextState);
-
 
 static enum 
 {
@@ -34,9 +32,9 @@ static enum
 	TIME_TX_PROC, 
 	PC_CONN,
 	ERROR,
-	DONE
+	DONE,
+	WAIT_BTN_PRESS
 } MAIN_STATES;
-
 
 
 #define IDLE_SECS (600)
@@ -48,6 +46,7 @@ byte 	current_state;
 byte 	button_pos;
 byte 	prev_button_pos;
 
+char  use_rs232_mode;
 
 //
 // Test if the button was depressed and released
@@ -95,7 +94,7 @@ void SetNextState(char nextState)
 	switch(nextState)
 	{
 		case INIT:
-			set_led_state(0, 100);		// No light
+			set_led_state(100, 0);		// Steady light
 			break;
 
 		case ZERO_FILL:
@@ -133,7 +132,7 @@ void SetNextState(char nextState)
 			break;
 
 		case DONE:
-			set_led_state(100, 100);	// "Done - key valid" blink pattern
+			set_led_state(150, 150);	// "Done - key valid" blink pattern
 			break;
 	
 		default:
@@ -148,16 +147,17 @@ void main()
 {
 	char  result;
 	setup_start_io();
-	current_state = INIT;
-
+  disable_tx_hqii();
+	SetNextState(INIT);
 
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
-  
+	// Use RS232 mode to receive ONLY when switch was in S16 position during power-up
+  use_rs232_mode = (prev_switch_pos == PC_POS) ? 0xFF : 0x00;
+    
   idle_counter = seconds_counter + IDLE_SECS;
-
 	while(1)
 	{
 		// If no activity was detected for more than 3 minutes - shut down
@@ -172,9 +172,7 @@ void main()
 			};
 		}
 
-		Sleep();	// Will wake up every 10 ms
-
-	  	// Check the switch position - did it change?
+   	// Check the switch position - did it change?
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
@@ -201,21 +199,19 @@ void main()
 		{
 			// This case when any switch or button changes
 			case INIT:
-				// Remove ground from pin B
-				TRIS_PIN_GND = INPUT;
-				ON_GND = 0;
-				hq_enabled = 0;
+        remove_gnd_pin_b(); // Remove ground from pin B
+				disable_tx_hqii();
 				close_eusart();
      		idle_counter = seconds_counter + IDLE_SECS;
 
-				// Switch is in one of the key fill positions
+				// Switch is in one of the VALID key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				{
 					// First check the position of the ZERO switch 
 					if( power_pos == ZERO_POS)
 					{
 						SetNextState(ZERO_FILL);
-					}else	// Zero is not active - use reqular
+					}else	// Not zero position - one of the S1-S10 positions
 					{
 						// Type = 0 - empty slot
 						//		= 1 - Type 1 fill
@@ -232,9 +228,7 @@ void main()
 					}
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
-					TRIS_PIN_GND = INPUT;			// Make Ground
-					ON_GND = 1;						//  on Pin B
-					
+  				make_gnd_pin_b();
 					if(is_bootloader_active())
 					{
    				  set_led_state(0, 100);	// Turn off LED
@@ -246,17 +240,16 @@ void main()
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
-					TRIS_PIN_GND = INPUT;	// Make ground
-					ON_GND = 1;						//  on Pin B
+          make_gnd_pin_b();
 					SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
-					TRIS_PIN_GND = INPUT;
-					ON_GND = 1;						// Make ground on Pin B
-					hq_enabled = 1;					// Enable HQ output
+          make_gnd_pin_b();
+          enable_tx_hqii();
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
+  				remove_gnd_pin_b();
 					fill_type = MODE3;
 					SetNextState(TIME_TX);
 				}
@@ -308,44 +301,46 @@ void main()
 				break;
 
 			case FILL_RX:
-				result = CheckFillType23();
-				if(result > 0)
-				{
-					// Process Type 1, 2, and 3 fills
-					fill_type = result;
-					SetNextState(FILL_RX_SG);
-					break;
-				}
-				
-				result = CheckFillType4();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_PC);
-					break;
-				}
-				
-				result = CheckFillRS232Type5();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_RS232);
-					break;
-				}
-
-				result = CheckFillRS485Type5();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_RS485);
-					break;
-				}
-				
-				if( TestButtonPress() )
-				{
-					fill_type = MODE1;
-					SetNextState(FILL_RX_PROC);
-				}
+			  if(use_rs232_mode){
+  				make_gnd_pin_b();
+  				
+  				result = CheckFillType4();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_PC);
+  					break;
+  				}
+  				
+  				result = CheckFillRS232Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS232);
+  					break;
+  				}
+  
+  				result = CheckFillRS485Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS485);
+  					break;
+  				}
+				}else{
+  				remove_gnd_pin_b();
+  				result = CheckFillType23();
+  				if(result > 0){
+  					// Process Type 1, 2, and 3 fills
+  					fill_type = result;
+  					SetNextState(FILL_RX_SG);
+  					break;
+  				}
+  				if( TestButtonPress() ){
+  					fill_type = MODE1;
+  					SetNextState(FILL_RX_PROC);
+  				}
+  		  }		
 				break;
 
 			case FILL_RX_SG:
@@ -424,6 +419,11 @@ void main()
 
 			case ERROR:
 			case DONE:
+ 				remove_gnd_pin_b();
+ 				current_state = WAIT_BTN_PRESS;
+				break;
+		
+			case WAIT_BTN_PRESS:
 				if( TestButtonPress() )
 				{
 					SetNextState(INIT);
