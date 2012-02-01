@@ -1,7 +1,7 @@
 #include "config.h"
 #include "controls.h"
 #include "delay.h"
-
+#include "gps.h"
 
 
 byte switch_pos;
@@ -100,4 +100,15 @@ void set_pin_f_as_power()
     PIN_F_PWR = 1;
     Delay10TCY();
 }
+
+void disable_tx_hqii()
+{
+  hq_enabled = 0;
+}
+
+
+void enable_tx_hqii()
+{
+  hq_enabled = 1;
+}  
 

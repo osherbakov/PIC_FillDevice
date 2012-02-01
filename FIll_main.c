@@ -8,7 +8,6 @@
 #include "Fill.h"
 #include "DS101.h"
 
-extern char ReceiveHQTime(void);
 extern void SetNextState(char nextState);
 
 
@@ -36,7 +35,8 @@ static enum
 	TIME_TX_PROC, 
 	PC_CONN,
 	ERROR,
-	DONE
+	DONE,
+	WAIT_BTN_PRESS
 } MAIN_STATES;
 
 
@@ -102,7 +102,7 @@ void SetNextState(char nextState)
 	switch(nextState)
 	{
 		case INIT:
-			set_led_state(0, 100);		// No light
+			set_led_state(100, 0);		// Steady Light
 			break;
 
 		case ZERO_FILL:
@@ -159,9 +159,9 @@ void main()
   // Perform BIST (self-test)
   TestRTCFunctions();  
 #endif
-	
 	setup_start_io();
-	current_state = INIT;
+	disable_tx_hqii();
+	SetNextState(INIT);
 
 
 	// Initialize current state of the buttons, switches, etc
@@ -170,7 +170,6 @@ void main()
 	prev_switch_pos = get_switch_state();
   
   idle_counter = seconds_counter + IDLE_SECS;
-
 	while(1)
 	{
 		// If no activity was detected for more than 3 minutes - shut down
@@ -184,8 +183,6 @@ void main()
 				Sleep();
 			};
 		}
-
-//		Sleep();	// Will wake up every 10 ms
 
 	  // Check the switch position - did it change?
 		switch_pos = get_switch_state();
@@ -216,7 +213,7 @@ void main()
 			case INIT:
 				// Remove ground from pin A
 				set_pin_a_as_power();
-				hq_enabled = 0;
+				disable_tx_hqii();
 				close_eusart();
      		idle_counter = seconds_counter + IDLE_SECS;
 
@@ -262,7 +259,7 @@ void main()
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
-					hq_enabled = 1;					// Enable HQ output
+					enable_tx_hqii();				// Enable HQ output
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
@@ -463,8 +460,13 @@ void main()
 				}
 				break;
 
+
 			case ERROR:
 			case DONE:
+        current_state = WAIT_BTN_PRESS;
+				break;
+
+			case WAIT_BTN_PRESS:
 				if( TestButtonPress() )
 				{
 					SetNextState(INIT);
