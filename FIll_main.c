@@ -20,10 +20,10 @@ static enum
 	FILL_TX_RS232,
 	FILL_TX_DTD232,
 	FILL_TX_RS485, 
-	FILL_TX_PROC,
+	FILL_TX_DS102,
 	FILL_RX,
 	FILL_RX_SG,
-	FILL_RX_PROC,
+	FILL_RX_DS102,
 	FILL_RX_PC,
 	FILL_RX_RS232,
 	FILL_RX_DTD232,
@@ -309,20 +309,23 @@ void main()
 				if(fill_type == MODE5)
 				{
 					SetNextState(FILL_TX_RS232);	// Start with RS232
-				}else if( CheckEquipment() > 0 )
+				}else if(fill_type == MODE4)
 				{
-					SetNextState(FILL_TX_PROC);
+  				WaitReqSendMBITRFill();
+				}else if( CheckType123Equipment() > 0 )
+				{
+					SetNextState(FILL_TX_DS102);
 				}
 				break;
 
-			case FILL_TX_PROC:
+			case FILL_TX_DS102:
 				// Check if the fill was initialed on the Rx device
-				TestFillResult(WaitReqSendFill());
+				TestFillResult(WaitReqSendDS102Fill());
 				// For Type1 fills we can simulate KOI18 and start
 				//     sending data on button press....
 				if( (fill_type == MODE1) && TestButtonPress() )
 				{
-					TestFillResult(SendFill());
+					TestFillResult(SendDS102Fill());
 				}
 				break;
 
@@ -371,23 +374,23 @@ void main()
 				if( TestButtonPress() )
 				{
 					fill_type = MODE1;
-					SetNextState(FILL_RX_PROC);
+					SetNextState(FILL_RX_DS102);
 				}
 				break;
 
 			case FILL_RX_SG:
 				if( TestButtonPress() )
 				{
-					SetNextState(FILL_RX_PROC);
+					SetNextState(FILL_RX_DS102);
 				}
 				break;
 
 			case FILL_RX_PC:
-				TestFillResult(GetStoreFill( (MODE4<<4) | switch_pos));
+				TestFillResult(GetStorePCFill( switch_pos, MODE4));
 				break;
 
-			case FILL_RX_PROC:
-				TestFillResult(GetStoreFill(switch_pos));
+			case FILL_RX_DS102:
+				TestFillResult(GetStoreDS102Fill(switch_pos, fill_type));
 				break;
 
 			case FILL_RX_RS232:
@@ -438,7 +441,7 @@ void main()
 				break;
 
 			case TIME_TX:
-				if( CheckEquipment() > 0 )
+				if( CheckType123Equipment() > 0 )
 				{
 					SetNextState(TIME_TX_PROC);
 				}

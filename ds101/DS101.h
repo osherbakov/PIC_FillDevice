@@ -45,8 +45,8 @@ enum DS_MODE{
 	TX_DTD232 = 5
 };	
 
-extern char SendDS101Fill(char mode, char slot);
-extern char GetDS101Fill(char mode, char slot);
+extern char SendDS101Fill(char slot, char mode);
+extern char GetDS101Fill(char slot, char mode);
 
 extern char SendRS232Fill(char slot);
 extern char SendDTD232Fill(char slot);

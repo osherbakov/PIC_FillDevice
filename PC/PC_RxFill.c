@@ -6,7 +6,6 @@
 #include "serial.h"
 #include "Fill.h"
 #include "clock.h"
-#include "DS101.h"
 #include "controls.h"
 
 //--------------------------------------------------------------
@@ -23,7 +22,6 @@
 #define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 
 static byte key_ack;
-static unsigned short long base_address;
 
 // ACK the received key from PC
 char SendPCAck(byte ack_type)
@@ -71,7 +69,6 @@ static void SetTimeFromPC(void)
 }
 
 
-
 static byte GetPCFill(void)
 {
 	byte records, byte_cnt, record_size;
@@ -106,14 +103,7 @@ static byte GetPCFill(void)
 			records++; 
 			record_size = 0;
 			saved_base_address = base_address++;
-			// Check if the cell that we received is the 
-			// TOD cell - set up time
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-			{
-				SetTimeFromPC();
-			}
-			p_ack(REQ_NEXT);	// ACK the previous and REQ the next packet
+			SendPCAck(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}
 	return records;
@@ -125,8 +115,7 @@ char GetStorePCFill(byte stored_slot, byte required_fill)
 {
 	char result = ST_ERR;
 	byte records;
-	unsigned short int saved_base_addrress;
-
+	unsigned short long saved_base_addrress;
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 
 	saved_base_addrress = base_address;	
@@ -142,6 +131,7 @@ char GetStorePCFill(byte stored_slot, byte required_fill)
 	records = GetPCFill();
 	if( records > 0)
 	{
+  	// All records were received - put final info into EEPROM
 	  // Mark the slot as valid slot containig data
 		byte_write(saved_base_addrress, records);
 		byte_write(saved_base_addrress + 1, fill_type);

@@ -15,8 +15,6 @@ static void ReleaseMode23Bus(void);
 static char WaitDS102Req(byte req_type);
 
 static char GetEquipmentMode23Type(void);
-static char WaitMBITRReq(byte req_type);
-static char WaitPCReq(byte req_type);
 
 static void StartMode23Handshake(void);
 static void EndMode23Handshake(void);
@@ -90,6 +88,7 @@ void SendMode23Query(byte Data)
   pinMode(PIN_B, INPUT);    // Tristate the pin
   pinMode(PIN_E, INPUT);    // Tristate the pin
 }
+
 
 // Sends byte data on PIN_D with clocking on PIN_E
 void SendDS102Byte(byte Data)
@@ -304,57 +303,16 @@ byte nofill_cell[] =
   0x77  
 };
 
-
-// Time cell
-byte TOD_cell[MODE2_3_CELL_SIZE];
-
-// Generic cell that can keep all the data
-byte	 data_cell[FILL_MAX_SIZE];
-
-void  FillTODData(void)
-{
-	byte ms;
-	GetRTCData();
-	TOD_cell[0] = TOD_TAG_0;
-	TOD_cell[1] = TOD_TAG_1;
-	TOD_cell[2] = rtc_date.Century;
-	TOD_cell[3] = rtc_date.Year;
-	TOD_cell[4] = rtc_date.Month;
-	TOD_cell[5] = rtc_date.Day;
-	TOD_cell[6] = rtc_date.JulianDayH;
-	TOD_cell[7] = rtc_date.JulianDayL;
-	TOD_cell[8] = rtc_date.Hours;
-	TOD_cell[9] = rtc_date.Minutes;
-	TOD_cell[10] = rtc_date.Seconds;
-	TOD_cell[11] = 0;
-
-	ms = rtc_date.MilliSeconds_10;
-	while(ms >= 10)
-	{
-		TOD_cell[11] += 0x10;
-		ms -= 10; 
-	}
-}
-
 // Check the equipment type
 // If the Type2/3 equipment is detected, then return MODE2 or MODE3
 // For Type 1 - return MODE1 right away
-// If Key is Type 4 - then send the /98 and wait for the response
-char CheckEquipment()
+char CheckType123Equipment()
 {
   char Equipment = 0;
   if((fill_type == MODE1))
   {
 	  AcquireMode1Bus();
 	  Equipment = MODE1;
-  }else if(fill_type == MODE4)
-  {
-	  // Connect ground on PIN A
-        set_pin_a_as_gnd();
-	  if( p_ack(REQ_FIRST) == 0 )  
-	  {
-		  Equipment = MODE4;
-	  }
   }else		// MODE 2 or MODE 3
   {
 	  set_pin_a_as_power();
@@ -395,67 +353,7 @@ char WaitReqSendTODFill()
   return 0;
 }
 
-static unsigned short long base_address;
-byte  	fill_type;
-byte 	records;
-
-// Set up functions that will be called depending on the Key type
-// Type 1, 2,3 - will be sent thru DS102 interface
-// Type 4 - will be sent thru MBITR
-// If the high byte of the parameter "stored_slot" is not 0 - send the key to PC
-char CheckFillType(byte stored_slot)
-{
-	base_address = get_eeprom_address(stored_slot & 0x0F);
-	records = byte_read(base_address++); 
-	if(records == 0xFF) records = 0x00;
-	
-	// Get the fill type from the EEPROM
-	fill_type = byte_read(base_address++);
-	if(stored_slot >> 4)	// Send fill to the PC
-	{
-		p_rx = rx_eusart;
-		p_tx = tx_eusart;
-		p_ack = WaitPCReq;
-	}else					// Send Fill to the MBITR
-	{
-		close_eusart();
-		if(fill_type == MODE4) // DES fill mode
-		{
-			p_rx = rx_mbitr;
-			p_tx = tx_mbitr;
-			p_ack = WaitMBITRReq;
-		}else					// Regular MODE 1, 2, 3 fills
-		{
-			p_tx = SendDS102Cell;
-			p_ack = WaitDS102Req;
-		}
-	}
-	return records ? fill_type : 0;
-}
-
-
-char WaitMBITRReq(byte req_type)
-{
-	byte char_received;
-	byte char_to_expect;
-
-	// This is the DES key load - send serial number request
-	char_received = 0;
-	if( req_type == REQ_FIRST )
-	{
-		char_to_expect = KEY_EOL;		// Wait for \n
-		p_tx(&CHECK_MBITR[0], 4);
-	}else
-	{
-		char_to_expect = KEY_ACK;		// Wait for 0x06
-	}	
-
-	// wait in the loop until receive the ACK character, or timeout
-  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
-	return ( char_received == char_to_expect ) ? 0 : -1 ; 
-}
-
-char SendDS102Fill()
+char SendDS102Fill(void)
 {
 	byte bytes, byte_cnt;
 	char wait_result = ST_OK;
@@ -475,10 +373,10 @@ char SendDS102Fill()
 			{
 				FillTODData();
 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  		p_tx(TOD_cell, MODE2_3_CELL_SIZE);
+	  		SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
-				p_tx(&data_cell[0], byte_cnt);
+				SendDS102Cell(&data_cell[0], byte_cnt);
 			}
 			bytes -= byte_cnt;
 		}
@@ -496,18 +394,12 @@ char SendDS102Fill()
     if(wait_result) 
 			break;
 	}	
+
+  if( (fill_type == MODE2) || (fill_type == MODE3))
+  {
+    ReleaseMode23Bus();
+  }
 	return wait_result;	// When send to MBITR - return with DONE flag
-}
-
-
-char SendStoredDS102Fill(byte stored_slot)
-{
-	CheckFillType(stored_slot);
-	// If first fill request was not answered - just return with timeout
-	// We will be called again after switches are checked
-	if( p_ack(REQ_FIRST) < 0 ) return -1;
-	
-	return SendDS102Fill();
 }
 
 char WaitReqSendDS102Fill()
@@ -515,8 +407,7 @@ char WaitReqSendDS102Fill()
   char  result;
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
-	if( p_ack(REQ_FIRST) < 0 ) return -1;
-	result = SendFill();
- 	ReleaseMode23Bus();
-	return result;
+	if( WaitDS102Req(REQ_FIRST) < 0 ) return -1;
+
+	return SendDS102Fill();
 }

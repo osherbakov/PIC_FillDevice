@@ -64,27 +64,35 @@ typedef enum
 #define tT (_bitPeriod/2) 
 
 extern byte	 data_cell[];
-extern byte  fill_type;
+extern byte	 TOD_cell[];
+extern void  FillTODData(void);
 
+extern unsigned short long base_address;
+extern byte  	fill_type;
+extern byte 	records;
+
+// Clear a selected slot
+extern char ClearFill(byte stored_slot);
+// Get the fill info from the slot
+extern char CheckFillType(byte stored_slot);
+
+// To receive fill - check for different fills
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);
 extern char CheckFillRS232Type5(void);
 extern char CheckFillDTD232Type5(void);
 extern char CheckFillRS485Type5(void);
 
+extern char GetStoreDS102Fill(byte stored_slot, byte fill_type);
+extern char GetStorePCFill(byte stored_slot, byte fill_type);
 
-extern char GetStoreFill(byte stored_slot);
+extern char CheckType123Equipment(void);
 
-extern char CheckEquipment(void);
+extern char WaitReqSendDS102Fill(void);
+extern char WaitReqSendTODFill(void);
+extern char SendDS102Fill(void);
 
-extern char ClearFill(byte stored_slot);
-extern char CheckFillType(byte stored_slot);
-extern char SendStoredFill(byte stored_slot);
-extern char WaitReqSendFillType23(void);
-extern char WaitReqSendFillType4(void);
-extern char WaitReqSendFillTOD(void);
-extern char SendFill(void);
-
-
+extern char WaitReqSendMBITRFill(void);
+extern char WaitReqSendPCFill(byte slot);
 
 #endif	// __FILL_H__

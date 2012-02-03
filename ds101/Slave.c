@@ -9,7 +9,6 @@
 #include "delay.h"
 
 
-static unsigned short long base_address;	// Address of the current EEPROM data
 static unsigned short long saved_base_address; // EEPROM block start address
 static unsigned char block_counter;     // Counter for blocks sent
 

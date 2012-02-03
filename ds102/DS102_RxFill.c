@@ -201,13 +201,6 @@ static void SetTimeFromCell(void)
 	}
 }
 
-char ClearFill(byte stored_slot)
-{
-	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
-   	 byte_write(base_address, 0x00);
-   	 return ST_OK;
-}
-
 typedef enum {
   DF_INIT = 0,  // Initial state
   DF_HIGH,      // D and F pins in high detected
@@ -280,24 +273,6 @@ char CheckFillType23()
 	return ret_val;
 }
 
-
-// Pointers to the functions
-// to do device-agnostic TX and RX
-void (*p_tx)(byte *, byte);
-byte (*p_rx)(byte *, byte);
-char (*p_ack)(byte);
-
-static unsigned short long base_address;
-
-
-// ACK the received key from PC
-static byte key_ack;
-char SendSerialAck(byte ack_type)
-{
-	key_ack = KEY_ACK;
-	tx_eusart(&key_ack, 1);			// ACK the previous packet
-}
-
 static byte GetFill(void)
 {
 	byte records, byte_cnt, record_size;
@@ -308,11 +283,11 @@ static byte GetFill(void)
 
 	saved_base_address = base_address++;
 
-	p_ack(REQ_FIRST);	// REQ the first packet
+	SendFillRequest(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
   	
-		byte_cnt = p_rx(&data_cell[0], FILL_MAX_SIZE);
+		byte_cnt = ReceiveDS102Cell(&data_cell[0], FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue
@@ -340,7 +315,7 @@ static byte GetFill(void)
 			{
 				SetTimeFromCell();
 			}
-			p_ack(REQ_NEXT);	// ACK the previous and REQ the next packet
+			SendFillRequest(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}
 	return records;
@@ -349,19 +324,13 @@ static byte GetFill(void)
 
 // Receive and store the fill data into the specified slot
 // The slot has the following format:
-//   TTSS
-//  TT - high nibble, if 0 - regular DS-102 fill, !=0 - fill from eusart
-//  SS - low nibble, slot number
-char GetStoreFill(byte stored_slot)
+char GetStoreDS102Fill(byte stored_slot, byte required_fill)
 {
 	char result = ST_ERR;
-	byte required_fill;
 	byte records;
-	unsigned short int saved_base_addrress;
+	unsigned short long saved_base_addrress;
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);
-	required_fill = stored_slot >> 4;
-
 	saved_base_addrress = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
 											// .. to be filled at the end
@@ -370,20 +339,10 @@ char GetStoreFill(byte stored_slot)
 	// The first byte of the record has the number of bytes that should be sent out
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
-	
-	if(required_fill)	// Fill from PC
-	{
-		fill_type = required_fill;
-		p_rx = rx_eusart;
-		p_tx = tx_eusart;
-		p_ack = SendSerialAck;
-	}else
-	{
-		close_eusart();
-		p_rx = ReceiveDS102Cell;
-		p_ack = SendFillRequest;
-	}
+	fill_type = required_fill;
+
 	records = GetFill();
+ 	// All records were received - put final info into EEPROM
 	// Mark the slot as valid slot containig data
 	if( records > 0)
 	{

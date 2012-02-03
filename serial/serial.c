@@ -237,11 +237,11 @@ void PCInterface()
 	{
   	// The last char in /FILLN specifies Type(high nibble) 
   	//    and Slot Number (low nibble)
-		GetStoreFill(data_cell[5]);
+		GetStorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
 	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
 	{
   	// The last char in /DUMPN is the slot number
-		SendStoredFill(data_cell[5]);
+		WaitReqSendPCFill(data_cell[5] & 0x0F);
 	}
 }
 

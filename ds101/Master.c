@@ -36,7 +36,6 @@ char master_state;
 
 char	retry_flag;
 
-static unsigned short long base_address;			// Address of the current EEPROM data
 static unsigned char block_counter;   // Counter for blocks sent
 
 void MasterStart(char slot)

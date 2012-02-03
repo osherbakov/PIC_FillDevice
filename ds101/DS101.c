@@ -108,7 +108,7 @@ void TxAXID(char mode)
 
 // Select appropriate functions based on the mode requested.
 // Ideally, it would be done with virtual functions in C++
-void SetupDS101Mode(char mode, char slot)
+void SetupDS101Mode(char slot, char mode )
 {
 		char TxMode = ((mode == TX_RS232) || 
 										(mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
@@ -190,58 +190,58 @@ char ProcessDS101(void)
   return GetStatus();  
 }
 
-char GetDS101Fill(char mode, char slot)
+char GetDS101Fill(char slot, char mode)
 {
-	SetupDS101Mode(mode, slot);
+	SetupDS101Mode(slot, mode );
 	return ProcessDS101();
 }
 
-char SendDS101Fill(char mode, char slot)
+char SendDS101Fill(char slot, char mode)
 {
-	SetupDS101Mode(mode, slot);
+	SetupDS101Mode(slot, mode);
 	return ProcessDS101();
 }
 
 char GetRS232Fill(char slot)
 {
-	SetupDS101Mode(RX_RS232, slot);
+	SetupDS101Mode(slot, RX_RS232 );
 	return ProcessDS101();
 }
 
 char GetDTD232Fill(char slot)
 {
-	SetupDS101Mode(RX_DTD232, slot);
+	SetupDS101Mode(slot, RX_DTD232);
 	return ProcessDS101();
 }
 
 char GetRS485Fill(char slot)
 {
-	SetupDS101Mode(RX_RS485, slot);
+	SetupDS101Mode(slot, RX_RS485 );
 	return ProcessDS101();
 }
 
 char SendRS232Fill(char slot)
 {
-	SetupDS101Mode(TX_RS232, slot);
+	SetupDS101Mode(slot, TX_RS232);
 	return ProcessDS101();
 }
 
 char SendDTD232Fill(char slot)
 {
-	SetupDS101Mode(TX_DTD232, slot);
+	SetupDS101Mode(slot, TX_DTD232);
 	return ProcessDS101();
 }
 
 char SendRS485Fill(char slot)
 {
-	SetupDS101Mode(TX_RS485, slot);
+	SetupDS101Mode(slot, TX_RS485);
 	return ProcessDS101();
 }
 
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-        set_pin_a_as_gnd();
+  set_pin_a_as_gnd();
 	TRIS_Data_N	= INPUT;
 	WPUB_Data_N = 1;
 	TRIS_Data_P	= INPUT;
