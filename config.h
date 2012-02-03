@@ -114,6 +114,8 @@ typedef enum
 #define  CLOCK_HI()   TRISBbits.TRISB3 = 1  // define macro for clock pin input
 #define  SCLK_PIN()   PORTBbits.RB3         // define macro for clock pin
 
+#define  I2CSETUP()   DATA_PIN() = 0; SCLK_PIN() = 0
+
 // RTC 1 PULSE_PER_SEC pin
 // Will generate Interrupt On Change (IOC)
 #define  PIN_1PPS	PORTBbits.RB5		

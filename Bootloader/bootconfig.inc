@@ -54,7 +54,7 @@
 ; Bootloader must start at the beginning of a FLASH Erase Block. If unspecified,
 ; bootloader will automatically be located at the end of program memory address space.
 ;#define BOOTLOADER_ADDRESS   0  ; bootloader at beginning, application start/ISR vectors require remapping
-#define BOOTLOADER_ADDRESS   END_FLASH - (ERASE_FLASH_BLOCKSIZE * 20)  ; useful for running under debugger (debug executive wants to reside at the end of memory space too)
+;#define BOOTLOADER_ADDRESS   END_FLASH - (ERASE_FLASH_BLOCKSIZE * 20)  ; useful for running under debugger (debug executive wants to reside at the end of memory space too)
 ;#define BOOTLOADER_ADDRESS  (END_FLASH - ERASE_FLASH_BLOCKSIZE) ; use on J parts to locate inside flash config erase block
 
 #ifdef BOOTLOADER_ADDRESS

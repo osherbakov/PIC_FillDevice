@@ -50,7 +50,7 @@ byte 	current_state;
 byte 	button_pos;
 byte 	prev_button_pos;
 
-#define MAX_NUM_POS (10)
+#define MAX_NUM_POS (16)
 #define HQ_TIME_POS (14)
 #define SG_TIME_POS (15)
 #define PC_POS 		(16)
@@ -333,7 +333,7 @@ void main()
 				result = CheckFillType23();
 				if(result > 0)
 				{
-					// Process Type 1, 2, and 3 fills
+					// Process Type 2, and 3 fills
 					fill_type = result;
 					SetNextState(FILL_RX_SG);
 					break;
