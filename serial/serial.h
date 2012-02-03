@@ -14,13 +14,10 @@
 #define TIMER_MBITR_CTRL ( 15<<3 | 1<<2 | 2)
 
 // Use negative logic
+// because we don't use any RS-232 interface chips
+// and generate/sense RS-232 signals directly
 #define  START	(1)
 #define  STOP	(0)
-
-#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
-#define  RX_TIMEOUT2_PC	 	(100)
-#define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
-#define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
 
 #define TX_MBITR_DELAY_MS	(10) 	  
 

@@ -49,7 +49,14 @@ typedef enum
 #define TOD_TAG_1 (0x02)
 
 #define KEY_ACK  (0x06)	// Key ack
+#define KEY_NAK  (0x15)	// Key nack
 #define KEY_EOL  (0x0D)	// Key End of Line
+
+#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
+#define  RX_TIMEOUT2_PC	 	(100)
+#define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
+#define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
+
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing
@@ -58,11 +65,6 @@ typedef enum
 
 extern byte	 data_cell[];
 extern byte  fill_type;
-
-// Pointers to the different Rx and Tx functions (PC, MBITR, and DS-102)
-extern void (*p_tx)(byte *, byte);
-extern byte (*p_rx)(byte *, byte);
-extern char (*p_ack)(byte);
 
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);
@@ -78,8 +80,9 @@ extern char CheckEquipment(void);
 extern char ClearFill(byte stored_slot);
 extern char CheckFillType(byte stored_slot);
 extern char SendStoredFill(byte stored_slot);
-extern char WaitReqSendFill(void);
-extern char WaitReqSendTODFill(void);
+extern char WaitReqSendFillType23(void);
+extern char WaitReqSendFillType4(void);
+extern char WaitReqSendFillTOD(void);
 extern char SendFill(void);
 
 

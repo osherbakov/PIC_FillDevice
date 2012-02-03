@@ -433,7 +433,6 @@ char CheckFillType(byte stored_slot)
 	return records ? fill_type : 0;
 }
 
-byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 
 char WaitMBITRReq(byte req_type)
 {
@@ -456,21 +455,10 @@ char WaitMBITRReq(byte req_type)
 	return ( char_received == char_to_expect ) ? 0 : -1 ; 
 }
 
-char WaitPCReq(byte req_type)
-{
-	byte char_received;
-	byte char_to_expect;
-
-	char_to_expect = KEY_ACK; 
-	// wait in the loop until receive the ACK character, or timeout
-  while( p_rx(&char_received, 1) && (char_received != char_to_expect) ) {}; 
-	return ( char_received == char_to_expect ) ? 0 : -1 ; 
-}
-
-char SendFill()
+char SendDS102Fill()
 {
 	byte bytes, byte_cnt;
-	char wait_result;
+	char wait_result = ST_OK;
 	
 	while(records)	
 	{
@@ -497,38 +485,38 @@ char SendFill()
 		records--;
 		
 		// After sending a record check for the next request
-		wait_result = p_ack( records ? REQ_NEXT : REQ_LAST );
+		wait_result = WaitDS102Req( records ? REQ_NEXT : REQ_LAST );
+
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_OK;
+			wait_result = ST_DONE;
+			break;
 		}
     if(wait_result) 
 			break;
 	}	
-	
-	// If regular Type 2 3 fill - release the bus
-	if( p_ack == WaitDS102Req)
-	{
-    	ReleaseMode23Bus();
-	}
-	return (p_ack == WaitMBITRReq) ? ST_DONE : wait_result;	// When send to MBITR - return with DONE flag
+	return wait_result;	// When send to MBITR - return with DONE flag
 }
 
 
-char SendStoredFill(byte stored_slot)
+char SendStoredDS102Fill(byte stored_slot)
 {
 	CheckFillType(stored_slot);
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
 	if( p_ack(REQ_FIRST) < 0 ) return -1;
-	return SendFill();
+	
+	return SendDS102Fill();
 }
 
-char WaitReqSendFill()
+char WaitReqSendDS102Fill()
 {
+  char  result;
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
 	if( p_ack(REQ_FIRST) < 0 ) return -1;
-	return SendFill();
+	result = SendFill();
+ 	ReleaseMode23Bus();
+	return result;
 }

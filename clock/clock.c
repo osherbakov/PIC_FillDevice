@@ -12,7 +12,7 @@ volatile unsigned int curr_lsb;	// LSB for the current sample (16 bits)
 void InitClockData(void)
 {
 	int i;
-	samples_number = -2;	// Initial value to force skipping of the first sample
+	samples_number = -3;	// Initial value to force skipping of the first sample
 	for(i = 0; i < NUM_SAMPLES; i++)
 	{
 		LSB[i] = 0;
@@ -52,9 +52,9 @@ void UpdateClockData()
 
 void ProcessClockData()
 {
-	char	num_above, num_below;
-	char  i;
-	char  tune;
+	unsigned char	num_above, num_below;
+	unsigned char	i;
+	char    tune;
 
   	// Not enough samples - exit
 	if(samples_number < NUM_SAMPLES)

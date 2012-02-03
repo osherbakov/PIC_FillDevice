@@ -124,19 +124,18 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-	  set_pin_a_as_power();						//  on Pin B
-
+  set_pin_a_as_power();	
 	TRIS_RxPC = INPUT;
-	Delay10TCY();	    // Let the voltage stabilize
 	
 	// only process when line is in SPACE
 	if(RxPC == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
-		if( RCSTA1bits.SPEN == 0)
+		if( !RCSTA1bits.SPEN)
 		{
 			open_eusart_rx();
 			start_eusart_rx(SerialBuffer, 4);
+    	return -1;
 		}
 	
 	  // Four characters are collected - check if it is 
@@ -170,6 +169,7 @@ void open_eusart_rx()
 {
 	TRIS_RxPC = INPUT;
 
+	RCSTA1bits.SPEN = 0; // Disable EUSART
 	SPBRGH1 = 0x00;
 	SPBRG1 = BRREG_CMD;
 	BAUDCON1 = DATA_POLARITY;
@@ -263,7 +263,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 		{
 			// Get data byte and save it
 			*p_data++ = RCREG1;
-		  	set_timeout(RX_TIMEOUT2_PC);
+		  set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -295,69 +295,3 @@ void tx_eusart(unsigned char *p_data, byte ncount)
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated
 }
 
-//
-// Soft UART to communicate with MBITR
-//
-byte rx_mbitr(unsigned char *p_data, byte ncount)
-{
-	byte bitcount, data;
-	byte	nrcvd = 0;	
-
-	TRIS_RxMBITR = INPUT;
-	T6CON = TIMER_MBITR_CTRL;
-	PR6 = TIMER_MBITR;
- 	set_timeout(RX_TIMEOUT1_MBITR);
-	
-	while( (ncount > nrcvd) && is_not_timeout() )
-	{
-		// Start conditiona was detected - count 1.5 cell size	
-		if(RxMBITR )
-		{
-			TMR6 = TIMER_MBITR_START;
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-			for(bitcount = 0; bitcount < 8 ; bitcount++)
-			{
-				// Wait until timer overflows
-				while(!PIR5bits.TMR6IF){} ;
-				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (RxMBITR ? 0x80 : 0x00);
-			}
-			*p_data++ = ~data;
-			nrcvd++;
-		  set_timeout(RX_TIMEOUT2_MBITR);
-			while(RxMBITR) {};	// Wait for stop bit
-		}
-	}
-	return nrcvd;
-}
-
-
-
-void tx_mbitr(byte *p_data, byte ncount)
-{
-	byte 	bitcount;
-	byte 	data;
-
-  DelayMs(TX_MBITR_DELAY_MS);
-	
-	TRIS_TxMBITR = OUTPUT;
-	PR6 = TIMER_MBITR;
-	T6CON = TIMER_MBITR_CTRL;
-	
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
-	while(ncount-- )
-	{
-		TxMBITR = START;        // Issue the start bit
-		data = ~(*p_data++);  // Get the symbol and advance pointer
-    	// send 8 data bits and 4 stop bits
-		for(bitcount = 0; bitcount < 12; bitcount++)
-		{
-			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-			TxMBITR = data & 0x01;	// Set the output
-			data >>= 1;				// We use the fact that 
-									      // "0" bits are STOP bits
-		}
-	}
-}
