@@ -111,7 +111,7 @@ static byte GetPCFill(void)
 
 
 // Receive and store the fill data into the specified slot
-char GetStorePCFill(byte stored_slot, byte required_fill)
+char StorePCFill(byte stored_slot, byte required_fill)
 {
 	char result = ST_ERR;
 	byte records;

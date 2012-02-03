@@ -185,9 +185,6 @@ char ReceiveGPSTime()
 	byte *p_time;
 	// Config the pin as input
 	TRIS_GPS_1PPS = INPUT;
-	
-	// Apply Ground to pin A
-	  set_pin_a_as_gnd();
 
 	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	do{

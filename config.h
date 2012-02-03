@@ -14,6 +14,14 @@
 typedef unsigned char byte;
 #endif
 
+#ifndef FALSE
+#define FALSE (0x00)
+#endif
+
+#ifndef TRUE
+#define TRUE (!FALSE)
+#endif
+
 typedef enum
 {
 	NEG = 0,

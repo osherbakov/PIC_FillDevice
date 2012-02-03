@@ -124,8 +124,6 @@ void SetupDS101Mode(char slot, char mode )
     ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
-    set_pin_a_as_gnd();
-
     if(TxMode) 
     	MasterStart(slot);
     else
@@ -190,31 +188,20 @@ char ProcessDS101(void)
   return GetStatus();  
 }
 
-char GetDS101Fill(char slot, char mode)
-{
-	SetupDS101Mode(slot, mode );
-	return ProcessDS101();
-}
 
-char SendDS101Fill(char slot, char mode)
-{
-	SetupDS101Mode(slot, mode);
-	return ProcessDS101();
-}
-
-char GetRS232Fill(char slot)
+char StoreRS232Fill(char slot)
 {
 	SetupDS101Mode(slot, RX_RS232 );
 	return ProcessDS101();
 }
 
-char GetDTD232Fill(char slot)
+char StoreDTD232Fill(char slot)
 {
 	SetupDS101Mode(slot, RX_DTD232);
 	return ProcessDS101();
 }
 
-char GetRS485Fill(char slot)
+char StoreRS485Fill(char slot)
 {
 	SetupDS101Mode(slot, RX_RS485 );
 	return ProcessDS101();
@@ -241,7 +228,6 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-  set_pin_a_as_gnd();
 	TRIS_Data_N	= INPUT;
 	WPUB_Data_N = 1;
 	TRIS_Data_P	= INPUT;

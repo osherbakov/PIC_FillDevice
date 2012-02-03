@@ -78,10 +78,7 @@ static unsigned char SerialBuffer[4];
 
 char CheckFillDTD232Type5()
 {
-	  set_pin_a_as_gnd();						//  on Pin B
-
 	TRIS_RxDTD = INPUT;
-	Delay10TCY();	// Let the voltage stabilize
 	
 	// Only process data when in SPACE
 	if(RxDTD == 0)
@@ -94,10 +91,7 @@ char CheckFillDTD232Type5()
 
 char CheckFillRS232Type5()
 {
-	  set_pin_a_as_gnd();
-
 	TRIS_RxPC = INPUT;
-	Delay10TCY();	// Let the voltage stabilize
 	
 	// Only process data when in SPACE
 	if(RxPC == 0)
@@ -124,7 +118,6 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-  set_pin_a_as_power();	
 	TRIS_RxPC = INPUT;
 	
 	// only process when line is in SPACE
@@ -237,7 +230,7 @@ void PCInterface()
 	{
   	// The last char in /FILLN specifies Type(high nibble) 
   	//    and Slot Number (low nibble)
-		GetStorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
+		StorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
 	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
 	{
   	// The last char in /DUMPN is the slot number

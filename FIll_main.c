@@ -154,20 +154,24 @@ void SetNextState(char nextState)
 void main()
 {
 	char  result;
+	char  receive_DS101_fill;
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
   TestRTCFunctions();  
 #endif
-	setup_start_io();
 	disable_tx_hqii();
+	setup_start_io();
 	SetNextState(INIT);
-
 
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
+	
+	// Allow receiving of the RS232 and RS485 keys ONLY when the system 
+	//  was started with the switch in PC (A) position
+	receive_DS101_fill = (prev_switch_pos == PC_POS) ? TRUE : FALSE;
   
   idle_counter = seconds_counter + IDLE_SECS;
 	while(1)
@@ -263,6 +267,7 @@ void main()
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
+          // SINCGARS TIME only fill - will use negative logic 
           set_pin_a_as_power();
 					fill_type = MODE3;
 					SetNextState(TIME_TX);
@@ -330,51 +335,60 @@ void main()
 				break;
 
 			case FILL_RX:
-				result = CheckFillType23();
-				if(result > 0)
+			  // Check if we should use DS102 fill or DS101/PC
+			  // The difference - DS102 connects VCC power to PIN_A
+			  // DS101 and PC - need GND on PIN_A to detect RS232 and RS485 properly
+				if(! receive_DS101_fill)
 				{
-					// Process Type 2, and 3 fills
-					fill_type = result;
-					SetNextState(FILL_RX_SG);
-					break;
-				}
-				
-				result = CheckFillType4();
-				if(result > 0)
+          set_pin_a_as_power();						//  Pin A is PWR
+				  result = CheckFillType23();
+				  if(result > 0)
+				  {
+  					// Process Type 2, and 3 fills
+  					fill_type = result;
+  					SetNextState(FILL_RX_SG);
+  					break;
+  				}
+  				if( TestButtonPress() )
+  				{
+  					fill_type = MODE1;
+  					SetNextState(FILL_RX_DS102);
+  				}
+				}else
 				{
-					fill_type = result;
-					SetNextState(FILL_RX_PC);
-					break;
-				}
-				
-				result = CheckFillRS232Type5();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_RS232);
-					break;
-				}
-
-				result = CheckFillDTD232Type5();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_DTD232);
-					break;
-				}
-
-				result = CheckFillRS485Type5();
-				if(result > 0)
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_RS485);
-					break;
-				}
-				
-				if( TestButtonPress() )
-				{
-					fill_type = MODE1;
-					SetNextState(FILL_RX_DS102);
+  				// For all DS101 and PC fills - PIN_A is GND
+          set_pin_a_as_gnd();						//  Pin A is GND
+  				result = CheckFillType4();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_PC);
+  					break;
+  				}
+  				
+  				result = CheckFillRS232Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS232);
+  					break;
+  				}
+  
+  				result = CheckFillDTD232Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_DTD232);
+  					break;
+  				}
+  
+  				result = CheckFillRS485Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS485);
+  					break;
+  				}
 				}
 				break;
 
@@ -386,15 +400,15 @@ void main()
 				break;
 
 			case FILL_RX_PC:
-				TestFillResult(GetStorePCFill( switch_pos, MODE4));
+				TestFillResult(StorePCFill( switch_pos, MODE4));
 				break;
 
 			case FILL_RX_DS102:
-				TestFillResult(GetStoreDS102Fill(switch_pos, fill_type));
+				TestFillResult(StoreDS102Fill(switch_pos, fill_type));
 				break;
 
 			case FILL_RX_RS232:
-				result = GetRS232Fill(switch_pos);
+				result = StoreRS232Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);
@@ -405,7 +419,7 @@ void main()
 				break;
 
 			case FILL_RX_DTD232:
-				result = GetDTD232Fill(switch_pos);
+				result = StoreDTD232Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);
@@ -416,7 +430,7 @@ void main()
 				break;
 
 			case FILL_RX_RS485:
-				result = GetRS485Fill(switch_pos);
+				result = StoreRS485Fill(switch_pos);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);

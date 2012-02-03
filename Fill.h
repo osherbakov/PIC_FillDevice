@@ -76,23 +76,27 @@ extern char ClearFill(byte stored_slot);
 // Get the fill info from the slot
 extern char CheckFillType(byte stored_slot);
 
-// To receive fill - check for different fills
+// To receive fill - check for different fill types
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);
 extern char CheckFillRS232Type5(void);
 extern char CheckFillDTD232Type5(void);
 extern char CheckFillRS485Type5(void);
 
-extern char GetStoreDS102Fill(byte stored_slot, byte fill_type);
-extern char GetStorePCFill(byte stored_slot, byte fill_type);
+// Actual functions to get and store fills
+extern char StoreDS102Fill(byte stored_slot, byte fill_type);
+extern char StorePCFill(byte stored_slot, byte fill_type);
 
 extern char CheckType123Equipment(void);
 
+// Functions to wait for the request and send fill
 extern char WaitReqSendDS102Fill(void);
 extern char WaitReqSendTODFill(void);
+extern char WaitReqSendMBITRFill(void);
+extern char WaitReqSendPCFill(byte slot); // Any slot can be sent (dumped)
+
+// Funcrtion to send fill immediately
 extern char SendDS102Fill(void);
 
-extern char WaitReqSendMBITRFill(void);
-extern char WaitReqSendPCFill(byte slot);
 
 #endif	// __FILL_H__
