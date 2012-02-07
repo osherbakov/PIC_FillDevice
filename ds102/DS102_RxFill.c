@@ -12,11 +12,11 @@
 //--------------------------------------------------------------
 // Delays in ms
 //--------------------------------------------------------------
-#define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  	100    // End of fill - > response (4ms - 2sec)
+#define tB  	5      // Query -> Response from Radio (0.8ms - 5ms)
+#define tD  	100     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	100     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	100     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tF  	200    // End of fill - > response (4ms - 2sec)
 
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
@@ -30,7 +30,7 @@
 // Timeouts in ms
 //--------------------------------------------------------------
 #define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
-#define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 
 static byte  PreviousState;

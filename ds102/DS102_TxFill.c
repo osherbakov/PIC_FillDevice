@@ -26,13 +26,13 @@ static void SendMode23Query(byte Data);
 //--------------------------------------------------------------
 #define tM 		10	  // D LOW -> F LOW 	(-5us - 100ms)
 #define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	250   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	200   // REQ -> Fill		(0 - 2.3 sec)
 
-#define tZ  	250   // End -> New Fill	
+#define tZ  	400   // End -> New Fill	
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
 //--------------------------------------------------------------
-#define tJ  	25		// D HIGH -> First data bit on B
+#define tJ  	50		// D HIGH -> First data bit on B
 #define tK1  	425 	// First Data bit on B -> E (CLK) LOW
 #define tK2  	425		// Last E (CLK) LOW -> TRISTATE E
 #define tL  	50		// C (REQ) LOW -> F (MUX) HIGH for the last bit
@@ -250,6 +250,7 @@ void AcquireMode1Bus()
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
+
   delay(tZ);
 }
 
@@ -266,6 +267,7 @@ void AcquireMode23Bus()
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
+
   delay(tZ);
 }
 
@@ -275,7 +277,9 @@ void ReleaseMode23Bus()
   delayMicroseconds(tL);
   pinMode(PIN_F, OUTPUT);
   digitalWrite(PIN_F, HIGH);
+
   delay(tZ);
+
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, INPUT);
