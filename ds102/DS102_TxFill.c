@@ -47,8 +47,6 @@ static void SendMode23Query(byte Data);
 #define tF  3000    // End of fill - > response (4ms - 2sec)
 #define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
 
-static byte  PreviousState;
-
 // Sends byte data on PIN_B with clocking on PIN_E
 void SendMode23Query(byte Data)
 {
@@ -127,6 +125,7 @@ char GetEquipmentMode23Type()
 {
   byte i;
   byte  NewState;	
+  byte  PreviousState;
 
   i = 0;
   pinMode(PIN_B, INPUT);
@@ -165,7 +164,9 @@ char GetEquipmentMode23Type()
 char WaitDS102Req(byte req_type)
 {
   byte  NewState;	
-  char   Result = 0;
+  byte  PreviousState;
+
+  char   Result = ST_TIMEOUT;
 
 	// For MODE1 fill we keep PIN_B low and don't read it
   if(fill_type != MODE1)
@@ -191,29 +192,21 @@ char WaitDS102Req(byte req_type)
     {
       // check if we should return now or wait for the PIN_C to go HIGH
       // If this is the last request - return just as PinC goes LOW	
-      if( (NewState == HIGH) || (req_type == REQ_LAST)) 
+      if( (NewState == HIGH) || 
+            (req_type == REQ_LAST) ||
+                (fill_type == MODE1) ) 
       {
-        return Result;
- 	  } 
+        Result = (Result != ST_ERR) ? ST_OK : ST_ERR;
+        break;
+ 	    } 
       PreviousState = NewState;
     }
 
-	// Do not check for pin B in MODE1 fill
+	  // Do not check for pin B in MODE1 fill
     if( (fill_type != MODE1) && (digitalRead(PIN_B) == LOW) ) 
     {
-      Result = 1;  // Bad CRC
+      Result = ST_ERR;  // Bad CRC
     }
-  }
-  // Timeout occured - must return -1, escept some special cases
-  // For Type 1 Fill the first request may be just a long pull of PIN_C
-  // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
-  if( (fill_type == MODE1) && 
-          ( (PreviousState == LOW) || (req_type == REQ_LAST) ) )
-  {
-		Result = 0;
-  }else
-  {
-		Result = -1;
   }
   return Result;
 }
@@ -281,7 +274,6 @@ void ReleaseMode23Bus()
   pinMode(PIN_D, INPUT);
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
-
   delay(tZ);
 }
 
@@ -325,7 +317,9 @@ char CheckType123Equipment()
 // Send only TOD fill info for Type 3 SINCGARS
 char WaitReqSendTODFill()
 {
-  char pos;	
+  char pos;	// Cell position (1..MAX_TYPE_3_POS)
+	char wait_result = ST_TIMEOUT;
+
   // On timeout return and check the switches
   if( WaitDS102Req(REQ_FIRST)  < 0 ) return -1;   
   
@@ -338,18 +332,29 @@ char WaitReqSendTODFill()
 		  SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
 	  }else
 	  {
+		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
 		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
 	  }
-	  WaitDS102Req(pos == NUM_TYPE3_CELLS ? REQ_LAST : REQ_NEXT);
+	  wait_result = WaitDS102Req( (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
+
+    // If all records were sent - ignore timeout
+	  if(pos == NUM_TYPE3_CELLS)
+		{
+			wait_result = ST_OK;
+			break;
+		}
+    if(wait_result) 
+			break;
   }
+
   ReleaseMode23Bus();
-  return 0;
+  return wait_result;
 }
 
 char SendDS102Fill(void)
 {
 	byte bytes, byte_cnt;
-	char wait_result = ST_OK;
+	char wait_result = ST_TIMEOUT;
 	
 	while(records)	
 	{
@@ -381,14 +386,14 @@ char SendDS102Fill(void)
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_DONE;
+			wait_result = ST_OK;
 			break;
 		}
     if(wait_result) 
 			break;
 	}	
 
-  if( (fill_type == MODE2) || (fill_type == MODE3))
+  if( fill_type != MODE1 )
   {
     ReleaseMode23Bus();
   }
