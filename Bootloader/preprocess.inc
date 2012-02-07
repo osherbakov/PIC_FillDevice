@@ -48,7 +48,7 @@ DigitalInput macro
 #endif
     endm        
 
-InputSwitch macro
+SwitchInput macro
       bsf		  TRISA, TRISA7
     endm        
 

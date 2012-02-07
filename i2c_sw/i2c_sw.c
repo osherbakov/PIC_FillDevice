@@ -23,7 +23,6 @@ Remarks     : None
 ********************************************************************/
 void SWStartI2C( void )
 {
-  I2CSETUP();
   DATA_LOW();                       // set pin to output to drive low
   DelayI2C();                   // user may need to modify based on Fosc
 }
@@ -53,7 +52,6 @@ void SWStopI2C( void )
 ********************************************************************/
 void SWRestartI2C( void )
 {
-  I2CSETUP();
   CLOCK_LOW();                      // set clock pin to output to drive low
   DATA_HI();                        // release data pin to float high
   DelayI2C();                   // user may need to modify based on Fosc

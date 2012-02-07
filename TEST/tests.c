@@ -1,9 +1,59 @@
 #include "config.h"
 #include "rtc.h"
 #include "clock.h"
+#include "delay.h"
 #include "string.h"
+#include "Fill.h"
+#include "controls.h"
 
 // Test Files
+
+// Test all pins - A, B, C, D, E, F
+//
+char TestAllPins()
+{
+  byte i;
+  
+	set_pin_a_as_gnd();				//  Set GND on Pin A
+	set_pin_f_as_io();
+	
+	pinMode(PIN_B, OUTPUT);		// make pin input
+	pinMode(PIN_C, OUTPUT);		// make pin input
+	pinMode(PIN_D, OUTPUT);		// make pin input
+	pinMode(PIN_E, OUTPUT);		// make pin input
+	pinMode(PIN_F, OUTPUT);		// make pin input
+
+  digitalWrite(PIN_B, LOW);	// Set all pins to LOW
+  digitalWrite(PIN_C, LOW);	
+  digitalWrite(PIN_D, LOW);	
+  digitalWrite(PIN_E, LOW);	
+  digitalWrite(PIN_F, LOW);	
+
+  for(i = 0; i < 64; i++)
+  {
+    digitalWrite(PIN_F, LOW);	
+    digitalWrite(PIN_B, HIGH);
+    DelayUs(100);
+
+    digitalWrite(PIN_B, LOW);	
+    digitalWrite(PIN_C, HIGH);
+    DelayUs(100);
+    
+    digitalWrite(PIN_C, LOW);	
+    digitalWrite(PIN_D, HIGH);
+    DelayUs(100);
+
+    digitalWrite(PIN_D, LOW);	
+    digitalWrite(PIN_E, HIGH);
+    DelayUs(100);
+
+    digitalWrite(PIN_E, LOW);	
+    digitalWrite(PIN_F, HIGH);
+    DelayUs(100);
+  }
+  
+  return 0;
+}
 
 // Test RTC functions
 // Date 0 - 01 Jan 2012
@@ -156,6 +206,7 @@ char TestRTCFunctions()
 }
 
 
+
 // Test RTC functionality
 
 
@@ -163,3 +214,20 @@ char TestRTCFunctions()
 
 
 // Test RTC functionality
+
+char SetupCurrentTime()
+{
+  rtc_date.Century = 0x20;
+  rtc_date.Year = 0x12;   // Year = 2012
+  
+  rtc_date.Month = 0x02;  // February
+  rtc_date.Day = 0x07;    // 07
+  rtc_date.Hours = 0x00;
+  rtc_date.Minutes =0x34;
+  rtc_date.Seconds =0x15;
+  CalculateWeekDay();
+  
+  SetRTCData();
+  
+  return 0;
+}

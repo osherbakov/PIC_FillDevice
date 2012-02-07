@@ -114,15 +114,13 @@ typedef enum
 #define	TRIS_PIN_F_PWR	TRISEbits.RE0
 
 // Software I2C bit-banging
-#define  DATA_LOW()   TRISBbits.TRISB4 = 0  // define macro for data pin output
-#define  DATA_HI()    TRISBbits.TRISB4 = 1  // define macro for data pin input
+#define  DATA_LOW()   TRISBbits.TRISB4 = 0; PORTBbits.RB4 = 0 // define macro for data pin output
+#define  DATA_HI()    TRISBbits.TRISB4 = 1; PORTBbits.RB4 = 1  // define macro for data pin input
 #define  DATA_PIN()   PORTBbits.RB4         // define macro for data pin
 
-#define  CLOCK_LOW()  TRISBbits.TRISB3 = 0  // define macro for clock pin output
-#define  CLOCK_HI()   TRISBbits.TRISB3 = 1  // define macro for clock pin input
+#define  CLOCK_LOW()  TRISBbits.TRISB3 = 0; PORTBbits.RB3 = 0  // define macro for clock pin output
+#define  CLOCK_HI()   TRISBbits.TRISB3 = 1; PORTBbits.RB3 = 1  // define macro for clock pin input
 #define  SCLK_PIN()   PORTBbits.RB3         // define macro for clock pin
-
-#define  I2CSETUP()   DATA_PIN() = 0; SCLK_PIN() = 0
 
 // RTC 1 PULSE_PER_SEC pin
 // Will generate Interrupt On Change (IOC)
