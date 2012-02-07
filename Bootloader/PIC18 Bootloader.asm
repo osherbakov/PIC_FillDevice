@@ -159,7 +159,7 @@ BootloaderStart:
 ; enter bootloader mode, even if there exists some application firmware in 
 ; program memory.
   DigitalInput                ; set RX pin as digital input on certain parts
-  InputSwitch                 ; Set the A7 pin to be input (S16 switch)
+  SwitchInput                 ; Set the A7 pin to be input (S16 switch)
 #ifdef INVERT_UART
     btfss   RXPORT, RXPIN
 GotoAppVector:
@@ -288,18 +288,18 @@ RetryAutoBaud:
     btfsc   INTCON, TMR0IF      ; if TMR0 overflowed, we did not get a good baud capture
     bra     RetryAutoBaud       ; try again
 
-    #ifdef BRG16
+  #ifdef BRG16
     ; save new baud rate generator value
     movff   TMR0L, UxSPBRG      ; warning: must read TMR0L before TMR0H holds real data
     movff   TMR0H, UxSPBRGH
-    #else 
+  #else 
     movff   TMR0L, UxSPBRG      ; warning: must read TMR0L before TMR0H holds real data
     ; TMR0H:TMR0L holds (p / 16).
     rrcf    TMR0H, w            ; divide by 2
     rrcf    UxSPBRG, F            
     btfss   STATUS, C           ; rounding
     decf    UxSPBRG, F    
-    #endif
+  #endif
 
     bsf     UxRCSTA, CREN       ; start receiving
 
@@ -310,12 +310,12 @@ WaitForHostCommand:
 #else ; not using autobaud
     movlw   low(BAUDRG)         ; set fixed baud rate generator value
     movwf   UxSPBRG
-    #ifdef UxSPBRGH
+  #ifdef UxSPBRGH
         #if high(BAUDRG) != 0
     movlw   high(BAUDRG)
     movwf   UxSPBRGH
         #endif
-    #endif
+  #endif
     bsf     UxRCSTA, CREN       ; start receiving
 DoAutoBaud:
 WaitForHostCommand:

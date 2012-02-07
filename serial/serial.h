@@ -4,11 +4,15 @@
 
 #define MBITR_BAUDRATE  (9600)
 #define PLGR_BAUDRATE	(19200)
+
+
 #define DATA_POLARITY  	(0x30)
 
+// Values for the Baud Rate Control registers
 #define BRREG_CMD ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * MBITR_BAUDRATE)) - 1 )
 #define BRREG_PLGR ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PLGR_BAUDRATE)) - 1 )
 
+// For MBITR we implement the Software USART - use TIMER6 as the bit timer
 #define TIMER_MBITR 	( ( (XTAL_FREQ * 1000000L) / ( 4L * 16L * MBITR_BAUDRATE)) - 1 )
 #define TIMER_MBITR_START 	( -(TIMER_MBITR/2) )
 #define TIMER_MBITR_CTRL ( 15<<3 | 1<<2 | 2)

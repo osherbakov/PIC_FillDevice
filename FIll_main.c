@@ -55,7 +55,6 @@ byte 	prev_button_pos;
 #define SG_TIME_POS (15)
 #define PC_POS 		(16)
 
-
 //
 // Test if the button was depressed and released
 //  Returns 1 if transition from LOW to HIGH was detected
@@ -155,13 +154,16 @@ void main()
 {
 	char  result;
 	char  receive_DS101_fill;
+	setup_start_io();
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
+  SetupCurrentTime();
+  TestAllPins();
   TestRTCFunctions();  
 #endif
-	disable_tx_hqii();
-	setup_start_io();
+
+	
 	SetNextState(INIT);
 
 	// Initialize current state of the buttons, switches, etc

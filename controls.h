@@ -29,7 +29,7 @@ typedef enum
 	DOWN_POS = 1
 } BUTTON_POS;
 
-#define MAX_NUM_POS (16)
+#define MAX_NUM_POS (13)
 #define HQ_TIME_POS (14)
 #define SG_TIME_POS (15)
 #define PC_POS 		  (16)
