@@ -50,11 +50,6 @@ byte 	current_state;
 byte 	button_pos;
 byte 	prev_button_pos;
 
-#define MAX_NUM_POS (16)
-#define HQ_TIME_POS (14)
-#define SG_TIME_POS (15)
-#define PC_POS 		(16)
-
 
 //
 // Test if the button was depressed and released
@@ -154,15 +149,19 @@ void SetNextState(char nextState)
 void main()
 {
 	char  result;
+
+	setup_start_io();
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
+  SetupCurrentTime();
+  TestAllPins();
   TestRTCFunctions();  
 #endif
-	setup_start_io();
-	disable_tx_hqii();
-	SetNextState(INIT);
 
+	disable_tx_hqii();
+	
+	SetNextState(INIT);
 
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
