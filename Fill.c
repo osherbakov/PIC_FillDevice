@@ -38,7 +38,7 @@ char CheckFillType(byte stored_slot)
 	return fill_type;
 }
 
-void  FillTODData(void)
+void  FillTODData()
 {
 	byte ms;
 	GetRTCData();
@@ -61,5 +61,19 @@ void  FillTODData(void)
 		TOD_cell[11] += 0x10;
 		ms -= 10; 
 	}
+}
+
+void  ExtractTODData()
+{
+	rtc_date.Century	= data_cell[2];
+	rtc_date.Year		= data_cell[3];
+	rtc_date.Month		= data_cell[4];
+	rtc_date.Day		= data_cell[5];
+	rtc_date.JulianDayH = data_cell[6];
+	rtc_date.JulianDayL = data_cell[7];
+	rtc_date.Hours		= data_cell[8];
+	rtc_date.Minutes	= data_cell[9];
+	rtc_date.Seconds	= data_cell[10];
+	CalculateWeekDay();
 }
 

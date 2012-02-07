@@ -149,7 +149,9 @@ void main()
 {
 	char  result;
 	char  receive_DS101_fill;
+
 	setup_start_io();
+	disable_tx_hqii();
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)

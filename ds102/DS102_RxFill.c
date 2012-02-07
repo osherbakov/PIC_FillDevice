@@ -12,11 +12,11 @@
 //--------------------------------------------------------------
 // Delays in ms
 //--------------------------------------------------------------
-#define tB  	5      // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  	100     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  	100     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  	100     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  	200    // End of fill - > response (4ms - 2sec)
+#define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
+#define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tF  	100    // End of fill - > response (4ms - 2sec)
 
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
@@ -30,7 +30,7 @@
 // Timeouts in ms
 //--------------------------------------------------------------
 #define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
-#define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 
 static byte  PreviousState;
@@ -164,20 +164,6 @@ static char SendBadFillAck(void)
   delay(tG);
   digitalWrite(PIN_B, HIGH);
   delay(tH);
-}
-
-static void  ExtractTODData(void)
-{
-	rtc_date.Century	= data_cell[2];
-	rtc_date.Year		= data_cell[3];
-	rtc_date.Month		= data_cell[4];
-	rtc_date.Day		= data_cell[5];
-	rtc_date.JulianDayH = data_cell[6];
-	rtc_date.JulianDayL = data_cell[7];
-	rtc_date.Hours		= data_cell[8];
-	rtc_date.Minutes	= data_cell[9];
-	rtc_date.Seconds	= data_cell[10];
-	CalculateWeekDay();
 }
 
 static void SetTimeFromCell(void)

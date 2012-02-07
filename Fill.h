@@ -66,6 +66,7 @@ typedef enum
 extern byte	 data_cell[];
 extern byte	 TOD_cell[];
 extern void  FillTODData(void);
+extern void  ExtractTODData(void);
 
 extern unsigned short long base_address;
 extern byte  	fill_type;

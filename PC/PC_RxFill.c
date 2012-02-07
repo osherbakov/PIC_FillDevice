@@ -37,21 +37,6 @@ char SendPCNak(byte ack_type)
 	tx_eusart(&key_ack, 1);			// NAK the previous packet
 }
 
-static void  ExtractTODData(void)
-{
-	rtc_date.Century	= data_cell[2];
-	rtc_date.Year		  = data_cell[3];
-	rtc_date.Month		= data_cell[4];
-	rtc_date.Day		  = data_cell[5];
-	rtc_date.JulianDayH = data_cell[6];
-	rtc_date.JulianDayL = data_cell[7];
-	rtc_date.Hours		= data_cell[8];
-	rtc_date.Minutes	= data_cell[9];
-	rtc_date.Seconds	= data_cell[10];
-	CalculateWeekDay();
-}
-
-
 static void SetTimeFromPC(void)
 {
 	ExtractTODData();

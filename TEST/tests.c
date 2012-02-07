@@ -222,10 +222,11 @@ char SetupCurrentTime()
   
   rtc_date.Month = 0x02;  // February
   rtc_date.Day = 0x07;    // 07
-  rtc_date.Hours = 0x00;
-  rtc_date.Minutes =0x34;
+  rtc_date.Hours = 0x06;
+  rtc_date.Minutes =0x07;
   rtc_date.Seconds =0x15;
   CalculateWeekDay();
+  CalculateJulianDay();
   
   SetRTCData();
   
