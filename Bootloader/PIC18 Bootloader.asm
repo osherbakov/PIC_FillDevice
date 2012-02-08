@@ -158,8 +158,13 @@ BootloaderStart:
 ; If RX pin is in BREAK state when we come out of MCLR reset, immediately 
 ; enter bootloader mode, even if there exists some application firmware in 
 ; program memory.
-  DigitalInput                ; set RX pin as digital input on certain parts
-  SwitchInput                 ; Set the A7 pin to be input (S16 switch)
+;  SetPinAGround               ; Set Ground on Pin A
+;  SetPinFPower                ; Supply power on pin F
+;  DigitalInput                ; set RX pin as digital input on certain parts
+;  SwitchInput                 ; Set the A7 pin to be input (S16 switch)
+
+    goto    AppVector          ; start application
+
 #ifdef INVERT_UART
     btfss   RXPORT, RXPIN
 GotoAppVector:

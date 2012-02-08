@@ -125,9 +125,30 @@ void SetNextState(char nextState)
 			set_led_state(20, 80);		// "Try RS232" blink pattern
 			break;
 
+		case FILL_TX_DTD232:
+			set_led_state(60, 60);		// "Try RS232" blink pattern
+			break;
+
 		case FILL_TX_RS485:
 			set_led_state(80,20);		// "Try RS485" blink pattern
 			break;
+
+		case FILL_RX_PC:
+			set_led_state(5, 150);		// "Connect Serial" blink pattern
+			break;
+
+		case FILL_RX_RS232:
+			set_led_state(20, 80);		// "Try RS232" blink pattern
+			break;
+
+		case FILL_RX_DTD232:
+			set_led_state(60, 60);		// "Try RS232" blink pattern
+			break;
+
+		case FILL_RX_RS485:
+			set_led_state(80,20);		// "Try RS485" blink pattern
+			break;
+
 	
 		case ERROR:
 			set_led_state(15, 5);		// "Fill error" blink pattern
@@ -148,7 +169,7 @@ void SetNextState(char nextState)
 void main()
 {
 	char  result;
-	char  receive_DS101_fill;
+	char  receive_fill_type;
 
 	setup_start_io();
 	disable_tx_hqii();
@@ -162,7 +183,6 @@ void main()
 
 	
 	SetNextState(INIT);
-
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
@@ -170,7 +190,7 @@ void main()
 	
 	// Allow receiving of the RS232 and RS485 keys ONLY when the system 
 	//  was started with the switch in PC (A) position
-	receive_DS101_fill = (prev_switch_pos == PC_POS) ? TRUE : FALSE;
+	receive_fill_type = (prev_button_pos == DOWN_POS) ? TRUE : FALSE;
   
   idle_counter = seconds_counter + IDLE_SECS;
 	while(1)
@@ -214,10 +234,10 @@ void main()
 		{
 			// This case when any switch or button changes
 			case INIT:
-				// Remove ground from pin A
-				set_pin_a_as_power();
 				disable_tx_hqii();
 				close_eusart();
+        set_pin_f_as_io();
+				set_pin_a_as_power(); // Remove ground from pin A
      		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
@@ -245,6 +265,7 @@ void main()
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
 					// Check for the bootloader activity
 					if( is_bootloader_active() )
 				  {
@@ -252,22 +273,27 @@ void main()
     				INTCONbits.GIE = 0;		// Disable interrupts
     				INTCONbits.PEIE = 0;
    				  BootloadMode();
-				  }	
-					SetNextState(PC_CONN);
+				  }else
+				  {
+					  SetNextState(PC_CONN);
+					}
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
 					  set_pin_a_as_gnd();
+					  set_pin_f_as_power();
             SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
+				  set_pin_f_as_power();
 					enable_tx_hqii();				// Enable HQ output
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS)
 				{
           // SINCGARS TIME only fill - will use negative logic 
           set_pin_a_as_power();
+				  set_pin_f_as_io();
 					fill_type = MODE3;
 					SetNextState(TIME_TX);
 				}
@@ -337,9 +363,10 @@ void main()
 			  // Check if we should use DS102 fill or DS101/PC
 			  // The difference - DS102 connects VCC power to PIN_A
 			  // DS101 and PC - need GND on PIN_A to detect RS232 and RS485 properly
-				if(! receive_DS101_fill)
+				if(!receive_DS101_fill)
 				{
           set_pin_a_as_power();						//  Pin A is PWR
+				  set_pin_f_as_io();
 				  result = CheckFillType23();
 				  if(result > 0)
 				  {
@@ -357,6 +384,7 @@ void main()
 				{
   				// For all DS101 and PC fills - PIN_A is GND
           set_pin_a_as_gnd();						//  Pin A is GND
+				  set_pin_f_as_power();
   				result = CheckFillType4();
   				if(result > 0)
   				{
@@ -364,7 +392,7 @@ void main()
   					SetNextState(FILL_RX_PC);
   					break;
   				}
-  				
+/*-----------------------------------------------
   				result = CheckFillRS232Type5();
   				if(result > 0)
   				{
@@ -388,6 +416,7 @@ void main()
   					SetNextState(FILL_RX_RS485);
   					break;
   				}
+------------------------------------------------*/
 				}
 				break;
 

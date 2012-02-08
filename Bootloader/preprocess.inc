@@ -53,6 +53,20 @@ SwitchInput macro
     endm        
 
 
+SetPinAGround macro
+      bcf   TRISC, TRISC1
+      bsf   PORTC, .1
+    endm
+
+SetPinFPower macro
+      ; Make Pin_F (PortC.PC0) input
+      bsf     TRISC, TRISC0
+      ; Make the PIN_F_PWR output and activate
+      banksel ANSELE		; ANSELE is in non-access bank 0x0F on PIC18F46K22 family
+      bcf     ANSELE, ANSE0	; Digital input enable on E0 pin for PIC18F46K22 family
+      bcf     TRISE, TRISE0 ; output
+      bsf     PORTE, .0     ; PORTE.RE0 = 1
+    endm
 
 pmwtpi macro                        ; tblwt*+ macro for PIC18Fxx20 bug
 #ifdef TBLWT_BUG
