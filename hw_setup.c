@@ -71,7 +71,7 @@ void setup_clocks()
 // for Have Quick data stream generation
 	PR4 = HQII_TIMER;
 	IPR5bits.TMR4IP = 1;	// HIGH priority
-	T4CON = 0x02;			// 1:1 Post, 16 prescaler, off 
+	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
 	PIE5bits.TMR4IE = 1;	// Enable TIMER4 Interrupt
 

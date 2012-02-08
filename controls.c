@@ -87,7 +87,6 @@ void set_pin_a_as_power()
 void set_pin_f_as_io()
 {
     TRIS_PIN_F = INPUT;
-
     TRIS_PIN_F_PWR = OUTPUT;
     PIN_F_PWR = 0;
     Delay10TCY();
