@@ -101,6 +101,7 @@ char CheckFillRS232Type5()
 		{
 			open_eusart_rx();
 			start_eusart_rx(SerialBuffer, 4);
+			return -1;
 		}
 		
 		if( (rx_count >= 2) && 

@@ -49,9 +49,9 @@ extern char SendRS232Fill(char slot);
 extern char SendDTD232Fill(char slot);
 extern char SendRS485Fill(char slot);
 
-extern char StoreRS232Fill(char slot);
-extern char StoreDTD232Fill(char slot);
-extern char StoreRS485Fill(char slot);
+extern char StoreRS232Fill(char slot, char mode);
+extern char StoreDTD232Fill(char slot, char mode);
+extern char StoreRS485Fill(char slot, char mode);
 
 #define SLAVE_ADDRESS	(0x35)
 #define MASTER_ADDRESS	(0xFF)

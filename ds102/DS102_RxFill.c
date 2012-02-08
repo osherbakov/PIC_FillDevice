@@ -289,13 +289,13 @@ static byte GetFill(void)
 			records++; 
 			record_size = 0;
 			saved_base_address = base_address++;
-			// Check if the cell that we received is the 
-			// TOD cell - set up time
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-			{
-				SetTimeFromCell();
-			}
+// Check if the cell that we received is the 
+// TOD cell - set up time
+//			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+//						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+//			{
+//				SetTimeFromCell();
+//			}
 			SendFillRequest(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}

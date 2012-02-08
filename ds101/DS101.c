@@ -189,19 +189,19 @@ char ProcessDS101(void)
 }
 
 
-char StoreRS232Fill(char slot)
+char StoreRS232Fill(char slot, char mode)
 {
 	SetupDS101Mode(slot, RX_RS232 );
 	return ProcessDS101();
 }
 
-char StoreDTD232Fill(char slot)
+char StoreDTD232Fill(char slot, char mode)
 {
 	SetupDS101Mode(slot, RX_DTD232);
 	return ProcessDS101();
 }
 
-char StoreRS485Fill(char slot)
+char StoreRS485Fill(char slot, char mode)
 {
 	SetupDS101Mode(slot, RX_RS485 );
 	return ProcessDS101();
@@ -232,7 +232,6 @@ char CheckFillRS485Type5()
 	WPUB_Data_N = 1;
 	TRIS_Data_P	= INPUT;
 	WPUB_Data_P = 1;
-	Delay10TCY();	// Let the voltage stabilize
 	
 	return ( Data_P && !Data_N ) ? MODE5 : -1;
 }	
