@@ -74,14 +74,12 @@ void set_pin_a_as_gnd()
 {
     TRIS_PIN_A_PWR = OUTPUT;
     PIN_A_PWR = 0;
-    Delay10TCY();
 }
 
 void set_pin_a_as_power()
 {
     TRIS_PIN_A_PWR = OUTPUT;
     PIN_A_PWR = 1;
-    Delay10TCY();
 }
 
 void set_pin_f_as_io()
@@ -89,7 +87,6 @@ void set_pin_f_as_io()
     TRIS_PIN_F = INPUT;
     TRIS_PIN_F_PWR = OUTPUT;
     PIN_F_PWR = 0;
-    Delay10TCY();
 }
 
 void set_pin_f_as_power()
@@ -97,7 +94,6 @@ void set_pin_f_as_power()
     TRIS_PIN_F = INPUT;
     TRIS_PIN_F_PWR = OUTPUT;
     PIN_F_PWR = 1;
-    Delay10TCY();
 }
 
 void disable_tx_hqii()

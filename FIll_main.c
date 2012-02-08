@@ -172,6 +172,7 @@ void main()
 
 	setup_start_io();
 	disable_tx_hqii();
+	close_eusart();
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
@@ -183,7 +184,7 @@ void main()
 	
 	SetNextState(INIT);
 	// Initialize current state of the buttons, switches, etc
-	DelayMs(200);
+	DelayMs(100);
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
@@ -385,7 +386,7 @@ void main()
 				{
   				// For all DS101 and PC fills - PIN_A is GND
           set_pin_a_as_gnd();						//  Pin A is GND
-				  set_pin_f_as_power();
+				  // set_pin_f_as_power();
   				result = CheckFillType4();
   				if(result > 0)
   				{
@@ -393,6 +394,7 @@ void main()
   					SetNextState(FILL_RX_PC);
   					break;
   				}
+/*-----------------------------------------------
   				result = CheckFillRS232Type5();
   				if(result > 0)
   				{
@@ -409,7 +411,6 @@ void main()
   					break;
   				}
   
-/*-----------------------------------------------
   				result = CheckFillRS485Type5();
   				if(result > 0)
   				{

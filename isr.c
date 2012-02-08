@@ -159,24 +159,6 @@ void high_isr (void)
 		hq_bit_counter &= 0x0F;
 		PIR5bits.TMR4IF = 0;	// Clear the interrupt
 	}
-
-	// Is it a EUSART TX interrupt ?
-  // If there are bytes to send - get the symbol from the 
-  //  buffer pointed by tx_data and decrement the counter
-  // If that was the last symbol - disable interrupts.
-	if(PIR1bits.TX1IF)
-	{
-		if( tx_count )	// not the last byte
-		{
-			TXREG1 = *tx_data++;
-			tx_count--;
-			if( tx_count == 0 )	// Last byte was sent
-			{
-				PIE1bits.TX1IE = 0;	// Disable Interrupts
-			}
-		}
-		// No need to clear the Interrupt Flag
-	}
 }
 
 #pragma code
@@ -213,6 +195,24 @@ void low_isr ()
 				rx_data[i] = rx_data[i+1];
 			}
 			rx_data[rx_count_1] = RCREG1;
+		}
+		// No need to clear the Interrupt Flag
+	}
+
+	// Is it a EUSART TX interrupt ?
+  // If there are bytes to send - get the symbol from the 
+  //  buffer pointed by tx_data and decrement the counter
+  // If that was the last symbol - disable interrupts.
+	if(PIR1bits.TX1IF)
+	{
+		if( tx_count )	// not the last byte
+		{
+			TXREG1 = *tx_data++;
+			tx_count--;
+			if( tx_count == 0 )	// Last byte was sent
+			{
+				PIE1bits.TX1IE = 0;	// Disable Interrupts
+			}
 		}
 		// No need to clear the Interrupt Flag
 	}

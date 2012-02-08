@@ -169,12 +169,19 @@ void setup_start_io()
 	setup_spi();
 	SetupRTC();
 
+	
 	// Setup and disable USART
 	// Configure the EUSART module
-	IPR1bits.TX1IP = 1;		// High priority TX
-	TXSTA1 = 0x00;			// Disable TX
+	RCSTA1 = 0x90;	      
+	TXSTA1 = 0x00;			  // Disable TX
+	RCSTA1bits.SPEN = 0;  // Disable EUSART
+	IPR1bits.TX1IP = 0;		// Low priority TX
 	IPR1bits.RC1IP = 0;		// Low priority RX
-	RCSTA1bits.SPEN = 0;	// Disable EUSART
+	PIE1bits.RC1IE = 0;	  // Disable RX interrupt
+	PIE1bits.TX1IE = 0;	  // Disable TX Interrupts
+	PIR1bits.RC1IF = 0;
+	PIR1bits.TX1IF = 0;
+	
 
 	// Enable all interrupts
 	INTCONbits.PEIE = 1;

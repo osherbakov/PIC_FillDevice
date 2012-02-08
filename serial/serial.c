@@ -119,10 +119,10 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-	TRIS_RxPC = INPUT;
+//	TRIS_RxPC = INPUT;
 	
 	// only process when line is in SPACE
-	if(RxPC == 0)
+//	if(RxPC == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
 		if( !RCSTA1bits.SPEN)
@@ -141,6 +141,7 @@ char CheckFillType4()
 			{
 	  		// SN request - send a fake SN = 123456
 				tx_eusart_buff(SN_RESP);
+  			// Re-init receiver
 				start_eusart_rx(SerialBuffer, 4);
 			}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 			{
@@ -281,7 +282,10 @@ volatile byte rx_count_1; // Max index in the buffer
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
+	TRIS_TxPC = INPUT;
 	TXSTA1bits.TXEN = 1; // Enable Tx	
+	RCSTA1bits.SPEN = 1; // Enable EUSART
+	
 	while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 
 	tx_data = (volatile byte *) p_data;
