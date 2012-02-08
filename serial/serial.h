@@ -25,17 +25,15 @@
 
 #define TX_MBITR_DELAY_MS	(10) 	  
 
-extern volatile byte *tx_data;
-extern volatile byte tx_count;
-extern volatile byte *rx_data;	// Pointer to the start of the buffer
-extern volatile byte rx_count;	// Number of symbols collected
-extern volatile byte rx_count_1; // Last byte index
+extern volatile byte *tx_data;    // Pointer to the data to be sent out
+extern volatile byte tx_count;    // Running number of bytes sent
+extern volatile byte *rx_data;	  // Pointer to the start of the buffer
+extern volatile byte rx_count;	  // Number of symbols collected
+extern volatile byte rx_count_1;  // Last byte index
 
 extern void PCInterface(void);
 
-extern void open_eusart_rxtx(void);
-extern void open_eusart_rx(void);
-extern void start_eusart_rx(unsigned char *, byte );
+extern void open_eusart_rxtx(unsigned char *p_rx_data, byte max_size);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern void tx_eusart(unsigned char *p_data, byte ncount);
 extern void close_eusart(void);

@@ -8,7 +8,70 @@
 
 static unsigned int month_day[] =  {0, 31, 59, 90,120,151,181,212,243,273,304,334,365};
 static unsigned char week_day[] =  {0,  3,  3,  6,  1,  4,  6,  2,  5,  0,  3,  5,  0};
+static byte month_names[] = "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
+static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 
+
+byte *GetCurrentDayString(byte *p_buffer)
+{
+  byte ms, hms, month, weekday;
+  byte  *p_curr = p_buffer;
+  GetRTCData();
+  
+  *p_curr++ = '0' + (rtc_date.Day >> 4);
+  *p_curr++ = '0' + (rtc_date.Day & 0x0F);
+  *p_curr++ = ' ';
+
+  *p_curr++ = '0' + (rtc_date.Hours >> 4);
+  *p_curr++ = '0' + (rtc_date.Hours & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Minutes >> 4);
+  *p_curr++ = '0' + (rtc_date.Minutes & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Seconds >> 4);
+  *p_curr++ = '0' + (rtc_date.Seconds & 0x0F);
+  *p_curr++ = '.';
+
+  // fast way to divide by 10  
+  hms = 0;
+	ms = rtc_date.MilliSeconds_10;
+	while(ms >= 10)
+	{
+		hms++;
+		ms -= 10; 
+	}
+  *p_curr++ = '0' + hms;
+  *p_curr++ = '.';
+  *p_curr++ = 'Z';
+  *p_curr++ = ' ';
+  
+  month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
+  month *= 3;
+
+  *p_curr++ = month_names[month++];
+  *p_curr++ = month_names[month++];
+  *p_curr++ = month_names[month++];
+
+  *p_curr++ = '0' + (rtc_date.Century >> 4);
+  *p_curr++ = '0' + (rtc_date.Century & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Year >> 4);
+  *p_curr++ = '0' + (rtc_date.Year & 0x0F);
+  *p_curr++ = ' ';
+
+  weekday = (rtc_date.WeekDay & 0x0F) * 3;
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = ' ';
+
+  *p_curr++ = 'J';
+  *p_curr++ = 'D';
+  *p_curr++ = '0' + (rtc_date.JulianDayH & 0x0F);
+  *p_curr++ = '0' + (rtc_date.JulianDayL >> 4);
+  *p_curr++ = '0' + (rtc_date.JulianDayL & 0x0F);
+  *p_curr++ = 0x0D;
+  *p_curr++ = 0x00;
+ 
+  return p_buffer;
+}  
 
 void CalculateWeekDay()
 {

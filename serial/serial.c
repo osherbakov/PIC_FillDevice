@@ -4,6 +4,7 @@
 #include "Fill.h"
 #include "serial.h"
 #include "gps.h"
+#include "rtc.h"
 #include "string.h"
 
 #define tx_eusart_str(a) tx_eusart((a), strlen((char *)a))
@@ -14,6 +15,7 @@
 //  /FILL<0x34> means fill key 4 of type 3
 static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
 static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
+static byte TIME_CMD[]    = "/TIME";	// Fill/Dump Time
 
 /****************************************************************/
 // Those are commands and responses that MBITR receives and sends
@@ -99,8 +101,7 @@ char CheckFillRS232Type5()
 	  // Coming in first time - enable eusart and setup buffer
 		if( RCSTA1bits.SPEN == 0)
 		{
-			open_eusart_rx();
-			start_eusart_rx(SerialBuffer, 4);
+			open_eusart_rxtx(SerialBuffer, 4);
 			return -1;
 		}
 		
@@ -119,16 +120,15 @@ char CheckFillRS232Type5()
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-//	TRIS_RxPC = INPUT;
+	TRIS_RxPC = INPUT;
 	
 	// only process when line is in SPACE
-//	if(RxPC == 0)
+	if(RxPC == 0)
 	{
 	  // Coming in first time - enable eusart and setup buffer
 		if( !RCSTA1bits.SPEN)
 		{
-			open_eusart_rx();
-			start_eusart_rx(SerialBuffer, 4);
+			open_eusart_rxtx(SerialBuffer, 4);
     	return -1;
 		}
 	
@@ -139,18 +139,17 @@ char CheckFillType4()
 		{
 			if( is_equal(SerialBuffer, SN_REQ, 4) )
 			{
+ 				rx_count = 0; // Data consumed
 	  		// SN request - send a fake SN = 123456
 				tx_eusart_buff(SN_RESP);
-  			// Re-init receiver
-				start_eusart_rx(SerialBuffer, 4);
 			}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 			{
+ 				rx_count = 0; // Data consumed
 				// Options request - send all options
 				send_options();
 				while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 				// Prepare to receive all next data as the Type 4 fill
-				open_eusart_rxtx();
-				start_eusart_rx(SerialBuffer, 4);
+				open_eusart_rxtx(SerialBuffer, 4);
 				return MODE4;
 			}
 		}
@@ -159,57 +158,36 @@ char CheckFillType4()
 }
 
 
-// Open EUSART for reading only, TX is not affected
-void open_eusart_rx()
+void open_eusart_rxtx(unsigned char *p_rx_data, byte max_size)
 {
 	TRIS_RxPC = INPUT;
+	TRIS_TxPC = INPUT;
 
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
 	RCSTA1bits.SPEN = 0; // Disable EUSART
 	SPBRGH1 = 0x00;
 	SPBRG1 = BRREG_CMD;
 	BAUDCON1 = DATA_POLARITY;
 
+	rx_data = (volatile byte *) p_rx_data;
 	rx_count = 0;
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-	RCSTA1bits.CREN = 1; // Enable Rx
-	RCSTA1bits.SPEN = 1; // Enable EUSART
-}
-
-
-void open_eusart_rxtx()
-{
-	TRIS_RxPC = INPUT;
-	TRIS_TxPC = INPUT;
-
-	SPBRGH1 = 0x00;
-	SPBRG1 = BRREG_CMD;
-	BAUDCON1 = DATA_POLARITY;
-
-	rx_count = 0;
+	rx_count_1 = max_size - 1;
 	tx_count = 0;
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
-	TXSTA1bits.TXEN = 1; // Enable Tx	
+	
 	RCSTA1bits.CREN = 1; // Enable Rx
+ 	TXSTA1bits.TXEN = 1; // Enable Tx	
 	RCSTA1bits.SPEN = 1; // Enable EUSART
-}
 
-// Set up interrupt-driven Rx buffers and counters
-void start_eusart_rx(unsigned char *p_data, byte ncount)
-{
-	rx_data = (volatile byte *) p_data;
-	rx_count = 0;
-	rx_count_1 = ncount - 1;
-	PIE1bits.RC1IE = 1;	 // Enable Interrupts
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 }
-
 
 void close_eusart()
 {
 	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
-	TXSTA1bits.TXEN = 0; 	// Disable Tx	
-	RCSTA = 0;					  // Disable EUSART
+	TXSTA = 0x00; 	      // Disable Tx	
+	RCSTA = 0x00;				  // Disable EUSART
 }
 
 void PCInterface()
@@ -218,8 +196,7 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart_rxtx();
-		start_eusart_rx(&data_cell[0], 6);
+		open_eusart_rxtx(&data_cell[0], 6);
 	}
 	
 	// Wait to receive 6 characters
@@ -237,7 +214,12 @@ void PCInterface()
 	{
   	// The last char in /DUMPN is the slot number
 		WaitReqSendPCFill(data_cell[5] & 0x0F);
-	}
+	}else if(is_equal( &data_cell[0], TIME_CMD, 5))
+	{
+  	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
+  	GetCurrentDayString(&data_cell[0]);
+  	tx_eusart_str(data_cell);
+  } 	
 }
 
 
@@ -282,12 +264,7 @@ volatile byte rx_count_1; // Max index in the buffer
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
-	TRIS_TxPC = INPUT;
-	TXSTA1bits.TXEN = 1; // Enable Tx	
-	RCSTA1bits.SPEN = 1; // Enable EUSART
-	
-	while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
-
+ 	while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated
