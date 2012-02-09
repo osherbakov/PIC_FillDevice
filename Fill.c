@@ -17,8 +17,8 @@ byte    TOD_cell[MODE2_3_CELL_SIZE];
 char ClearFill(byte stored_slot)
 {
 	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
-   	 byte_write(base_address, 0x00);
-   	 return ST_OK;
+   byte_write(base_address, 0x00);
+   return ST_OK;
 }
 
 // Detect the fill type and set up global variables

@@ -200,26 +200,30 @@ void PCInterface()
 	}
 	
 	// Wait to receive 6 characters
-	if(rx_count < 6) return;
-	
-	// Six or more characters received - chaeck if
-	// this is a /DUMPN request to dump keys to PC
-	//  or it is a /FILLN request to load key from PC
-	if( is_equal(&data_cell[0], KEY_FILL, 5))
+	if(rx_count >= 6) 
 	{
-  	// The last char in /FILLN specifies Type(high nibble) 
-  	//    and Slot Number (low nibble)
-		StorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
-	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
-	{
-  	// The last char in /DUMPN is the slot number
-		WaitReqSendPCFill(data_cell[5] & 0x0F);
-	}else if(is_equal( &data_cell[0], TIME_CMD, 5))
-	{
-  	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
-  	GetCurrentDayString(&data_cell[0]);
-  	tx_eusart_str(data_cell);
-  } 	
+  	// Six or more characters received - check if
+  	// this is a /DUMPN request to dump keys to PC
+  	//  or it is a /FILLN request to load key from PC
+  	if( is_equal(&data_cell[0], KEY_FILL, 5))
+  	{
+    	// The last char in /FILLN specifies Type(high nibble) 
+    	//    and Slot Number (low nibble)
+  		rx_count = 0; // Data consumed
+  		StorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
+  	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
+  	{
+    	// The last char in /DUMPN is the slot number
+  		rx_count = 0; // Data consumed
+  		WaitReqSendPCFill(data_cell[5] & 0x0F);
+  	}else if(is_equal( &data_cell[0], TIME_CMD, 5))
+  	{
+    	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
+  		rx_count = 0; // Data consumed
+    	GetCurrentDayString(&data_cell[0]);
+    	tx_eusart_str(data_cell);
+    } 	
+  }  
 }
 
 

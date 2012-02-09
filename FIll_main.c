@@ -369,6 +369,7 @@ void main()
 				{
           set_pin_a_as_power();						//  Pin A is PWR
 				  set_pin_f_as_io();
+				  
 				  result = CheckFillType23();
 				  if(result > 0)
 				  {
@@ -386,39 +387,46 @@ void main()
 				{
   				// For all DS101 and PC fills - PIN_A is GND
           set_pin_a_as_gnd();						//  Pin A is GND
-				  // set_pin_f_as_power();
-  				result = CheckFillType4();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_PC);
-  					break;
-  				}
-/*-----------------------------------------------
-  				result = CheckFillRS232Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_RS232);
-  					break;
-  				}
-  
-  				result = CheckFillDTD232Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_DTD232);
-  					break;
-  				}
-  
-  				result = CheckFillRS485Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_RS485);
-  					break;
-  				}
-------------------------------------------------*/
+				  set_pin_f_as_power();
+				  
+				  switch(receive_fill_type)
+				  {
+  				  case MODE4:
+      				result = CheckFillType4();
+      				if(result > 0)
+      				{
+      					fill_type = result;
+      					SetNextState(FILL_RX_PC);
+      				}
+  					  break;
+  				  case MODE5:
+      				result = CheckFillRS232Type5();
+      				if(result > 0)
+      				{
+      					fill_type = result;
+      					SetNextState(FILL_RX_RS232);
+      				}
+  					  break;
+  				  case MODE6:
+      				result = CheckFillDTD232Type5();
+      				if(result > 0)
+      				{
+      					fill_type = result;
+      					SetNextState(FILL_RX_DTD232);
+      				}
+  					  break;
+  				  case MODE7:
+      				result = CheckFillRS485Type5();
+      				if(result > 0)
+      				{
+      					fill_type = result;
+      					SetNextState(FILL_RX_RS485);
+      				}
+  					  break;
+
+  					default:
+  					  break;
+  				}  
 				}
 				break;
 
