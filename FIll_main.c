@@ -22,7 +22,7 @@ static enum
 	FILL_TX_RS485, 
 	FILL_TX_DS102,
 	FILL_RX,
-	FILL_RX_SG,
+	FILL_RX_TYPE23,
 	FILL_RX_DS102,
 	FILL_RX_PC,
 	FILL_RX_RS232,
@@ -31,8 +31,8 @@ static enum
 	ZERO_FILL,
 	HQ_TX,
 	HQ_RX,
-	TIME_TX,
-	TIME_TX_PROC, 
+	FILL_TX_TIME,
+	FILL_TX_TIME_PROC, 
 	PC_CONN,
 	ERROR,
 	DONE,
@@ -109,7 +109,7 @@ void SetNextState(char nextState)
 			break;
 
 		case FILL_TX :
-		case TIME_TX :
+		case FILL_TX_TIME :
 			if(fill_type == MODE4)
 				set_led_state(5, 150);	// "Connect Serial" blink pattern	
 			else			
@@ -298,7 +298,7 @@ void main()
           set_pin_a_as_power();
 				  set_pin_f_as_io();
 					fill_type = MODE3;
-					SetNextState(TIME_TX);
+					SetNextState(FILL_TX_TIME);
 				}
 				break;
 				
@@ -375,7 +375,7 @@ void main()
 				  {
   					// Process Type 2, and 3 fills
   					fill_type = result;
-  					SetNextState(FILL_RX_SG);
+  					SetNextState(FILL_RX_TYPE23);
   					break;
   				}
   				// If button pressed - Type 1!!!
@@ -421,7 +421,8 @@ void main()
   				}
 				  break;
 
-			case FILL_RX_SG:
+			case FILL_RX_TYPE23:
+			  CheckFillType23();
 				if( TestButtonPress() )
 				{
 					SetNextState(FILL_RX_DS102);
@@ -483,14 +484,14 @@ void main()
 			case HQ_TX:
 				break;
 
-			case TIME_TX:
+			case FILL_TX_TIME:
 				if( CheckType123Equipment() > 0 )
 				{
-					SetNextState(TIME_TX_PROC);
+					SetNextState(FILL_TX_TIME_PROC);
 				}
 				break;
 
-			case TIME_TX_PROC:
+			case FILL_TX_TIME_PROC:
 				TestFillResult(WaitReqSendTODFill());
 				break;
 
