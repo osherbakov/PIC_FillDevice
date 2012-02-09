@@ -228,10 +228,14 @@ char SendRS485Fill(char slot)
 // The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
 char CheckFillRS485Type5()
 {
-	TRIS_Data_N	= INPUT;
-	WPUB_Data_N = 1;
-	TRIS_Data_P	= INPUT;
-	WPUB_Data_P = 1;
+	if( !RCSTA1bits.SPEN )
+  {  
+  	TRIS_Data_N	= INPUT;
+  	TRIS_Data_P	= INPUT;
+  	WPUB_Data_N = 1;
+  	WPUB_Data_P = 1;
 	
-	return ( Data_P && !Data_N ) ? MODE5 : -1;
+	  return ( Data_P && !Data_N ) ? MODE5 : -1;
+	}
+	return -1;
 }	

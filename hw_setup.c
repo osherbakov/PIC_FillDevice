@@ -12,8 +12,8 @@ extern void setup_clocks();
 extern void setup_spi();
 extern void setup_start_io();
 
-#define MS_10_PER_1MHZ (10*1000L)
-#define CNT_10MS ((((XTAL_FREQ / 4) * (MS_10_PER_1MHZ / 10))/16 ) - 1 )
+#define TMR2_FREQ  (100)
+#define CNT_10MS ((( XTAL_FREQ * 1000000L) / ( 4L * TMR2_FREQ * 10L * 16L )) - 1 )
 
 void setup_clocks()
 {
@@ -49,10 +49,10 @@ void setup_clocks()
 // Set up timer 1 to count OSC_CLOCK in 16-bit mode
 //  It is used for 0.131072s timeout, when clock overflows
 // Used for timeouts in RS-232 and RS-485 soft USART
-  	TMR1H = 0;
-  	TMR1L = 0;	// Reset the timer
-    T1GCONbits.TMR1GE = 0;	// No gating
-    T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
+  TMR1H = 0;
+  TMR1L = 0;	// Reset the timer
+  T1GCONbits.TMR1GE = 0;	// No gating
+  T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
 	IPR1bits.TMR1IP = 0;	// Low priority
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
@@ -62,7 +62,7 @@ void setup_clocks()
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
-	T2CON = (10 << 3) | (1 << 2) | 2;
+	T2CON = ((10-1) << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt

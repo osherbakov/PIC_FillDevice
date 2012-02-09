@@ -42,8 +42,8 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-    TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;
+  TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
@@ -60,8 +60,8 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
- 			while(RxPC) {};	// Wait for stop bit
-			return data;
+ 			while(!PIR1bits.TMR1IF && RxPC) {};	// Wait for stop bit
+			return PIR1bits.TMR1IF ? -1 : data;
 		}
 	}
 	return -1;
@@ -109,8 +109,8 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-    TMR1H = 0;
-  	TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;
+  TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
@@ -127,8 +127,8 @@ int RxDTDChar()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
- 			while(RxDTD) {};	// Wait for stop bit
-			return data;
+ 			while(!PIR1bits.TMR1IF && RxDTD) {};	// Wait for stop bit
+			return PIR1bits.TMR1IF ? -1 : data;
 		}
 	}
 	return -1;
@@ -195,9 +195,9 @@ int RxRS485Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
- 			while(Data_N) {};	// Wait for stop bit
 			INTCONbits.GIE = 1;		// Enable interrupts
-			return data;
+ 			while(!PIR1bits.TMR1IF && Data_N) {};	// Wait for stop bit
+			return PIR1bits.TMR1IF ? -1 : data;
 		}
 	}
 	return -1;

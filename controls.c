@@ -46,7 +46,7 @@ byte get_switch_state()
 
 byte get_power_state()
 {
-	TRIS_ZBR = INPUT;	// Go back to the Input state
+	TRIS_ZBR = INPUT;	      // Pin is Input 
 	return (ZBR)? ZERO_POS : ON_POS;
 }
 

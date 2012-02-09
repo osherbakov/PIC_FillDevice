@@ -170,6 +170,10 @@ void low_isr ()
 	{
 		timeout_counter--;
 		rtc_date.MilliSeconds_10++;
+		if(rtc_date.MilliSeconds_10 >= 100)
+		{
+  		rtc_date.MilliSeconds_10 = 0;
+  	}
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{

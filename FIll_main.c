@@ -164,16 +164,25 @@ void SetNextState(char nextState)
 	current_state = nextState;
 }
 
+void  PinsToDefault(void)
+{
+	disable_tx_hqii();
+	close_eusart();
+  set_pin_f_as_io();
+	set_pin_a_as_power(); // Remove ground from pin A
+	TRIS_PIN_B = 1;
+	TRIS_PIN_C = 1;
+	TRIS_PIN_D = 1;
+	TRIS_PIN_E = 1;
+	TRIS_PIN_F = 1;
+}
 
 void main()
 {
 	char  result;
 
 	setup_start_io();
-	disable_tx_hqii();
-	close_eusart();
-  set_pin_f_as_io();
-	set_pin_a_as_power(); // Remove ground from pin A
+  PinsToDefault();	
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
@@ -182,7 +191,6 @@ void main()
   TestRTCFunctions();  
 #endif
 
-	
 	SetNextState(INIT);
 	// Initialize current state of the buttons, switches, etc
 	DelayMs(100);
@@ -232,16 +240,7 @@ void main()
 		{
 			// This case when any switch or button changes
 			case INIT:
-				disable_tx_hqii();
-				close_eusart();
-        set_pin_f_as_io();
-				set_pin_a_as_power(); // Remove ground from pin A
-				TRIS_PIN_B = 1;
-				TRIS_PIN_C = 1;
-				TRIS_PIN_D = 1;
-				TRIS_PIN_E = 1;
-				TRIS_PIN_F = 1;
-				
+        PinsToDefault();
      		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
@@ -305,7 +304,7 @@ void main()
 				
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
-				// On the timeout - switch to a alternative mode
+				// On the timeout - switch to next mode
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_DTD232);	
@@ -317,7 +316,7 @@ void main()
 
 			case FILL_TX_DTD232:
 				result = SendDTD232Fill(switch_pos);
-				// On the timeout - switch to a alternative mode
+				// On the timeout - switch to next mode
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS485);	
@@ -329,7 +328,7 @@ void main()
 
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
-				// On the timeout - switch to a alternative mode
+				// On the timeout - switch to next mode
 				if(result < 0)
 				{
 					SetNextState(FILL_TX_RS232);	
@@ -340,14 +339,20 @@ void main()
 				break;
 					
 			case FILL_TX:
-				if(fill_type == MODE5)
+				if(fill_type == MODE5)          // Any DS-101 fill
 				{
-					SetNextState(FILL_TX_RS232);	// Start with RS232
-				}else if(fill_type == MODE4)
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
+					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
+				}else if(fill_type == MODE4)    // MBITR keys
 				{
-  				WaitReqSendMBITRFill();
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
+  				TestFillResult(WaitReqSendMBITRFill());
 				}else if( CheckType123Equipment() > 0 )
 				{
+					set_pin_a_as_power();						//  Set POWER on Pin A for Type 1,2,3
+          set_pin_f_as_io();
 					SetNextState(FILL_TX_DS102);
 				}
 				break;

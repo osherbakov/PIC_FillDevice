@@ -14,7 +14,7 @@ static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 
 byte *GetCurrentDayString(byte *p_buffer)
 {
-  byte month, weekday;
+  byte  ms, ms_10, month, weekday;
   byte  *p_curr = p_buffer;
   
   
@@ -26,6 +26,17 @@ byte *GetCurrentDayString(byte *p_buffer)
   *p_curr++ = '0' + (rtc_date.Minutes & 0x0F);
   *p_curr++ = '0' + (rtc_date.Seconds >> 4);
   *p_curr++ = '0' + (rtc_date.Seconds & 0x0F);
+  *p_curr++ = '.';
+
+  ms = 0;
+	ms_10 = rtc_date.MilliSeconds_10;
+	while(ms_10 >= 10)
+	{
+		ms++;
+		ms_10 -= 10; 
+	}
+  *p_curr++ = '0' + ms;
+  
   *p_curr++ = 'Z';
   *p_curr++ = ' ';
   

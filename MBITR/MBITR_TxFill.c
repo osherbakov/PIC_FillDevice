@@ -9,32 +9,6 @@
 
 static char WaitMBITRReq(byte req_type);
 
-//--------------------------------------------------------------
-// Delays for the appropriate timings in millisecs
-//--------------------------------------------------------------
-#define tM 		10	  // D LOW -> F LOW 	(-5us - 100ms)
-#define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	250   // REQ -> Fill		(0 - 2.3 sec)
-
-#define tZ  	250   // End -> New Fill	
-//--------------------------------------------------------------
-// Delays for the appropriate timings in usecs
-//--------------------------------------------------------------
-#define tJ  	25		// D HIGH -> First data bit on B
-#define tK1  	425 	// First Data bit on B -> E (CLK) LOW
-#define tK2  	425		// Last E (CLK) LOW -> TRISTATE E
-#define tL  	50		// C (REQ) LOW -> F (MUX) HIGH for the last bit
-
-//--------------------------------------------------------------
-// Timeouts in ms
-//--------------------------------------------------------------
-#define tB  1000    // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  500     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  500     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  500     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  3000    // End of fill - > response (4ms - 2sec)
-#define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
-
 byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 
 static char WaitMBITRReq(byte req_type)
@@ -122,6 +96,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 		{
 			TMR6 = TIMER_MBITR_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+		  set_timeout(RX_TIMEOUT2_MBITR);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -129,10 +104,13 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxMBITR ? 0x80 : 0x00);
 			}
+			while(is_not_timeout() && RxMBITR) {};	// Wait for stop bit
+			if(!is_not_timeout())
+			{
+  			break;
+  		}
 			*p_data++ = ~data;
 			nrcvd++;
-		  set_timeout(RX_TIMEOUT2_MBITR);
-			while(RxMBITR) {};	// Wait for stop bit
 		}
 	}
 	return nrcvd;
