@@ -168,11 +168,12 @@ void SetNextState(char nextState)
 void main()
 {
 	char  result;
-	char  receive_fill_type;
 
 	setup_start_io();
 	disable_tx_hqii();
 	close_eusart();
+  set_pin_f_as_io();
+	set_pin_a_as_power(); // Remove ground from pin A
 	
 #ifdef  DO_TEST
   // Perform BIST (self-test)
@@ -189,10 +190,6 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 	
-	// Allow receiving of the RS232 and RS485 keys ONLY when the system 
-	//  was started with the switch in PC (A) position
-	receive_fill_type = prev_switch_pos;
-  
   idle_counter = seconds_counter + IDLE_SECS;
 	while(1)
 	{
@@ -239,6 +236,12 @@ void main()
 				close_eusart();
         set_pin_f_as_io();
 				set_pin_a_as_power(); // Remove ground from pin A
+				TRIS_PIN_B = 1;
+				TRIS_PIN_C = 1;
+				TRIS_PIN_D = 1;
+				TRIS_PIN_E = 1;
+				TRIS_PIN_F = 1;
+				
      		idle_counter = seconds_counter + IDLE_SECS;
 
 				// Switch is in one of the key fill positions
@@ -361,15 +364,7 @@ void main()
 				break;
 
 			case FILL_RX:
-			  // Check if we should use DS102 fill or DS101/PC
-			  // The difference - DS102 connects VCC power to PIN_A
-			  // DS101 and PC - need GND on PIN_A to detect RS232 and RS485 properly
-				if( (receive_fill_type >= MODE1) &&
-				      (receive_fill_type <= MODE3) )
-				{
-          set_pin_a_as_power();						//  Pin A is PWR
-				  set_pin_f_as_io();
-				  
+			    // For Type 2 and 3 pins D and F should go low
 				  result = CheckFillType23();
 				  if(result > 0)
 				  {
@@ -378,57 +373,48 @@ void main()
   					SetNextState(FILL_RX_SG);
   					break;
   				}
+  				// If button pressed - Type 1!!!
   				if( TestButtonPress() )
   				{
   					fill_type = MODE1;
   					SetNextState(FILL_RX_DS102);
   				}
-				}else
-				{
-  				// For all DS101 and PC fills - PIN_A is GND
-          set_pin_a_as_gnd();						//  Pin A is GND
-				  set_pin_f_as_power();
-				  
-				  switch(receive_fill_type)
-				  {
-  				  case MODE4:
-      				result = CheckFillType4();
-      				if(result > 0)
-      				{
-      					fill_type = result;
-      					SetNextState(FILL_RX_PC);
-      				}
-  					  break;
-  				  case MODE5:
-      				result = CheckFillRS232Type5();
-      				if(result > 0)
-      				{
-      					fill_type = result;
-      					SetNextState(FILL_RX_RS232);
-      				}
-  					  break;
-  				  case MODE6:
-      				result = CheckFillDTD232Type5();
-      				if(result > 0)
-      				{
-      					fill_type = result;
-      					SetNextState(FILL_RX_DTD232);
-      				}
-  					  break;
-  				  case MODE7:
-      				result = CheckFillRS485Type5();
-      				if(result > 0)
-      				{
-      					fill_type = result;
-      					SetNextState(FILL_RX_RS485);
-      				}
-  					  break;
 
-  					default:
-  					  break;
-  				}  
-				}
-				break;
+          // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+   				result = CheckFillType4();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_PC);
+ 					  break;
+  				}
+
+          // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+   				result = CheckFillRS232Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS232);
+ 					  break;
+  				}
+
+          // If Pin_C is -5V - that is DTD-232 Type 5
+  				result = CheckFillDTD232Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_DTD232);
+				    break;
+  				}
+
+  				result = CheckFillRS485Type5();
+  				if(result > 0)
+  				{
+  					fill_type = result;
+  					SetNextState(FILL_RX_RS485);
+				    break;
+  				}
+				  break;
 
 			case FILL_RX_SG:
 				if( TestButtonPress() )

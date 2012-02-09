@@ -198,8 +198,8 @@ char CheckFillType23()
 	char ret_val = -1;
 
 	// Setup pins
-	pinMode(PIN_D, INPUT);		// make pin an input
-	pinMode(PIN_F, INPUT);		// make pin an input
+	pinMode(PIN_D, INPUT);		// make pin D input
+	pinMode(PIN_F, INPUT);		// make pin F input
 
   switch(t23_state)
   {
