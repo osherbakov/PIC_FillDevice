@@ -200,6 +200,12 @@ void low_isr ()
 			}
 			rx_data[rx_count_1] = RCREG1;
 		}
+		// overruns? clear it
+		if(RCSTA1 & 0x06)
+		{
+			RCSTA1bits.CREN = 0;
+			RCSTA1bits.CREN = 1;
+		}
 		// No need to clear the Interrupt Flag
 	}
 

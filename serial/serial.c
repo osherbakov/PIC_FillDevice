@@ -221,29 +221,37 @@ void PCInterface()
 // RX_TIMEOUT2_PC - timeout for all consequtive chars
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
-  byte	nrcvd = 0;
+  byte  n_rcvd;
+  byte  *rx_data_saved;
+  byte  rx_count_1_saved;
 
-	// We collect chars in the loop - no need for interrupts
+  // Save previous buffer setup  
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	rx_data_saved = rx_data;
+	rx_count_1_saved = rx_count_1;
 
+	rx_data = (volatile byte *) p_data;
+	rx_count = 0;
+	rx_count_1 = ncount - 1;
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
   set_timeout(RX_TIMEOUT1_PC);
-	while( (nrcvd < ncount ) && is_not_timeout() )
+  // We need 2 while loops - one with initial Timeout,
+  // another with the timeout after receiving first symbol 
+	while( ( rx_count == 0 ) && is_not_timeout() ) {}
+	if(is_not_timeout() )
 	{
-		if(PIR1bits.RC1IF)	// Data is avaiable
-		{
-			// Get data byte and save it
-			*p_data++ = RCREG1;
-		  set_timeout(RX_TIMEOUT2_PC);
-			// overruns? clear it
-			if(RCSTA1 & 0x06)
-			{
-				RCSTA1bits.CREN = 0;
-				RCSTA1bits.CREN = 1;
-			}
-			nrcvd++;
-		}
+    set_timeout(RX_TIMEOUT2_PC);
+	  while( (rx_count < ncount ) && is_not_timeout() )	{}
 	}
-	return nrcvd;
+	
+	// Restore all previous buffer setup
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	n_rcvd = rx_count; 
+	rx_data = rx_data_saved;
+	rx_count_1 = rx_count_1_saved;
+	rx_count = 0;        // Clear buffer
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+  return n_rcvd;
 }
 
 

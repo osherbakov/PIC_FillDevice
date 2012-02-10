@@ -8,12 +8,12 @@
 #define TIMER_DTD 	( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
 #define TIMER_DTD_START 	( -(TIMER_DTD/2) )
 #define TIMER_DTD_EDGE 	( (TIMER_DTD/2) )
-#define TIMER_DTD_CTRL (1<<2 | 2)
+#define TIMER_DTD_CTRL (1<<2 | 2)     // ENA, 1:16
 
 #define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
 #define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
-#define TIMER_DS101_CTRL (1<<2 | 0)
+#define TIMER_DS101_CTRL (1<<2 | 0)   // ENA, 1:1
 
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);

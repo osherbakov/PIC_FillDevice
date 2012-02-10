@@ -221,7 +221,7 @@ char CheckFillType23()
     	// Here we are waiting for some time when F and D are LOW, and then D comes back
 	    // to HIGH no later than tA timeout
     	set_timeout(tA);
-    	while( !is_not_timeout() )
+    	while( is_not_timeout() )
     	{
       	// Pin F went high - return back to normal
     		if( digitalRead(PIN_F) == HIGH )

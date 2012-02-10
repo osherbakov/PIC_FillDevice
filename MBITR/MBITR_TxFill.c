@@ -22,20 +22,23 @@ static char WaitMBITRReq(byte req_type)
 	{
 		char_to_expect = KEY_EOL;		// Wait for \n
 		tx_mbitr(&CHECK_MBITR[0], 4);
-	}else
+	}else if( req_type == REQ_LAST )  // Do not wait for the ACK on the last one
+	{
+  	return ST_OK;
+	}else 
 	{
 		char_to_expect = KEY_ACK;		// Wait for 0x06
 	}	
 
 	// wait in the loop until receive the ACK character, or timeout
   while( rx_mbitr(&char_received, 1) && (char_received != char_to_expect) ) {}; 
-	return ( char_received == char_to_expect ) ? 0 : -1 ; 
+	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT ; 
 }
 
 static char SendMBITRFill(void)
 {
 	byte bytes, byte_cnt;
-	char wait_result;
+	char wait_result = ST_OK;
 	
 	while(records)	
 	{

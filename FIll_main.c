@@ -193,7 +193,6 @@ void main()
 
 	SetNextState(INIT);
 	// Initialize current state of the buttons, switches, etc
-	DelayMs(100);
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
@@ -385,6 +384,7 @@ void main()
   					SetNextState(FILL_RX_DS102);
   				}
 
+/***********************************
           // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
    				result = CheckFillType4();
   				if(result > 0)
@@ -419,6 +419,7 @@ void main()
   					SetNextState(FILL_RX_RS485);
 				    break;
   				}
+************************************/
 				  break;
 
 			case FILL_RX_TYPE23:

@@ -7,47 +7,24 @@
 #include "Fill.h"
 #include "controls.h"
 
-//--------------------------------------------------------------
-// Delays for the appropriate timings in millisecs
-//--------------------------------------------------------------
-#define tM 		10	  // D LOW -> F LOW 	(-5us - 100ms)
-#define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	250   // REQ -> Fill		(0 - 2.3 sec)
-
-#define tZ  	250   // End -> New Fill	
-//--------------------------------------------------------------
-// Delays for the appropriate timings in usecs
-//--------------------------------------------------------------
-#define tJ  	25		// D HIGH -> First data bit on B
-#define tK1  	425 	// First Data bit on B -> E (CLK) LOW
-#define tK2  	425		// Last E (CLK) LOW -> TRISTATE E
-#define tL  	50		// C (REQ) LOW -> F (MUX) HIGH for the last bit
-
-//--------------------------------------------------------------
-// Timeouts in ms
-//--------------------------------------------------------------
-#define tB  1000    // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  500     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  500     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  500     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  3000    // End of fill - > response (4ms - 2sec)
-#define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
 
 static char WaitPCReq(byte req_type)
 {
 	byte char_received;
 	byte char_to_expect;
+	
+	if(req_type == REQ_LAST) return ST_OK;
 
 	char_to_expect = KEY_ACK; 
 	// wait in the loop until receive the ACK character, or timeout
   while( rx_eusart(&char_received, 1) && (char_received != char_to_expect) ) {}; 
-	return ( char_received == char_to_expect ) ? 0 : -1 ; 
+	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT; 
 }
 
 static char SendPCFill(void)
 {
 	byte bytes, byte_cnt;
-	char wait_result;
+	char wait_result = ST_OK;
 	
 	while(records)	
 	{
