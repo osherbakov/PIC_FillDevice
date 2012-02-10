@@ -76,7 +76,7 @@ void ProcessClockData()
 			num_below++;
 		}else
 		{
-			// MSB are the same - chack LSBs
+			// MSB are the same - check LSBs
 			if(LSB[i] > (ONE_SEC_TICKS & 0xFFFFL))
 			{
 				num_above++;

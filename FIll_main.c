@@ -283,9 +283,9 @@ void main()
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
-					  set_pin_a_as_gnd();
-					  set_pin_f_as_power();
-            SetNextState(HQ_RX);
+					set_pin_a_as_gnd();
+					set_pin_f_as_power();
+          SetNextState(HQ_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
@@ -473,7 +473,8 @@ void main()
 			case ZERO_FILL:
 				if( TestButtonPress() )
 				{
-					TestFillResult(ClearFill(switch_pos));
+					ClearFill(switch_pos);
+					SetNextState(INIT);
 				}
 				break;
 
@@ -510,6 +511,7 @@ void main()
 
 			case ERROR:
 			case DONE:
+		    PinsToDefault();
         current_state = WAIT_BTN_PRESS;
 				break;
 

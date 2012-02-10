@@ -13,9 +13,9 @@
 // Delays in ms
 //--------------------------------------------------------------
 #define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tD  	60     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	60     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	60     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
 #define tF  	100    // End of fill - > response (4ms - 2sec)
 
 //--------------------------------------------------------------
@@ -118,8 +118,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   PreviousState = LOW;
   set_timeout(tE);
 
-  while( is_not_timeout() && 
-				(byte_count < count))
+  while( is_not_timeout() &&  (byte_count < count) )
   {
 		// Check for the last fill for Mode2 and 3
 		if( ((fill_type == MODE2) || (fill_type == MODE3)) 
@@ -222,10 +221,10 @@ char CheckFillType23()
     	// Here we are waiting for some time when F and D are LOW, and then D comes back
 	    // to HIGH no later than tA timeout
     	set_timeout(tA);
-    	while( 1 )
+    	while( !is_not_timeout() )
     	{
-      	// Pin F went high, or timeout expired - return back to normal
-    		if( (digitalRead(PIN_F) == HIGH) || !is_not_timeout() )
+      	// Pin F went high - return back to normal
+    		if( digitalRead(PIN_F) == HIGH )
     		{
           t23_state = DF_INIT;
           break;
