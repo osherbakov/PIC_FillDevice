@@ -397,7 +397,7 @@ char WaitReqSendTODFill()
 	  WaitDS102Req(pos == NUM_TYPE3_CELLS ? REQ_LAST : REQ_NEXT);
   }
   ReleaseMode23Bus();
-  return ST_DONE;
+  return ST_OK;
 }
 
 static unsigned int base_address;
@@ -506,7 +506,8 @@ char SendFill()
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_DONE;
+			wait_result = ST_OK;
+			break;
 		}
     if(wait_result) 
 			break;
