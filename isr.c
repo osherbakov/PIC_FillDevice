@@ -188,6 +188,10 @@ void low_isr ()
 	{
 		timeout_counter--;
 		rtc_date.MilliSeconds_10++;
+		if(rtc_date.MilliSeconds_10 >= 100)
+		{
+  		rtc_date.MilliSeconds_10 = 0;
+  	}
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{
@@ -213,6 +217,12 @@ void low_isr ()
 				rx_data[i] = rx_data[i+1];
 			}
 			rx_data[rx_count_1] = RCREG1;
+		}
+		// overruns? clear it
+		if(RCSTA1 & 0x06)
+		{
+			RCSTA1bits.CREN = 0;
+			RCSTA1bits.CREN = 1;
 		}
 		// No need to clear the Interrupt Flag
 	}

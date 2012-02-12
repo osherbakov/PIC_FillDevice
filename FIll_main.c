@@ -327,7 +327,8 @@ void main()
   					SetNextState(FILL_RX_RS485);
   					break;
   				}
-				}else{
+				}else
+				{
   				remove_gnd_pin_b();
   				result = CheckFillType23();
   				if(result > 0){

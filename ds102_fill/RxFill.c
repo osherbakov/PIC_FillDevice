@@ -42,6 +42,7 @@ static char GetQueryByte(void)
   byte  Data;
   
   remove_gnd_pin_b();
+	pinMode(PIN_C, OUTPUT);		// make pin C Output
   pinMode(PIN_B, INPUT);		// make pin an input
   pinMode(PIN_E, INPUT);		// make pin an input
   WPUB_PIN_B = 1;
@@ -79,7 +80,9 @@ static void SendEquipmentType(void)
   
   remove_gnd_pin_b();
   pinMode(PIN_B, OUTPUT);		// make a pin active
+	pinMode(PIN_C, OUTPUT);		// make pin C Output
   pinMode(PIN_E, OUTPUT);		// make a pin active
+  digitalWrite(PIN_C, HIGH);	// Set Pin C to High
   digitalWrite(PIN_E, HIGH);	// Set clock to High
   delayMicroseconds(tJ);		// Setup time for clock high
 
@@ -185,6 +188,7 @@ static void  ExtractTODData(void)
 static void SetTimeFromCell(void)
 {
 	ExtractTODData();
+	CalculateWeekDay();
 	CalculateNextSecond();
 	if( !rtc_date.Valid )
 	{
@@ -220,8 +224,11 @@ char CheckFillType23()
 	char ret_val = -1;
 
 	// Setup pins
-	pinMode(PIN_D, INPUT);		// make pin an input
-	pinMode(PIN_F, INPUT);		// make pin an input
+	pinMode(PIN_C, OUTPUT);		// make pin C Output
+	pinMode(PIN_D, INPUT);		// make pin D input
+	pinMode(PIN_F, INPUT);		// make pin F input
+
+  digitalWrite(PIN_C, HIGH);	// Set Pin C to High
 
   switch(t23_state)
   {
@@ -244,10 +251,10 @@ char CheckFillType23()
     	// Here we are waiting for some time when F and D are LOW, and then D comes back
 	    // to HIGH no later than tA timeout
     	set_timeout(tA);
-    	while( 1 )
+    	while( is_not_timeout() )
     	{
-      	// Pin F went high, or timeout expired - return back to normal
-    		if( (digitalRead(PIN_F) == HIGH) || !is_not_timeout() )
+      	// Pin F went high - return back to normal
+    		if( digitalRead(PIN_F) == HIGH )
     		{
           t23_state = DF_INIT;
           break;

@@ -125,11 +125,13 @@ char CheckFillType4()
 			if( is_equal(SerialBuffer, SN_REQ, 4) )
 			{
 	  		// SN request - send a fake SN = 123456
+	  		rx_count = 0;     // Consume command
 				tx_eusart_buff(SN_RESP);
 				start_eusart_rx(SerialBuffer, 4);
 			}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 			{
 				// Options request - send all options
+	  		rx_count = 0;     // Consume command
 				send_options();
 				while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 				// Prepare to receive all next data as the Type 4 fill
@@ -153,6 +155,7 @@ void open_eusart_rx()
 	BAUDCON1 = DATA_POLARITY;
 
 	rx_count = 0;
+	tx_count = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 1; // Enable Rx
 	RCSTA1bits.SPEN = 1; // Enable EUSART
@@ -206,20 +209,23 @@ void PCInterface()
 	}
 	
 	// Wait to receive 6 characters
-	if(rx_count < 6) return;
-	
-	// Six or more characters received - chaeck if
-	// this is a /DUMPN request to dump keys to PC
-	//  or it is a /FILLN request to load key from PC
-	if( is_equal(&data_cell[0], KEY_FILL, 5))
+	if(rx_count >= 6)
 	{
-  	// The last char in /FILLN specifies Type(high nibble) 
-  	//    and Slot Number (low nibble)
-		GetStoreFill(data_cell[5]);
-	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
-	{
-  	// The last char in /DUMPN is the slot number
-		SendStoredFill(data_cell[5]);
+  	// Six or more characters received - check if
+  	// this is a /DUMPN request to dump keys to PC
+  	//  or it is a /FILLN request to load key from PC
+  	if( is_equal(&data_cell[0], KEY_FILL, 5))
+  	{
+    	// The last char in /FILLN specifies Type(high nibble) 
+    	//    and Slot Number (low nibble)
+   		rx_count = 0;     // Consume command
+  		GetStoreFill(data_cell[5]);
+  	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
+  	{
+    	// The last char in /DUMPN is the slot number
+   		rx_count = 0;     // Consume command
+  		SendStoredFill(data_cell[5]);
+  	}
 	}
 }
 
@@ -241,7 +247,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 		{
 			// Get data byte and save it
 			*p_data++ = RCREG1;
-		  	set_timeout(RX_TIMEOUT2_PC);
+	  	set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -251,6 +257,8 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 			nrcvd++;
 		}
 	}
+	
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 	return nrcvd;
 }
 
@@ -284,7 +292,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	TRIS_Rx = INPUT;
 	T6CON = TIMER_MBITR_CTRL;
 	PR6 = TIMER_MBITR;
-  	set_timeout(RX_TIMEOUT1_MBITR);
+ 	set_timeout(RX_TIMEOUT1_MBITR);
 	
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
@@ -300,10 +308,13 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxBIT ? 0x80 : 0x00);
 			}
-			*p_data++ = ~data;
-			nrcvd++;
-		    set_timeout(RX_TIMEOUT2_MBITR);
-			while(RxBIT) {};	// Wait for stop bit
+	    set_timeout(RX_TIMEOUT2_MBITR);
+			while(RxBIT && is_not_timeout()) {};	// Wait for stop bit
+			if(is_not_timeout())
+			{
+			  *p_data++ = ~data;
+			  nrcvd++;
+			}
 		}
 	}
 	return nrcvd;
@@ -316,7 +327,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-    DelayMs(TX_MBITR_DELAY_MS);
+  DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_Tx = OUTPUT;
 	PR6 = TIMER_MBITR;

@@ -62,7 +62,7 @@ void setup_clocks()
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
-	T2CON = (10 << 3) | (1 << 2) | 2;
+	T2CON = (9 << 3) | (1 << 2) | 2;
 	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
