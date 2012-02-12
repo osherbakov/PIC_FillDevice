@@ -397,12 +397,11 @@ char SendDS102Fill(void)
   {
     ReleaseMode23Bus();
   }
-	return wait_result;	// When send to MBITR - return with DONE flag
+	return wait_result;	
 }
 
 char WaitReqSendDS102Fill()
 {
-  char  result;
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
 	if( WaitDS102Req(REQ_FIRST) < 0 ) return -1;

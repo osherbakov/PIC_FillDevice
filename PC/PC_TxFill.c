@@ -52,10 +52,11 @@ static char SendPCFill(void)
 		
 		// After sending a record check for the next request
 		wait_result = WaitPCReq( records ? REQ_NEXT : REQ_LAST );
+		
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_DONE;
+			wait_result = ST_OK;
 			break;
 		}
     if(wait_result) 

@@ -256,7 +256,8 @@ void main()
 						//		= 2,3 - Type 2,3 fill
 						//		= 4 - DES Key fill
 						//		= 5 - DS-101 fill (both RS232 and RS485)
-						if( CheckFillType(switch_pos) > 0)
+						fill_type = CheckFillType(switch_pos);
+						if( fill_type > 0)
 						{
 							SetNextState(FILL_TX);	// Be ready to send
 						}else

@@ -5,6 +5,7 @@
 #include "rtc.h"
 #include "serial.h"
 #include "clock.h"
+#include "gps.h"
 
 void high_isr (void);
 void low_isr (void);
@@ -16,16 +17,13 @@ volatile signed int timeout_counter;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
-extern void CalculateHQDate(void);			
-
-extern byte hq_data[];
-
 volatile byte hq_enabled;
-static unsigned char hq_active;
-static unsigned char hq_bit_counter;
-static unsigned char hq_byte_counter;
-static unsigned char hq_current_bit; 
-static unsigned char hq_current_byte; 
+volatile byte hq_active;
+
+static byte hq_bit_counter;
+static byte hq_byte_counter;
+static byte hq_current_bit; 
+static byte hq_current_byte; 
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase

@@ -73,7 +73,7 @@ void setup_clocks()
 	IPR5bits.TMR4IP = 1;	// HIGH priority
 	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
-	PIE5bits.TMR4IE = 1;	// Enable TIMER4 Interrupt
+	PIE5bits.TMR4IE = 0;	// Enable TIMER4 Interrupt
 
 // Set up the timer 6 to roll over every 300us but with no interrupts
 // for Have Quick data stream detection

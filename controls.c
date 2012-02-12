@@ -99,6 +99,7 @@ void set_pin_f_as_power()
 void disable_tx_hqii()
 {
   hq_enabled = 0;
+  hq_active = 0;
 }
 
 
