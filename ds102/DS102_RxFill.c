@@ -129,6 +129,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
     if( PreviousState != NewState  )
     {
       PreviousState = NewState;
+		  set_timeout(tF);
       if( NewState == LOW )
       {
   	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
@@ -138,7 +139,6 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 					*p_cell++ = Data;
 					bit_count = 0;
 					byte_count++;
-				  set_timeout(tF);
 				}
       }
     }

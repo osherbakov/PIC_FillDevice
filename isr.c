@@ -87,6 +87,7 @@ void high_isr (void)
 		}
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
+/********************** Comment it out for the time being *******************
       // Get statistics for the clock adjustment
 	  	TL = TMR0L;	// Read LSB first to latch the data
 	 		TH = TMR0H;
@@ -95,7 +96,8 @@ void high_isr (void)
       curr_lsb = ((int)TH << 8) + TL;
       UpdateClockData();
       ProcessClockData();
-      
+****************************************************************************/      
+
       // Adjust current time
 			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
     	TMR2 = 0;	          // zero out 10ms counter
