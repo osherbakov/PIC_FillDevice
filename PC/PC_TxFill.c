@@ -21,13 +21,22 @@ static char WaitPCReq(byte req_type)
 	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT; 
 }
 
-static char SendPCFill(void)
+char WaitReqSendPCFill(byte stored_slot)
 {
-	byte bytes, byte_cnt;
-	byte  *p_data;
-	char wait_result = ST_OK;
-	
+  byte  	fill_type, records;
+	byte    bytes, byte_cnt;
+	byte    *p_data;
+	char    wait_result;
+	unsigned short long base_address;
+
 	p_data = &data_cell[0];
+	wait_result = ST_OK;
+	
+  base_address = get_eeprom_address(stored_slot & 0x0F);
+	records = byte_read(base_address++);
+	if(records == 0xFF) records = 0x00;
+	// Get the fill type from the EEPROM
+	fill_type = byte_read(base_address++);
 	
 	while(records)	
 	{
@@ -65,21 +74,14 @@ static char SendPCFill(void)
     if(wait_result) 
 			break;
 	}	
-	
 	return wait_result;	
 }
-
-char WaitReqSendPCFill(byte stored_slot)
-{
-  CheckFillType(stored_slot);
-	return SendPCFill();
-}
-
 
 
 char ReadMemSendPCFill(byte stored_slot)
 {
 	unsigned int bytes, byte_cnt;
+  unsigned short long base_address;	
 	byte  *p_data;
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);

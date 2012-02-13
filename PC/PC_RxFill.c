@@ -43,7 +43,7 @@ static void SetTimeFromPC(void)
 }
 
 
-static byte GetPCFill(void)
+static byte GetPCFill(unsigned short long base_address)
 {
 	byte records, byte_cnt, record_size;
 	byte  *p_data;
@@ -92,10 +92,11 @@ char StorePCFill(byte stored_slot, byte required_fill)
 {
 	char result = ST_ERR;
 	byte records;
-	unsigned short long saved_base_addrress;
+	unsigned short long base_address;
+	unsigned short long saved_base_address;
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 
-	saved_base_addrress = base_address;	
+	saved_base_address = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
 											// .. to be filled at the end
 	// All data are stored in 1K bytes (8K bits) slots
@@ -103,15 +104,14 @@ char StorePCFill(byte stored_slot, byte required_fill)
 	// The first byte of the record has the number of bytes that should be sent out
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
-	fill_type = required_fill;
 	
-	records = GetPCFill();
+	records = GetPCFill(base_address);
 	if( records > 0)
 	{
   	// All records were received - put final info into EEPROM
 	  // Mark the slot as valid slot containig data
-		byte_write(saved_base_addrress, records);
-		byte_write(saved_base_addrress + 1, fill_type);
+		byte_write(saved_base_address, records);
+		byte_write(saved_base_address + 1, required_fill);
 		result = ST_DONE;
 	}
   return result;

@@ -17,6 +17,7 @@ static enum
 	BIST,
 	BIST_ERR,
 	FILL_TX,
+	FILL_TX_MBITR,
 	FILL_TX_RS232,
 	FILL_TX_DTD232,
 	FILL_TX_RS485, 
@@ -108,11 +109,12 @@ void SetNextState(char nextState)
 			set_led_state(15, 15);		// "Key empty" blink pattern
 			break;
 
+		case FILL_TX_MBITR:
+				set_led_state(5, 150);	// "Connect Serial" blink pattern	
+			break;
+
 		case FILL_TX :
 		case FILL_TX_TIME :
-			if(fill_type == MODE4)
-				set_led_state(5, 150);	// "Connect Serial" blink pattern	
-			else			
 				set_led_state(50, 150);	// "Key valid" blink pattern
 			break;
 
@@ -180,7 +182,8 @@ void  PinsToDefault(void)
 void main()
 {
 	char  result;
-
+  byte  fill_type;
+  
 	setup_start_io();
   PinsToDefault();	
 	
@@ -348,8 +351,8 @@ void main()
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
           set_pin_f_as_power();
-  				TestFillResult(WaitReqSendMBITRFill());
-				}else if( CheckType123Equipment() > 0 )
+					SetNextState(FILL_TX_MBITR);
+				}else if( CheckType123Equipment(fill_type) > 0 )
 				{
 					set_pin_a_as_power();						//  Set POWER on Pin A for Type 1,2,3
           set_pin_f_as_io();
@@ -357,14 +360,18 @@ void main()
 				}
 				break;
 
+			case FILL_TX_MBITR:
+ 				TestFillResult(WaitReqSendMBITRFill(switch_pos));
+				break;
+
 			case FILL_TX_DS102:
 				// Check if the fill was initialed on the Rx device
-				TestFillResult(WaitReqSendDS102Fill());
+				TestFillResult(WaitReqSendDS102Fill(switch_pos, fill_type));
 				// For Type1 fills we can simulate KOI18 and start
 				//     sending data on button press....
 				if( (fill_type == MODE1) && TestButtonPress() )
 				{
-					TestFillResult(SendDS102Fill());
+					TestFillResult(SendDS102Fill(switch_pos));
 				}
 				break;
 
@@ -488,7 +495,7 @@ void main()
 				break;
 
 			case FILL_TX_TIME:
-				if( CheckType123Equipment() > 0 )
+				if( CheckType123Equipment(fill_type) > 0 )
 				{
 					SetNextState(FILL_TX_TIME_PROC);
 				}

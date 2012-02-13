@@ -149,7 +149,7 @@ static char GetEquipmentMode23Type(void)
 //      -1 	- Timeout
 //			0 	- Request received
 //			1 	- PinB was asserted - error fill
-char WaitDS102Req(byte req_type)
+static char WaitDS102Req(byte fill_type, byte req_type)
 {
   byte  NewState;	
   byte  PreviousState;
@@ -288,7 +288,7 @@ byte nofill_cell[] =
 // Check the equipment type
 // If the Type2/3 equipment is detected, then return MODE2 or MODE3
 // For Type 1 - return MODE1 right away
-char CheckType123Equipment()
+char CheckType123Equipment(byte fill_type)
 {
   char Equipment = 0;
   if((fill_type == MODE1))
@@ -317,7 +317,7 @@ char WaitReqSendTODFill()
 	char wait_result = ST_TIMEOUT;
 
   // On timeout return and check the switches
-  if( WaitDS102Req(REQ_FIRST)  < 0 ) return -1;   
+  if( WaitDS102Req(MODE3, REQ_FIRST)  < 0 ) return -1;   
   
   for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
   {
@@ -331,7 +331,7 @@ char WaitReqSendTODFill()
 		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
 		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
 	  }
-	  wait_result = WaitDS102Req( (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
+	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
 
     // If all records were sent - ignore timeout
 	  if(pos == NUM_TYPE3_CELLS)
@@ -347,12 +347,21 @@ char WaitReqSendTODFill()
   return wait_result;
 }
 
-char SendDS102Fill(void)
+char SendDS102Fill(byte stored_slot)
 {
-	byte bytes, byte_cnt;
-	byte *p_data;
-	char wait_result = ST_TIMEOUT;
+  byte  	fill_type, records;
+	byte    bytes, byte_cnt;
+	byte    *p_data;
+	unsigned short long base_address;
 	
+	char    wait_result = ST_TIMEOUT;
+	
+  base_address = get_eeprom_address(stored_slot & 0x0F);
+	records = byte_read(base_address++);
+	if(records == 0xFF) records = 0x00;
+	// Get the fill type from the EEPROM
+	fill_type = byte_read(base_address++);
+
 	p_data = &data_cell[0];
 	
 	while(records)	
@@ -384,7 +393,7 @@ char SendDS102Fill(void)
 		records--;
 		
 		// After sending a record check for the next request
-		wait_result = WaitDS102Req( records ? REQ_NEXT : REQ_LAST );
+		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
 
     // If all records were sent - ignore timeout
 	  if(records == 0)
@@ -403,11 +412,11 @@ char SendDS102Fill(void)
 	return wait_result;	
 }
 
-char WaitReqSendDS102Fill()
+char WaitReqSendDS102Fill(byte stored_slot, byte fill_type)
 {
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
-	if( WaitDS102Req(REQ_FIRST) < 0 ) return -1;
+	if( WaitDS102Req(fill_type, REQ_FIRST) < 0 ) return -1;
 
-	return SendDS102Fill();
+	return SendDS102Fill(stored_slot);
 }

@@ -4,10 +4,6 @@
 #include "serial.h"
 #include "Fill.h"
 
-unsigned short long base_address;
-byte  	fill_type;
-byte 	  records;
-
 // Generic cell that can keep all the data
 byte	  data_cell[FILL_MAX_SIZE];
 
@@ -25,13 +21,13 @@ char ClearFill(byte stored_slot)
 // Type 1, 2,3 - will be sent thru DS102 interface
 char CheckFillType(byte stored_slot)
 {
-	base_address = get_eeprom_address(stored_slot & 0x0F);
+  byte  	fill_type, records;
+  unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++); 
-	if(records == 0xFF) records = 0x00;
-	
+
 	// Get the fill type from the EEPROM
 	fill_type = byte_read(base_address++);
-	if( (records == 0) || (fill_type == 0xFF))
+	if( (records == 0xFF) || (records == 0) || (fill_type == 0xFF))
 	{
   	fill_type = 0;
   }

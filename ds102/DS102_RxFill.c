@@ -16,7 +16,7 @@
 #define tD  	60     // PIN_C Pulse Width (0.25ms - 75ms)
 #define tG  	60     // PIN_B Pulse Wodth (0.25ms - 80ms)
 #define tH  	60     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  	100    // End of fill - > response (4ms - 2sec)
+#define tF  	300    // End of fill - > response (4ms - 2sec)
 
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
@@ -33,16 +33,14 @@
 #define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 
-static byte  PreviousState;
-static byte  NewState;	
-
 static char GetQueryByte(void)
 {
+  byte  PreviousState, NewState;	
   byte  bit_count;
   byte  Data;
   
-  pinMode(PIN_B, INPUT);		// make pin an input
-  pinMode(PIN_E, INPUT);		// make pin an input
+  pinMode(PIN_B, INPUT);		
+  pinMode(PIN_E, INPUT);
   WPUB_PIN_B = 1;
   WPUB_PIN_E = 1;
 
@@ -101,15 +99,16 @@ static void SendEquipmentType(void)
   pinMode(PIN_E, INPUT);		// Tristate the pin
 }
 
-static byte ReceiveDS102Cell(byte *p_cell, byte count)
+static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 {
   byte  bit_count;
   byte  byte_count;
+  byte  PreviousState, NewState;	
   byte  Data;
 
-  pinMode(PIN_D, INPUT);		// make pin an input DATA
-  pinMode(PIN_E, INPUT);		// make pin an input CLOCK
-  pinMode(PIN_F, INPUT);		// make pin an input MUX OVR
+  pinMode(PIN_D, INPUT);		// make pin input DATA
+  pinMode(PIN_E, INPUT);		// make pin input CLOCK
+  pinMode(PIN_F, INPUT);		// make pin input MUX OVR
   WPUB_PIN_E = 1;
   
 
@@ -121,8 +120,7 @@ static byte ReceiveDS102Cell(byte *p_cell, byte count)
   while( is_not_timeout() &&  (byte_count < count) )
   {
 		// Check for the last fill for Mode2 and 3
-		if( ((fill_type == MODE2) || (fill_type == MODE3)) 
-				&& (digitalRead(PIN_F) == HIGH ))
+		if( (fill_type != MODE1) && (digitalRead(PIN_F) == HIGH) )
 		{
 			break;	// Fill device had deasserted PIN F - exit
 		}
@@ -238,7 +236,6 @@ char CheckFillType23()
     			if( type > 0 )  
     			{
     				SendEquipmentType();
-    				fill_type = type;
     				ret_val =  type;
     			}
           t23_state = DF_INIT;
@@ -254,7 +251,7 @@ char CheckFillType23()
 	return ret_val;
 }
 
-static byte GetFill(void)
+static byte GetFill(unsigned short long base_address, byte fill_type)
 {
 	byte records, byte_cnt, record_size;
 	byte *p_data;
@@ -264,13 +261,12 @@ static byte GetFill(void)
 	record_size = 0;
 	p_data = &data_cell[0];
 
-	saved_base_address = base_address++;
+	saved_base_address = base_address++;  // First byte is record size
 
 	SendFillRequest(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
-  	
-		byte_cnt = ReceiveDS102Cell(p_data, FILL_MAX_SIZE);
+		byte_cnt = ReceiveDS102Cell(fill_type, p_data, FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue
@@ -314,10 +310,11 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 {
 	char result = ST_ERR;
 	byte records;
-	unsigned short long saved_base_addrress;
+	unsigned short long base_address;
+	unsigned short long saved_base_address;
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);
-	saved_base_addrress = base_address;	
+	saved_base_address = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
 											// .. to be filled at the end
 	// The first byte of the each slot has the number of the records (0 - 255)
@@ -325,15 +322,13 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	// The first byte of the record has the number of bytes that should be sent out
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
-	fill_type = required_fill;
-
-	records = GetFill();
+	records = GetFill(base_address, required_fill);
  	// All records were received - put final info into EEPROM
 	// Mark the slot as valid slot containig data
 	if( records > 0)
 	{
-		byte_write(saved_base_addrress, records);
-		byte_write(saved_base_addrress + 1, fill_type);
+		byte_write(saved_base_address, records);
+		byte_write(saved_base_address + 1, required_fill);
 		result = ST_DONE;
 	}
   return result;

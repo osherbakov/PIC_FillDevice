@@ -36,13 +36,14 @@ char master_state;
 
 char	retry_flag;
 
+static unsigned long short base_address;
 static unsigned char block_counter;   // Counter for blocks sent
 
 void MasterStart(char slot)
 {
 	base_address = get_eeprom_address(slot & 0x0F);
-	base_address++;		// Skip the Fill type byte
 	block_counter = byte_read(base_address++); 
+	base_address++;		// Skip the Fill type byte
 	// Reset all to defaults 
 	NR = 0;
 	NS = 0;

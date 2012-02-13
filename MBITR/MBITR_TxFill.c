@@ -35,13 +35,25 @@ static char WaitMBITRReq(byte req_type)
 	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT ; 
 }
 
-static char SendMBITRFill(void)
+char WaitReqSendMBITRFill(byte stored_slot)
 {
-	byte bytes, byte_cnt;
-	byte *p_data;
-	char wait_result = ST_OK;
-	
+	byte    bytes, byte_cnt;
+  byte  	fill_type, records;
+	byte    *p_data;
+	char    wait_result;
+	unsigned short long base_address;
+
+	// If first fill request was not answered - just return with timeout
+	// We will be called again after switches are checked
+	if( WaitMBITRReq(REQ_FIRST) < 0 ) return -1;
+
+	wait_result = ST_OK;
 	p_data = &data_cell[0];
+	base_address = get_eeprom_address(stored_slot & 0x0F);
+	records = byte_read(base_address++);
+	if(records == 0xFF) records = 0x00;
+	// Get the fill type from the EEPROM
+	fill_type = byte_read(base_address++);
 	
 	while(records)	
 	{
@@ -68,16 +80,6 @@ static char SendMBITRFill(void)
 			break;
 	}	
 	return wait_result;
-}
-
-
-char WaitReqSendMBITRFill()
-{
-	// If first fill request was not answered - just return with timeout
-	// We will be called again after switches are checked
-	if( WaitMBITRReq(REQ_FIRST) < 0 ) return -1;
-
-	return SendMBITRFill();
 }
 
 

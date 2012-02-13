@@ -70,10 +70,6 @@ extern byte	 TOD_cell[];
 extern void  FillTODData(void);
 extern void  ExtractTODData(void);
 
-extern unsigned short long base_address;
-extern byte  	fill_type;
-extern byte 	records;
-
 // Clear a selected slot
 extern char ClearFill(byte stored_slot);
 // Get the fill info from the slot
@@ -85,22 +81,22 @@ extern char CheckFillType4(void);
 extern char CheckFillRS232Type5(void);
 extern char CheckFillDTD232Type5(void);
 extern char CheckFillRS485Type5(void);
+extern char CheckType123Equipment(byte fill_type);
 
 // Actual functions to get and store fills
 extern char StoreDS102Fill(byte stored_slot, byte fill_type);
 extern char StorePCFill(byte stored_slot, byte fill_type);
 
-extern char CheckType123Equipment(void);
 
 // Functions to wait for the request and send fill
-extern char WaitReqSendDS102Fill(void);
-extern char WaitReqSendTODFill(void);
-extern char WaitReqSendMBITRFill(void);
-extern char WaitReqSendPCFill(byte slot); // Any slot can be sent (dumped)
+extern char WaitReqSendDS102Fill(byte stored_slot, byte fill_type);
+extern char WaitReqSendMBITRFill(byte stored_slot);
+extern char WaitReqSendPCFill(byte stored_slot); // Any slot can be sent (dumped)
 extern char ReadMemSendPCFill(byte stored_slot);
+extern char WaitReqSendTODFill(void);
 
 // Funcrtion to send fill immediately
-extern char SendDS102Fill(void);
+extern char SendDS102Fill(byte stored_slot);
 
 
 #endif	// __FILL_H__

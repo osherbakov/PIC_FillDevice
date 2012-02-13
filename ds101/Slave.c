@@ -9,8 +9,9 @@
 #include "delay.h"
 
 
-static unsigned short long saved_base_address; // EEPROM block start address
-static unsigned char block_counter;     // Counter for blocks sent
+static unsigned short long base_address;        // EEPROM block start address
+static unsigned short long saved_base_address;  // EEPROM block start address (saved)
+static unsigned char block_counter;             // Counter for blocks sent
 
 static char NewAddress;
 static char Disconnected;
@@ -81,8 +82,8 @@ void SaveDataBlock(char *p_data, int n_chars)
 	
 	// update the block counter and type
 	block_counter++;
-	byte_write(saved_base_address, MODE5);
-	byte_write(saved_base_address + 1, block_counter);  
+	byte_write(saved_base_address, block_counter);  
+	byte_write(saved_base_address + 1, MODE5);
 }	
 
 void SlaveProcessIFrame(char *p_data, int n_chars)
