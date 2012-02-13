@@ -97,6 +97,7 @@ extern char WaitReqSendDS102Fill(void);
 extern char WaitReqSendTODFill(void);
 extern char WaitReqSendMBITRFill(void);
 extern char WaitReqSendPCFill(byte slot); // Any slot can be sent (dumped)
+extern char ReadMemSendPCFill(byte stored_slot);
 
 // Funcrtion to send fill immediately
 extern char SendDS102Fill(void);

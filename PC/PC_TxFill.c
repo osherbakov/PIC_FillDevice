@@ -24,7 +24,10 @@ static char WaitPCReq(byte req_type)
 static char SendPCFill(void)
 {
 	byte bytes, byte_cnt;
+	byte  *p_data;
 	char wait_result = ST_OK;
+	
+	p_data = &data_cell[0];
 	
 	while(records)	
 	{
@@ -32,11 +35,11 @@ static char SendPCFill(void)
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, &data_cell[0], byte_cnt);
+			array_read(base_address, p_data, byte_cnt);
 			base_address += byte_cnt;
 			// Check if the cell that we are about to send is the 
 			// TOD cell - replace it with the real Time cell
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				FillTODData();
@@ -44,7 +47,7 @@ static char SendPCFill(void)
 		  	tx_eusart(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
-				tx_eusart(&data_cell[0], byte_cnt);
+				tx_eusart(p_data, byte_cnt);
 			}
 			bytes -= byte_cnt;
 		}
@@ -63,11 +66,34 @@ static char SendPCFill(void)
 			break;
 	}	
 	
-	return wait_result;	// When send to MBITR - return with DONE flag
+	return wait_result;	
 }
 
 char WaitReqSendPCFill(byte stored_slot)
 {
   CheckFillType(stored_slot);
 	return SendPCFill();
+}
+
+
+
+char ReadMemSendPCFill(byte stored_slot)
+{
+	unsigned int bytes, byte_cnt;
+	byte  *p_data;
+
+	base_address = get_eeprom_address(stored_slot & 0x0F);
+	p_data = &data_cell[0];
+	
+	bytes = 0x1000;
+	while(bytes)	
+	{
+			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
+			array_read(base_address, p_data, byte_cnt);
+			base_address += byte_cnt;
+			tx_eusart(p_data, byte_cnt);
+			bytes -= byte_cnt;
+			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+	}
+	return ST_OK;
 }

@@ -175,7 +175,8 @@ static void SetTimeFromCell(void)
 	}else
 	{
 		// The time is in chunks of 1/10 sec
-		char ms_100 =  (10 - (data_cell[11] >> 4) ) & 0x0F; 
+		char ms_100 = MIN((data_cell[11] >> 4), 9);
+		ms_100 =  9 - ms_100; 
 		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
 	}
@@ -256,10 +257,12 @@ char CheckFillType23()
 static byte GetFill(void)
 {
 	byte records, byte_cnt, record_size;
+	byte *p_data;
 	unsigned short long saved_base_address;
 
 	records = 0;
 	record_size = 0;
+	p_data = &data_cell[0];
 
 	saved_base_address = base_address++;
 
@@ -267,7 +270,7 @@ static byte GetFill(void)
   while(1)
 	{
   	
-		byte_cnt = ReceiveDS102Cell(&data_cell[0], FILL_MAX_SIZE);
+		byte_cnt = ReceiveDS102Cell(p_data, FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue
@@ -275,26 +278,29 @@ static byte GetFill(void)
 		record_size += byte_cnt;
 		if(record_size == 0)
 		{
-			break;	// No data provided - exit
+			break;	// No data provided on the first fill - exit
 		}
+		// Any data present - save it in EEPROM
 		if(byte_cnt)
 		{
-			array_write(base_address, &data_cell[0], byte_cnt);
+			array_write(base_address, p_data, byte_cnt);
 			base_address += byte_cnt;
 		}
+		// Block of data received - save size and request next
 		if(byte_cnt < FILL_MAX_SIZE)
 		{
 			byte_write(saved_base_address, record_size);
 			records++; 
+			// Prepare for the next record
 			record_size = 0;
 			saved_base_address = base_address++;
-// Check if the cell that we received is the 
-// TOD cell - set up time
-//			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-//						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-//			{
-//				SetTimeFromCell();
-//			}
+      // Check if the cell that we received is the 
+      // TOD cell - set up time
+			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
+						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+			{
+				SetTimeFromCell();
+			}
 			SendFillRequest(REQ_NEXT);	// ACK the previous and REQ the next packet
 		}
 	}
@@ -314,8 +320,8 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	saved_base_addrress = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
 											// .. to be filled at the end
-	// All data are stored in 1K bytes (8K bits) slots
 	// The first byte of the each slot has the number of the records (0 - 255)
+	// The second byte - fill type
 	// The first byte of the record has the number of bytes that should be sent out
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
@@ -328,7 +334,7 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	{
 		byte_write(saved_base_addrress, records);
 		byte_write(saved_base_addrress + 1, fill_type);
-		result = ST_OK;
+		result = ST_DONE;
 	}
   return result;
 }

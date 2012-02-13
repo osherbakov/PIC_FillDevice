@@ -38,7 +38,10 @@ static char WaitMBITRReq(byte req_type)
 static char SendMBITRFill(void)
 {
 	byte bytes, byte_cnt;
+	byte *p_data;
 	char wait_result = ST_OK;
+	
+	p_data = &data_cell[0];
 	
 	while(records)	
 	{
@@ -46,9 +49,9 @@ static char SendMBITRFill(void)
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, &data_cell[0], byte_cnt);
+			array_read(base_address, p_data, byte_cnt);
 			base_address += byte_cnt;
-			tx_mbitr(&data_cell[0], byte_cnt);
+			tx_mbitr(p_data, byte_cnt);
 			bytes -= byte_cnt;
 		}
 		records--;

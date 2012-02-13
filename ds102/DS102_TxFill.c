@@ -7,20 +7,6 @@
 #include "Fill.h"
 #include "controls.h"
 
-
-static void AcquireMode1Bus(void);
-static void AcquireMode23Bus(void);
-static void ReleaseMode23Bus(void);
-
-static char WaitDS102Req(byte req_type);
-
-static char GetEquipmentMode23Type(void);
-
-static void StartMode23Handshake(void);
-static void EndMode23Handshake(void);
-
-static void SendMode23Query(byte Data);
-
 //--------------------------------------------------------------
 // Delays for the appropriate timings in millisecs
 //--------------------------------------------------------------
@@ -48,7 +34,7 @@ static void SendMode23Query(byte Data);
 #define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
 
 // Sends byte data on PIN_B with clocking on PIN_E
-void SendMode23Query(byte Data)
+static void SendMode23Query(byte Data)
 {
   byte i;
   // Set up pins mode and levels
@@ -79,7 +65,7 @@ void SendMode23Query(byte Data)
     delayMicroseconds(tT);     // Hold Clock in LOW for tT
     digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
-  delayMicroseconds(tK2 - tT);  // Wait there
+  delayMicroseconds(tK2);  // Wait there
   
   // Release PIN_B and PIN_E - the Radio will drive it
   pinMode(PIN_B, INPUT);    // Tristate the pin
@@ -88,7 +74,7 @@ void SendMode23Query(byte Data)
 
 
 // Sends byte data on PIN_D with clocking on PIN_E
-void SendDS102Byte(byte Data)
+static void SendDS102Byte(byte Data)
 {
   byte i;
   for(i = 0; i < 8; i++)
@@ -103,7 +89,7 @@ void SendDS102Byte(byte Data)
 }
 
 // Send Cell - a collection of bytes
-void SendDS102Cell(byte *p_cell, byte count)
+static void SendDS102Cell(byte *p_cell, byte count)
 {
   byte i;
   pinMode(PIN_D, OUTPUT);
@@ -121,7 +107,7 @@ void SendDS102Cell(byte *p_cell, byte count)
 
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
 //   The total number of clocks is 40 (41), but only the last bit matters
-char GetEquipmentMode23Type()
+static char GetEquipmentMode23Type(void)
 {
   byte i;
   byte  NewState;	
@@ -140,7 +126,7 @@ char GetEquipmentMode23Type()
   while(is_not_timeout())
   {
     NewState = digitalRead(PIN_E);
-	// Find the state change
+	  // Find the state change
     if( PreviousState != NewState  )
     {
       if( NewState == LOW )
@@ -157,8 +143,10 @@ char GetEquipmentMode23Type()
   return -1;
 }
 
+
 // Wait for the Fill request on PinC
-// Returns 	-1 	- timeout
+// Returns 	
+//      -1 	- Timeout
 //			0 	- Request received
 //			1 	- PinB was asserted - error fill
 char WaitDS102Req(byte req_type)
@@ -192,9 +180,7 @@ char WaitDS102Req(byte req_type)
     {
       // check if we should return now or wait for the PIN_C to go HIGH
       // If this is the last request - return just as PinC goes LOW	
-      if( (NewState == HIGH) || 
-            (req_type == REQ_LAST) ||
-                (fill_type == MODE1) ) 
+      if( (NewState == HIGH) || (req_type == REQ_LAST) ) 
       {
         Result = (Result != ST_ERR) ? ST_OK : ST_ERR;
         break;
@@ -208,30 +194,19 @@ char WaitDS102Req(byte req_type)
       Result = ST_ERR;  // Bad CRC
     }
   }
+  // Timeout occured - must return -1, except some special cases
+  // For Type 1 Fill the first request may be just a long pull of PIN_C
+  // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
+  if( (fill_type == MODE1) && 
+          ( (PreviousState == LOW) || (req_type == REQ_LAST) ) )
+  {
+		Result = ST_OK;
+  }
   return Result;
 }
 
 
-void StartMode23Handshake()
-{
-  pinMode(PIN_D, OUTPUT);    // make pin output
-  pinMode(PIN_F, OUTPUT);    // make pin output
-  // Drop PIN_D first
-  digitalWrite(PIN_D, LOW);
-  digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
-  delay(tA);                  // Pin D pulse width
-  digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
-}
-
-void EndMode23Handshake()
-{
-  pinMode(PIN_D, OUTPUT);
-  pinMode(PIN_E, OUTPUT);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-}
-
-void AcquireMode1Bus()
+static void AcquireMode1Bus(void)
 {
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
@@ -247,13 +222,15 @@ void AcquireMode1Bus()
 }
 
 
-void AcquireMode23Bus()
+static void AcquireMode23Bus(void)
 {
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
 
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);
@@ -263,7 +240,7 @@ void AcquireMode23Bus()
 }
 
 
-void ReleaseMode23Bus()
+static void ReleaseMode23Bus(void)
 {
   delayMicroseconds(tL);
   pinMode(PIN_F, OUTPUT);
@@ -275,6 +252,25 @@ void ReleaseMode23Bus()
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
   delay(tZ);
+}
+
+static void StartMode23Handshake(void)
+{
+  pinMode(PIN_D, OUTPUT);    // make pin output
+  pinMode(PIN_F, OUTPUT);    // make pin output
+  // Drop PIN_D first
+  digitalWrite(PIN_D, LOW);
+  digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
+  delay(tA);                  // Pin D pulse width
+  digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
+}
+
+static void EndMode23Handshake(void)
+{
+  pinMode(PIN_D, OUTPUT);
+  pinMode(PIN_E, OUTPUT);
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, HIGH);
 }
 
 
@@ -354,19 +350,26 @@ char WaitReqSendTODFill()
 char SendDS102Fill(void)
 {
 	byte bytes, byte_cnt;
+	byte *p_data;
 	char wait_result = ST_TIMEOUT;
+	
+	p_data = &data_cell[0];
 	
 	while(records)	
 	{
 		bytes = byte_read(base_address++);
+		if(bytes !=  MODE2_3_CELL_SIZE)
+		{
+  		break;
+  	}
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, &data_cell[0], byte_cnt);
+			array_read(base_address, p_data, byte_cnt);
 			base_address += byte_cnt;
 			// Check if the cell that we are about to send is the 
 			// TOD cell - replace it with the real Time cell
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				FillTODData();
@@ -374,7 +377,7 @@ char SendDS102Fill(void)
 	  		SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
-				SendDS102Cell(&data_cell[0], byte_cnt);
+				SendDS102Cell(p_data, byte_cnt);
 			}
 			bytes -= byte_cnt;
 		}

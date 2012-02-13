@@ -16,6 +16,7 @@
 static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
 static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
 static byte TIME_CMD[]    = "/TIME";	// Fill/Dump Time
+static byte MEM_READ[] 		= "/READ";	// Read the key N
 
 /****************************************************************/
 // Those are commands and responses that MBITR receives and sends
@@ -181,11 +182,12 @@ void close_eusart()
 
 void PCInterface()
 {
+ 	byte *p_data = &data_cell[0];
 	// If entering the first time - enable eusart
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart_rxtx(&data_cell[0], 6);
+		open_eusart_rxtx(p_data, 6);
 	}
 	
 	// Wait to receive 6 characters
@@ -194,23 +196,28 @@ void PCInterface()
   	// Six or more characters received - check if
   	// this is a /DUMPN request to dump keys to PC
   	//  or it is a /FILLN request to load key from PC
-  	if( is_equal(&data_cell[0], KEY_FILL, 5))
+  	if( is_equal(p_data, KEY_FILL, 5))
   	{
     	// The last char in /FILLN specifies Type(high nibble) 
     	//    and Slot Number (low nibble)
   		rx_count = 0; // Data consumed
-  		StorePCFill(data_cell[5] & 0x0F, (data_cell[5] >> 4) & 0x0F);
-  	}else if(is_equal( &data_cell[0], KEY_DUMP, 5))
+  		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
+  	}else if(is_equal( p_data, KEY_DUMP, 5))
   	{
     	// The last char in /DUMPN is the slot number
   		rx_count = 0; // Data consumed
-  		WaitReqSendPCFill(data_cell[5] & 0x0F);
-  	}else if(is_equal( &data_cell[0], TIME_CMD, 5))
+  		WaitReqSendPCFill(p_data[5] & 0x0F);
+  	}else if(is_equal( p_data, MEM_READ, 5))
+  	{
+    	// The last char in /READN is the slot number
+  		rx_count = 0; // Data consumed
+  		ReadMemSendPCFill(p_data[5] & 0x0F);
+  	}else if(is_equal( p_data, TIME_CMD, 5))
   	{
     	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
   		rx_count = 0; // Data consumed
-    	GetCurrentDayString(&data_cell[0]);
-    	tx_eusart_str(data_cell);
+    	GetCurrentDayString(p_data);
+    	tx_eusart_str(p_data);
     } 	
   }  
 }
@@ -222,7 +229,7 @@ void PCInterface()
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
   byte  n_rcvd;
-  byte  *rx_data_saved;
+  volatile byte  *rx_data_saved;
   byte  rx_count_1_saved;
 
   // Save previous buffer setup  

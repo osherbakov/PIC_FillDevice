@@ -35,7 +35,8 @@ static void SetTimeFromPC(void)
 	}else
 	{
 		// The time is in chunks of 1/10 sec
-		char ms_100 =  (10 - (data_cell[11] >> 4) ) & 0x0F; 
+		char ms_100 = MIN((data_cell[11] >> 4), 9);
+		ms_100 =  9 - ms_100; 
 		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
 	}
@@ -45,7 +46,10 @@ static void SetTimeFromPC(void)
 static byte GetPCFill(void)
 {
 	byte records, byte_cnt, record_size;
+	byte  *p_data;
 	unsigned short long saved_base_address;
+
+	p_data = &data_cell[0];
 
 	records = 0;
 	record_size = 0;
@@ -55,7 +59,7 @@ static byte GetPCFill(void)
 	SendPCAck(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
-		byte_cnt = rx_eusart(&data_cell[0], FILL_MAX_SIZE);
+		byte_cnt = rx_eusart(p_data, FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue
@@ -67,7 +71,7 @@ static byte GetPCFill(void)
 		}
 		if(byte_cnt)
 		{
-			array_write(base_address, &data_cell[0], byte_cnt);
+			array_write(base_address, p_data, byte_cnt);
 			base_address += byte_cnt;
 		}
 		if(byte_cnt < FILL_MAX_SIZE)

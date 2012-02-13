@@ -322,6 +322,6 @@ char ReceiveHQTime(void )
   		  (HQ_JulianDayH == rtc_date.JulianDayH) && 
     		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
     		    (HQ_Year == rtc_date.Year) 
-		    ) ? ST_DONE : ST_ERR;
+		          ) ? ST_DONE : ST_ERR;
 }
 
