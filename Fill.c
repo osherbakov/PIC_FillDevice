@@ -244,7 +244,7 @@ char  ExtractYear(byte *p_buff, byte n_count)
 void GetSetCurrentDayTime(byte *p_buffer)
 {
 	byte byte_cnt;
-	byte_cnt = rx_eusart(p_buffer, FILL_MAX_SIZE);
+	byte_cnt = rx_eusart_cont(p_buffer, FILL_MAX_SIZE);
   
   if( (byte_cnt >= 17) &&
         ExtractYear(p_buffer, byte_cnt) &&

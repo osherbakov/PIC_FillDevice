@@ -264,6 +264,35 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
   return n_rcvd;
 }
 
+// Receive the specified number of characters with timeout
+// RX_TIMEOUT2_PC - timeout for all consequtive chars
+byte rx_eusart_cont(unsigned char *p_data, byte ncount)
+{
+  
+  byte  nrcvd = 0;
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+
+  set_timeout(RX_TIMEOUT2_PC);
+	while( (nrcvd < ncount ) && is_not_timeout() )
+	{
+		if(PIR1bits.RC1IF)	// Data is avaiable
+		{
+			// Get data byte and save it
+			*p_data++ = RCREG1;
+			nrcvd++;
+		  set_timeout(RX_TIMEOUT2_PC);
+			// overruns? clear it
+			if(RCSTA1 & 0x06)
+			{
+				RCSTA1bits.CREN = 0;
+				RCSTA1bits.CREN = 1;
+			}
+		}
+	}
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+  return nrcvd;
+}
+
 
 volatile byte *tx_data; // Pointer to the current output data
 volatile byte tx_count; // currect output counter
