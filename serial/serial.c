@@ -55,8 +55,6 @@ static byte OPT_END[] 		= {0x0D, 0x00};
 static byte OPT_ENABLED[] = "Radio Option Enabled";
 static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
 
-static byte RESP_ERR[] 		= "ERR\n";	
-
 // The list of all options enabled in the radio
 static byte *OPTS[] = 
 {
@@ -214,19 +212,10 @@ void PCInterface()
   		ReadMemSendPCFill(p_data[5] & 0x0F);
   	}else if(is_equal( p_data, TIME_CMD, 5))
   	{
-    	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
+    	// The last char in /TIME is either 
   		rx_count = 0; // Data consumed
-  		if(p_data[5] == 'D')
-  		{
-    	  GetCurrentDayTime(p_data);
-      	tx_eusart_str(p_data);
-      }else if(p_data[5] == 'F')
-      {
-        StoreCurrentDayTime(p_data);
-      }else // Not 'D' or 'F' - send error message
-      {
-      	tx_eusart_buff(RESP_ERR);
-      }    
+  	  GetSetCurrentDayTime(p_data);
+    	tx_eusart_str(p_data);
     } 	
   }  
 }
@@ -241,15 +230,17 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
   volatile byte  *rx_data_saved;
   byte  rx_count_1_saved;
 
+  //----------------------------------
   // Save previous buffer setup  
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	rx_data_saved = rx_data;
 	rx_count_1_saved = rx_count_1;
-
 	rx_data = (volatile byte *) p_data;
 	rx_count = 0;
 	rx_count_1 = ncount - 1;
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+  //----------------------------------
+	
   set_timeout(RX_TIMEOUT1_PC);
   // We need 2 while loops - one with initial Timeout,
   // another with the timeout after receiving first symbol 
@@ -260,6 +251,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 	  while( (rx_count < ncount ) && is_not_timeout() )	{}
 	}
 	
+  //----------------------------------
 	// Restore all previous buffer setup
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	n_rcvd = rx_count; 
@@ -267,6 +259,8 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 	rx_count_1 = rx_count_1_saved;
 	rx_count = 0;        // Clear buffer
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+  //----------------------------------
+	
   return n_rcvd;
 }
 

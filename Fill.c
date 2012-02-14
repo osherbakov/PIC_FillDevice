@@ -16,21 +16,20 @@ static byte month_names[] = "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 
 
-byte *GetCurrentDayTime(byte *p_buff)
+static void GetCurrentDayTime(byte *p_buffer)
 {
   byte  ms, ms_10, month, weekday;
-  byte  *p_curr = p_buff;
   
   
   GetRTCData();
   
-  *p_curr++ = '0' + (rtc_date.Hours >> 4);
-  *p_curr++ = '0' + (rtc_date.Hours & 0x0F);
-  *p_curr++ = '0' + (rtc_date.Minutes >> 4);
-  *p_curr++ = '0' + (rtc_date.Minutes & 0x0F);
-  *p_curr++ = '0' + (rtc_date.Seconds >> 4);
-  *p_curr++ = '0' + (rtc_date.Seconds & 0x0F);
-  *p_curr++ = '.';
+  *p_buffer++ = '0' + (rtc_date.Hours >> 4);
+  *p_buffer++ = '0' + (rtc_date.Hours & 0x0F);
+  *p_buffer++ = '0' + (rtc_date.Minutes >> 4);
+  *p_buffer++ = '0' + (rtc_date.Minutes & 0x0F);
+  *p_buffer++ = '0' + (rtc_date.Seconds >> 4);
+  *p_buffer++ = '0' + (rtc_date.Seconds & 0x0F);
+  *p_buffer++ = '.';
 
   ms = 0;
 	ms_10 = rtc_date.MilliSeconds_10;
@@ -39,42 +38,40 @@ byte *GetCurrentDayTime(byte *p_buff)
 		ms++;
 		ms_10 -= 10; 
 	}
-  *p_curr++ = '0' + ms;
+  *p_buffer++ = '0' + ms;
   
-  *p_curr++ = 'Z';
-  *p_curr++ = ' ';
+  *p_buffer++ = 'Z';
+  *p_buffer++ = ' ';
   
-  *p_curr++ = '0' + (rtc_date.Day >> 4);
-  *p_curr++ = '0' + (rtc_date.Day & 0x0F);
+  *p_buffer++ = '0' + (rtc_date.Day >> 4);
+  *p_buffer++ = '0' + (rtc_date.Day & 0x0F);
 
   month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
   month *= 3;
 
-  *p_curr++ = month_names[month++];
-  *p_curr++ = month_names[month++];
-  *p_curr++ = month_names[month++];
+  *p_buffer++ = month_names[month++];
+  *p_buffer++ = month_names[month++];
+  *p_buffer++ = month_names[month++];
 
-  *p_curr++ = '0' + (rtc_date.Century >> 4);
-  *p_curr++ = '0' + (rtc_date.Century & 0x0F);
-  *p_curr++ = '0' + (rtc_date.Year >> 4);
-  *p_curr++ = '0' + (rtc_date.Year & 0x0F);
-  *p_curr++ = ' ';
+  *p_buffer++ = '0' + (rtc_date.Century >> 4);
+  *p_buffer++ = '0' + (rtc_date.Century & 0x0F);
+  *p_buffer++ = '0' + (rtc_date.Year >> 4);
+  *p_buffer++ = '0' + (rtc_date.Year & 0x0F);
+  *p_buffer++ = ' ';
 
   weekday = (rtc_date.WeekDay & 0x0F) * 3;
-  *p_curr++ = weekday_names[weekday++];
-  *p_curr++ = weekday_names[weekday++];
-  *p_curr++ = weekday_names[weekday++];
-  *p_curr++ = ' ';
+  *p_buffer++ = weekday_names[weekday++];
+  *p_buffer++ = weekday_names[weekday++];
+  *p_buffer++ = weekday_names[weekday++];
+  *p_buffer++ = ' ';
 
-  *p_curr++ = 'J';
-  *p_curr++ = 'D';
-  *p_curr++ = '0' + (rtc_date.JulianDayH & 0x0F);
-  *p_curr++ = '0' + (rtc_date.JulianDayL >> 4);
-  *p_curr++ = '0' + (rtc_date.JulianDayL & 0x0F);
-  *p_curr++ = 0x0D;
-  *p_curr++ = 0x00;
- 
-  return p_buff;
+  *p_buffer++ = 'J';
+  *p_buffer++ = 'D';
+  *p_buffer++ = '0' + (rtc_date.JulianDayH & 0x0F);
+  *p_buffer++ = '0' + (rtc_date.JulianDayL >> 4);
+  *p_buffer++ = '0' + (rtc_date.JulianDayL & 0x0F);
+  *p_buffer++ = 0x0D;
+  *p_buffer++ = 0x00;
 }  
 
 
@@ -214,7 +211,7 @@ char  ExtractDate(byte *p_buff, byte n_count)
 
 char  ExtractYear(byte *p_buff, byte n_count)
 {
-  // find the block that has 4 digits
+  // find the block that has 4 digits only
   while(1)
   {
     while ( !isdigit(*p_buff) && (n_count > 4))
@@ -242,5 +239,22 @@ char  ExtractYear(byte *p_buff, byte n_count)
     }  
   }  
   return FALSE; 
+}
+
+void GetSetCurrentDayTime(byte *p_buffer)
+{
+	byte byte_cnt;
+	byte_cnt = rx_eusart(p_buffer, FILL_MAX_SIZE);
+  
+  if( (byte_cnt >= 17) &&
+        ExtractYear(p_buffer, byte_cnt) &&
+          ExtractTime(p_buffer, byte_cnt) &&
+            ExtractDate(p_buffer, byte_cnt) )
+  {
+    CalculateJulianDay();
+    CalculateWeekDay();
+		SetRTCData();		
+	}
+	GetCurrentDayTime(p_buffer);
 }
 

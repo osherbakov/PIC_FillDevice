@@ -73,8 +73,7 @@ extern char  ExtractYear(byte *p_buff, byte n_count);
 extern char  ExtractDate(byte *p_buff, byte n_count);
 extern char  ExtractTime(byte *p_buff, byte n_count);
 
-extern byte *GetCurrentDayTime(byte *p_buffer);
-extern void StoreCurrentDayTime(byte *p_buffer);
+extern void GetSetCurrentDayTime(byte *p_buffer);
 
 // Clear a selected slot
 extern char ClearFill(byte stored_slot);

@@ -25,24 +25,6 @@ char SendPCNak(byte ack_type)
 	tx_eusart(&key_ack, 1);			// NAK the previous packet
 }
 
-
-void StoreCurrentDayTime(byte *p_buffer)
-{
-	byte byte_cnt;
-	byte_cnt = rx_eusart(p_buffer, FILL_MAX_SIZE);
-  
-  if( (byte_cnt >= 17) &&
-        ExtractYear(p_buffer, byte_cnt) &&
-          ExtractTime(p_buffer, byte_cnt) &&
-            ExtractDate(p_buffer, byte_cnt) )
-  {
-    CalculateJulianDay();
-    CalculateWeekDay();
-		SetRTCData();		
-	}
-}
-
-
 static byte GetPCFill(unsigned short long base_address)
 {
 	byte records, byte_cnt, record_size;
