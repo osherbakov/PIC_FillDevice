@@ -31,6 +31,4 @@ extern void CalculateMonthAndDay(void);
 extern void CalculateNextSecond(void);
 extern void CalculateWeekDay(void);
 
-extern byte *GetCurrentDayString(byte *p_buffer);
-
 #endif		// __RTC_H_

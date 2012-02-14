@@ -25,19 +25,19 @@ char SendPCNak(byte ack_type)
 	tx_eusart(&key_ack, 1);			// NAK the previous packet
 }
 
-static void SetTimeFromPC(void)
+
+void StoreCurrentDayTime(byte *p_buffer)
 {
-	ExtractTODData();
-	CalculateNextSecond();
-	if( !rtc_date.Valid )
-	{
-		SendPCNak(0);
-	}else
-	{
-		// The time is in chunks of 1/10 sec
-		char ms_100 = MIN((data_cell[11] >> 4), 9);
-		ms_100 =  9 - ms_100; 
-		while(ms_100-- > 0) delay(100);
+	byte byte_cnt;
+	byte_cnt = rx_eusart(p_buffer, FILL_MAX_SIZE);
+  
+  if( (byte_cnt >= 17) &&
+        ExtractYear(p_buffer, byte_cnt) &&
+          ExtractTime(p_buffer, byte_cnt) &&
+            ExtractDate(p_buffer, byte_cnt) )
+  {
+    CalculateJulianDay();
+    CalculateWeekDay();
 		SetRTCData();		
 	}
 }

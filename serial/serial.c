@@ -55,6 +55,8 @@ static byte OPT_END[] 		= {0x0D, 0x00};
 static byte OPT_ENABLED[] = "Radio Option Enabled";
 static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
 
+static byte RESP_ERR[] 		= "ERR\n";	
+
 // The list of all options enabled in the radio
 static byte *OPTS[] = 
 {
@@ -139,8 +141,6 @@ char CheckFillType4()
 			// Options request - send all options
 			send_options();
 			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
-			// Prepare to receive all next data as the Type 4 fill
-			open_eusart_rxtx(SerialBuffer, 4);
 			return MODE4;
 		}
 	}
@@ -216,8 +216,17 @@ void PCInterface()
   	{
     	// The last char in /TIMEX is either "D" - Dump, or "F" - Fill
   		rx_count = 0; // Data consumed
-    	GetCurrentDayString(p_data);
-    	tx_eusart_str(p_data);
+  		if(p_data[5] == 'D')
+  		{
+    	  GetCurrentDayTime(p_data);
+      	tx_eusart_str(p_data);
+      }else if(p_data[5] == 'F')
+      {
+        StoreCurrentDayTime(p_data);
+      }else // Not 'D' or 'F' - send error message
+      {
+      	tx_eusart_buff(RESP_ERR);
+      }    
     } 	
   }  
 }

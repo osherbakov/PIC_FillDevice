@@ -186,9 +186,15 @@ void main()
   
 	setup_start_io();
   PinsToDefault();	
-	
+  	
 #ifdef  DO_TEST
+  byte  test_str[] = "  123455 15JUN 2012 ";
+  
   // Perform BIST (self-test)
+  ExtractTime(test_str, 20);
+  ExtractDate(test_str, 20);
+  ExtractYear(test_str, 20);
+  
   SetupCurrentTime();
   TestAllPins();
   TestRTCFunctions();  

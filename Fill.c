@@ -3,12 +3,80 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
+#include "gps.h"
+#include <ctype.h>
 
 // Generic cell that can keep all the data
 byte	  data_cell[FILL_MAX_SIZE];
 
 // Time cell
 byte    TOD_cell[MODE2_3_CELL_SIZE];
+
+static byte month_names[] = "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
+static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
+
+
+byte *GetCurrentDayTime(byte *p_buff)
+{
+  byte  ms, ms_10, month, weekday;
+  byte  *p_curr = p_buff;
+  
+  
+  GetRTCData();
+  
+  *p_curr++ = '0' + (rtc_date.Hours >> 4);
+  *p_curr++ = '0' + (rtc_date.Hours & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Minutes >> 4);
+  *p_curr++ = '0' + (rtc_date.Minutes & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Seconds >> 4);
+  *p_curr++ = '0' + (rtc_date.Seconds & 0x0F);
+  *p_curr++ = '.';
+
+  ms = 0;
+	ms_10 = rtc_date.MilliSeconds_10;
+	while(ms_10 >= 10)
+	{
+		ms++;
+		ms_10 -= 10; 
+	}
+  *p_curr++ = '0' + ms;
+  
+  *p_curr++ = 'Z';
+  *p_curr++ = ' ';
+  
+  *p_curr++ = '0' + (rtc_date.Day >> 4);
+  *p_curr++ = '0' + (rtc_date.Day & 0x0F);
+
+  month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
+  month *= 3;
+
+  *p_curr++ = month_names[month++];
+  *p_curr++ = month_names[month++];
+  *p_curr++ = month_names[month++];
+
+  *p_curr++ = '0' + (rtc_date.Century >> 4);
+  *p_curr++ = '0' + (rtc_date.Century & 0x0F);
+  *p_curr++ = '0' + (rtc_date.Year >> 4);
+  *p_curr++ = '0' + (rtc_date.Year & 0x0F);
+  *p_curr++ = ' ';
+
+  weekday = (rtc_date.WeekDay & 0x0F) * 3;
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = weekday_names[weekday++];
+  *p_curr++ = ' ';
+
+  *p_curr++ = 'J';
+  *p_curr++ = 'D';
+  *p_curr++ = '0' + (rtc_date.JulianDayH & 0x0F);
+  *p_curr++ = '0' + (rtc_date.JulianDayL >> 4);
+  *p_curr++ = '0' + (rtc_date.JulianDayL & 0x0F);
+  *p_curr++ = 0x0D;
+  *p_curr++ = 0x00;
+ 
+  return p_buff;
+}  
+
 
 char ClearFill(byte stored_slot)
 {
@@ -71,5 +139,108 @@ void  ExtractTODData()
 	rtc_date.Minutes	= data_cell[9];
 	rtc_date.Seconds	= data_cell[10];
 	CalculateWeekDay();
+}
+
+char  ExtractTime(byte *p_buff, byte n_count)
+{
+  // find the block that has 6 digits
+  while(1)
+  {
+    while ( !isdigit(*p_buff) && (n_count > 6))
+    {
+      p_buff++; n_count--;
+    }
+    if(n_count >= 6)
+    {
+      if(isdigit(p_buff[0]) && isdigit(p_buff[1]) && isdigit(p_buff[2]) && 
+          isdigit(p_buff[3]) && isdigit(p_buff[4]) && isdigit(p_buff[5]) )
+      {
+  	    rtc_date.Hours		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+        rtc_date.Minutes	= ((p_buff[2] & 0x0F) << 4) + (p_buff[3] & 0x0F);
+        rtc_date.Seconds	= ((p_buff[4] & 0x0F) << 4) + (p_buff[5] & 0x0F);
+        return TRUE;
+      } 
+      while ( isdigit(*p_buff) && (n_count > 6))
+      {
+        p_buff++; n_count--;
+      }
+    }else
+    {
+      return FALSE;
+    }  
+  }  
+  return FALSE; 
+}
+
+char  ExtractDate(byte *p_buff, byte n_count)
+{
+  byte month;
+  // find the block that has 2 Digits and 3 Letters
+  while(1)
+  {
+    while ( !isdigit(*p_buff) && (n_count > 5))
+    {
+      p_buff++; n_count--;
+    }
+    if(n_count >= 5)
+    {
+      if(isdigit(p_buff[0]) && isdigit(p_buff[1]) && isalpha(p_buff[2]) && 
+          isalpha(p_buff[3]) && isalpha(p_buff[4]) )
+      {
+  	    // Find the month in the table
+  	    for( month = 1; month <= 12; month++)
+  	    {
+    	    if(is_equal(&p_buff[2], &month_names[month * 3], 3))
+    	    {
+        	  if(month >= 10) month += 0x06;
+      	    rtc_date.Day		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+            rtc_date.Month	= month;
+            return TRUE;
+      	  }  
+    	  }
+    	  return FALSE;
+      } 
+      while ( isdigit(*p_buff) && (n_count > 5))
+      {
+        p_buff++; n_count--;
+      }
+    }else
+    {
+      return FALSE;
+    }  
+  }  
+  return FALSE; 
+}
+
+char  ExtractYear(byte *p_buff, byte n_count)
+{
+  // find the block that has 4 digits
+  while(1)
+  {
+    while ( !isdigit(*p_buff) && (n_count > 4))
+    {
+      p_buff++; n_count--;
+    }
+    if(n_count >= 4)
+    {
+      if( isdigit(p_buff[0]) && isdigit(p_buff[1]) && 
+          isdigit(p_buff[2]) && isdigit(p_buff[3]) && 
+            ((n_count == 4) || !isdigit(p_buff[4])) )
+      {
+  	    rtc_date.Century		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+        rtc_date.Year	=   ((p_buff[2] & 0x0F) << 4) + (p_buff[3] & 0x0F);
+        return TRUE;
+      }
+      // Skip digits 
+      while ( isdigit(*p_buff) && (n_count > 4))
+      {
+        p_buff++; n_count--;
+      }
+    }else
+    {
+      return FALSE;
+    }  
+  }  
+  return FALSE; 
 }
 
