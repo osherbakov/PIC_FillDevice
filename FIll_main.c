@@ -8,9 +8,6 @@
 #include "Fill.h"
 #include "DS101.h"
 
-extern void SetNextState(char nextState);
-
-
 static enum 
 {
 	INIT = 0,
@@ -44,8 +41,7 @@ static enum
 
 #define IDLE_SECS (600)
 
-unsigned int idle_counter;
-
+static unsigned int idle_counter;
 
 byte 	current_state;
 byte 	button_pos;
@@ -54,7 +50,7 @@ byte 	prev_button_pos;
 //
 // Test if the button was depressed and released
 //  Returns 1 if transition from LOW to HIGH was detected
-byte TestButtonPress(void)
+static byte TestButtonPress(void)
 {
 	button_pos = get_button_state();
 	if(button_pos != prev_button_pos)
@@ -68,31 +64,9 @@ byte TestButtonPress(void)
 	return 0;
 }
 
-// Test the resutlt of the fill and set next state.
-//   if result is 0 - go back to INIT state
-//		result = 1 - error happened - set error blink 
-//				and wait for the button press in ERROR state
-//		result = 2 - loaded sucessfully - set "Key Valid" blink 
-//				and wait for the button press in DONE state
-//		result = -1 - timeout, continue working
-void TestFillResult(char result)
-{
-	if(result == ST_OK)					// OK return value
-	{
-		SetNextState(INIT);
-	}else if(result == ST_ERR)			// ERROR return value
-	{
-		SetNextState(ERROR);
-	}else if(result == ST_DONE )			// DONE return value
-	{
-		SetNextState(DONE);
-	}
-	// Timeout - stay in the same state
-}
-
 
 // Set the blink pattern depending on the next state specified
-void SetNextState(char nextState)
+static void SetNextState(char nextState)
 {
 	switch(nextState)
 	{
@@ -124,7 +98,7 @@ void SetNextState(char nextState)
 			break;
 			
 		case FILL_TX_RS232:
-			set_led_state(20, 80);		// "Try RS232" blink pattern
+			set_led_state(40, 80);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_TX_DTD232:
@@ -132,7 +106,7 @@ void SetNextState(char nextState)
 			break;
 
 		case FILL_TX_RS485:
-			set_led_state(80,20);		// "Try RS485" blink pattern
+			set_led_state(80,40);		// "Try RS485" blink pattern
 			break;
 
 		case FILL_RX_PC:
@@ -148,7 +122,7 @@ void SetNextState(char nextState)
 			break;
 
 		case FILL_RX_RS485:
-			set_led_state(80,20);		// "Try RS485" blink pattern
+			set_led_state(80,40);		// "Try RS485" blink pattern
 			break;
 	
 		case ERROR:
@@ -166,7 +140,30 @@ void SetNextState(char nextState)
 	current_state = nextState;
 }
 
-void  PinsToDefault(void)
+// Test the resutlt of the fill and set next state.
+//   if result is 0 - go back to INIT state
+//		result = 1 - error happened - set error blink 
+//				and wait for the button press in ERROR state
+//		result = 2 - loaded sucessfully - set "Key Valid" blink 
+//				and wait for the button press in DONE state
+//		result = -1 - timeout, continue working
+static void TestFillResult(char result)
+{
+	if(result == ST_OK)					// OK return value
+	{
+		SetNextState(INIT);
+	}else if(result == ST_ERR)			// ERROR return value
+	{
+		SetNextState(ERROR);
+	}else if(result == ST_DONE )			// DONE return value
+	{
+		SetNextState(DONE);
+	}
+	// Timeout - stay in the same state
+}
+
+
+static void  PinsToDefault(void)
 {
 	disable_tx_hqii();
 	close_eusart();
@@ -179,10 +176,18 @@ void  PinsToDefault(void)
 	TRIS_PIN_F = 1;
 }
 
+static void bump_idle_counter(void)
+{
+  INTCONbits.GIE = 0; 
+	idle_counter = seconds_counter + IDLE_SECS;
+  INTCONbits.GIE = 1;
+}
+
 void main()
 {
 	char  result;
   byte  fill_type;
+  char  allow_type45_fill;
   
 	setup_start_io();
   PinsToDefault();	
@@ -201,12 +206,17 @@ void main()
 #endif
 
 	SetNextState(INIT);
+	DelayMs(500);
+	
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
+
+  allow_type45_fill = (prev_switch_pos == PC_POS) ? TRUE : FALSE;
 	
-  idle_counter = seconds_counter + IDLE_SECS;
+  bump_idle_counter();
+  
 	while(1)
 	{
 		// If no activity was detected for more than 3 minutes - shut down
@@ -226,7 +236,7 @@ void main()
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
       // On any change bump the idle counter
-      idle_counter = seconds_counter + IDLE_SECS;
+      bump_idle_counter();
 			prev_switch_pos = switch_pos; // Save new state
 			SetNextState(INIT);
 		}
@@ -235,7 +245,7 @@ void main()
 		if( power_pos != prev_power_pos )
 		{
       // On any change bump the idle counter
-      idle_counter = seconds_counter + IDLE_SECS;
+      bump_idle_counter();
 			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
@@ -247,9 +257,13 @@ void main()
 		switch(current_state)
 		{
 			// This case when any switch or button changes
+			// Also after ending any operation
+			//-----------------------------------------------------
+			//********************************************
+			//-----------INIT-----------------
 			case INIT:
         PinsToDefault();
-     		idle_counter = seconds_counter + IDLE_SECS;
+        bump_idle_counter();
 
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
@@ -310,6 +324,29 @@ void main()
 					SetNextState(FILL_TX_TIME);
 				}
 				break;
+			//-----------INIT-----------------
+			//********************************************
+	
+			//********************************************
+			//-----------FILL_TX--------------	
+			case FILL_TX:
+				if(fill_type == MODE5)          // Any DS-101 fill
+				{
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
+					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
+				}else if(fill_type == MODE4)    // MBITR keys
+				{
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
+					SetNextState(FILL_TX_MBITR);
+				}else if( CheckType123Equipment(fill_type) > 0 )
+				{
+					set_pin_a_as_power();						//  Set POWER on Pin A for Type 1,2,3
+          set_pin_f_as_io();
+					SetNextState(FILL_TX_DS102);
+				}
+				break;
 				
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
@@ -347,24 +384,6 @@ void main()
 				}
 				break;
 					
-			case FILL_TX:
-				if(fill_type == MODE5)          // Any DS-101 fill
-				{
-					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
-					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
-				}else if(fill_type == MODE4)    // MBITR keys
-				{
-					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
-					SetNextState(FILL_TX_MBITR);
-				}else if( CheckType123Equipment(fill_type) > 0 )
-				{
-					set_pin_a_as_power();						//  Set POWER on Pin A for Type 1,2,3
-          set_pin_f_as_io();
-					SetNextState(FILL_TX_DS102);
-				}
-				break;
 
 			case FILL_TX_MBITR:
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
@@ -381,7 +400,29 @@ void main()
 				}
 				break;
 
+			case FILL_TX_TIME:
+				if( CheckType123Equipment(fill_type) > 0 )
+				{
+					SetNextState(FILL_TX_TIME_PROC);
+				}
+				break;
+
+			case FILL_TX_TIME_PROC:
+				TestFillResult(WaitReqSendTODFill());
+				break;
+			//-----------FILL_TX--------------	
+			//********************************************
+
+			//********************************************
+			//-----------FILL_RX--------------	
 			case FILL_RX:
+			  if( !allow_type45_fill )
+			  {
+  			  // Only Type 1, 2 and 3 fills are allowed
+  			  //  in DS-102 mode
+          set_pin_a_as_power();
+				  set_pin_f_as_io();
+
 			    // For Type 2 and 3 pins D and F should go low
 				  result = CheckFillType23();
 				  if(result > 0)
@@ -397,8 +438,12 @@ void main()
   					fill_type = MODE1;
   					SetNextState(FILL_RX_DS102);
   				}
-
-/***********************************
+        }else
+        {
+          // Only RS-232 and RS-485 fills are allowed 
+					set_pin_a_as_gnd();						//  Set GND on Pin A
+          set_pin_f_as_power();
+          
           // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
    				result = CheckFillType4();
   				if(result > 0)
@@ -417,6 +462,7 @@ void main()
  					  break;
   				}
 
+/***********************************
           // If Pin_C is -5V - that is DTD-232 Type 5
   				result = CheckFillDTD232Type5();
   				if(result > 0)
@@ -434,7 +480,9 @@ void main()
 				    break;
   				}
 ************************************/
-				  break;
+				
+				}
+				break;
 
 			case FILL_RX_TYPE23:
 			  CheckFillType23();
@@ -484,7 +532,11 @@ void main()
 					TestFillResult(result);
 				}
 				break;
+			//-----------FILL_RX--------------	
+			//********************************************
 				
+			//********************************************
+			//-----------ZERO_FILL--------------	
 			case ZERO_FILL:
 				if( TestButtonPress() )
 				{
@@ -492,23 +544,20 @@ void main()
 					SetNextState(INIT);
 				}
 				break;
+			//-----------ZERO_FILL--------------	
+			//********************************************
 
+			//********************************************
+			//-----------PC_CONN--------------	
 			case PC_CONN:
 				PCInterface();
 				break;
+			//-----------PC_CONN--------------	
+			//********************************************
 
+			//********************************************
+			//-----------HQII TX and RX--------------	
 			case HQ_TX:
-				break;
-
-			case FILL_TX_TIME:
-				if( CheckType123Equipment(fill_type) > 0 )
-				{
-					SetNextState(FILL_TX_TIME_PROC);
-				}
-				break;
-
-			case FILL_TX_TIME_PROC:
-				TestFillResult(WaitReqSendTODFill());
 				break;
 
 			case HQ_RX:
@@ -522,8 +571,11 @@ void main()
 					TestFillResult(ReceiveHQTime());
 				}
 				break;
+			//-----------HQII TX and RX--------------	
+			//********************************************
 
-
+			//********************************************
+			//-----------DONE and ERROR--------------	
 			case ERROR:
 			case DONE:
 		    PinsToDefault();

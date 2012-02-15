@@ -100,9 +100,11 @@ char CheckFillRS232Type5()
   	if(!RxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart_rxtx(SerialBuffer, 4);
+  		open_eusart(SerialBuffer, 4);
   	}	
-	}else	if( (rx_count >= 2) && 
+	}
+	
+	if( (rx_count >= 2) && 
 			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
 			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
 			  	  is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
@@ -121,9 +123,11 @@ char CheckFillType4()
   	if(!RxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart_rxtx(SerialBuffer, 4);
+  		open_eusart(SerialBuffer, 4);
   	}	
-	}else if(rx_count >= 4)
+	}
+	
+	if(rx_count >= 4)
 	{
     // Four characters are collected - check if it is 
     //  /98 - serial number request, or
@@ -146,7 +150,7 @@ char CheckFillType4()
 }
 
 
-void open_eusart_rxtx(unsigned char *p_rx_data, byte max_size)
+void open_eusart(unsigned char *p_rx_data, byte max_size)
 {
 	TRIS_RxPC = INPUT;
 	TRIS_TxPC = INPUT;
@@ -170,9 +174,25 @@ void open_eusart_rxtx(unsigned char *p_rx_data, byte max_size)
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 }
 
+
+void set_eusart_rx_buffer(unsigned char *p_rx_data, byte max_size)
+{
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	RCSTA1bits.CREN = 0; // Disable Rx
+	rx_data = (volatile byte *) p_rx_data;
+	rx_count = 0;
+	rx_count_1 = max_size - 1;
+	
+	RCSTA1bits.CREN = 1; // Enable Rx
+	RCSTA1bits.SPEN = 1; // Enable EUSART
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+}
+
+
+
 void close_eusart()
 {
-	PIE1bits.RC1IE = 0;	 	// Disable RX interrupt
+	PIE1bits.RC1IE = 0;	 	// Disable RX Interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA = 0x00; 	      // Disable Tx	
 	RCSTA = 0x00;				  // Disable EUSART
@@ -185,7 +205,7 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart_rxtx(p_data, 6);
+		open_eusart(p_data, 6);
 	}
 	
 	// Wait to receive 6 characters
@@ -198,24 +218,25 @@ void PCInterface()
   	{
     	// The last char in /FILLN specifies Type(high nibble) 
     	//    and Slot Number (low nibble)
-  		rx_count = 0; // Data consumed
   		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
+		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, KEY_DUMP, 5))
   	{
     	// The last char in /DUMPN is the slot number
-  		rx_count = 0; // Data consumed
   		WaitReqSendPCFill(p_data[5] & 0x0F);
+		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, MEM_READ, 5))
   	{
     	// The last char in /READN is the slot number
-  		rx_count = 0; // Data consumed
   		ReadMemSendPCFill(p_data[5] & 0x0F);
+		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, TIME_CMD, 5))
   	{
-    	// The last char in /TIME is either 
+    	// If there is more data to follow - set the time 
   		rx_count = 0; // Data consumed
   	  GetSetCurrentDayTime(p_data);
     	tx_eusart_str(p_data);
+		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
     } 	
   }  
 }
@@ -226,45 +247,30 @@ void PCInterface()
 // RX_TIMEOUT2_PC - timeout for all consequtive chars
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
-  byte  n_rcvd;
-  volatile byte  *rx_data_saved;
-  byte  rx_count_1_saved;
+  byte  nrcvd = 0;
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-  //----------------------------------
-  // Save previous buffer setup  
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-	rx_data_saved = rx_data;
-	rx_count_1_saved = rx_count_1;
-	rx_data = (volatile byte *) p_data;
-	rx_count = 0;
-	rx_count_1 = ncount - 1;
-	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
-  //----------------------------------
-	
   set_timeout(RX_TIMEOUT1_PC);
-  // We need 2 while loops - one with initial Timeout,
-  // another with the timeout after receiving first symbol 
-	while( ( rx_count == 0 ) && is_not_timeout() ) {}
-	if(is_not_timeout() )
+	while( (nrcvd < ncount ) && is_not_timeout() )
 	{
-    set_timeout(RX_TIMEOUT2_PC);
-	  while( (rx_count < ncount ) && is_not_timeout() )	{}
+		if(PIR1bits.RC1IF)	// Data is avaiable
+		{
+			// Get data byte and save it
+			*p_data++ = RCREG1;
+			nrcvd++;
+		  set_timeout(RX_TIMEOUT2_PC);
+			// overruns? clear it
+			if(RCSTA1 & 0x06)
+			{
+				RCSTA1bits.CREN = 0;
+				RCSTA1bits.CREN = 1;
+			}
+		}
 	}
-	
-  //----------------------------------
-	// Restore all previous buffer setup
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-	n_rcvd = rx_count; 
-	rx_data = rx_data_saved;
-	rx_count_1 = rx_count_1_saved;
-	rx_count = 0;        // Clear buffer
-	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
-  //----------------------------------
-	
-  return n_rcvd;
+  return nrcvd;
 }
 
-// Receive the specified number of characters with timeout
+// Continue to receive the specified number of characters with timeout
 // RX_TIMEOUT2_PC - timeout for all consequtive chars
 byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 {
@@ -289,7 +295,6 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 			}
 		}
 	}
-	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
   return nrcvd;
 }
 

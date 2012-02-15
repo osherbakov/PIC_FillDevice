@@ -56,12 +56,12 @@ static char GetQueryByte(void)
     {
       if( NewState == LOW )
       {
-		Data = (Data >> 1 ) | ((digitalRead(PIN_B)) ? 0 : 0x80);
+		    Data = (Data >> 1 ) | ((digitalRead(PIN_B)) ? 0 : 0x80);
         bit_count++; 
-		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
-		{
-			return MODE3;
-		}
+    		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
+    		{
+    			return MODE3;
+    		}
       }
       PreviousState = NewState;
     }
@@ -93,7 +93,7 @@ static void SendEquipmentType(void)
     delayMicroseconds(tT);		// Hold Clock in LOW for tT
     digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
-  delayMicroseconds(tK4 - tT);  // Wait there
+  delayMicroseconds(tK4);  // Wait there
   
   // Release PIN_E - the Fill device will drive it
   pinMode(PIN_E, INPUT);		// Tristate the pin
@@ -165,16 +165,27 @@ static char SendBadFillAck(void)
 
 static void SetTimeFromCell(void)
 {
+  char ms_100;
+  
 	ExtractTODData();
 	CalculateNextSecond();
+	// The time is in chunks of 1/10 sec
+	// Additionally, we used 	
+	//	  set_timeout(tF);
+	// to detect last byte - so actual 0ms time is "tF" ms earlier
+
+	ms_100 = data_cell[11] >> 4;
+	ms_100 =  9 - ms_100 - ((tF + 50)/ 100);
+	if(ms_100 < 0)
+	{
+		ms_100 += 10;  // Add next second
+  	CalculateNextSecond();
+	}
 	if( !rtc_date.Valid )
 	{
 		SendBadFillAck();
 	}else
 	{
-		// The time is in chunks of 1/10 sec
-		char ms_100 = MIN((data_cell[11] >> 4), 9);
-		ms_100 =  9 - ms_100; 
 		while(ms_100-- > 0) delay(100);
 		SetRTCData();		
 	}
@@ -228,7 +239,6 @@ char CheckFillType23()
           t23_state = DF_INIT;
           break;
     		}
- 		
     		// Pin D went high before timeout expired - wait for query request from the fill device
     		if( digitalRead(PIN_D) == HIGH)
     		{
@@ -269,7 +279,7 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 		byte_cnt = ReceiveDS102Cell(fill_type, p_data, FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
-		//  == FILL_MAX_SIZE --> record and continue
+		//  == FILL_MAX_SIZE --> record and continue collecting
 		//  0 < byte_cnt < FILL_MAX_SIZE --> record and issue new request
 		record_size += byte_cnt;
 		if(record_size == 0)

@@ -33,7 +33,8 @@ extern volatile byte rx_count_1;  // Last byte index
 
 extern void PCInterface(void);
 
-extern void open_eusart_rxtx(unsigned char *p_rx_data, byte max_size);
+extern void open_eusart(unsigned char *p_rx_data, byte max_size);
+extern void set_eusart_rx_buffer(unsigned char *p_rx_data, byte max_size);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern byte rx_eusart_cont(unsigned char *p_data, byte ncount);
 extern void tx_eusart(unsigned char *p_data, byte ncount);
