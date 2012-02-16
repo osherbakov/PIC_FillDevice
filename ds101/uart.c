@@ -8,12 +8,12 @@
 #define TIMER_DTD 	( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
 #define TIMER_DTD_START 	( -(TIMER_DTD/2) )
 #define TIMER_DTD_EDGE 	( (TIMER_DTD/2) )
-#define TIMER_DTD_CTRL (1<<2 | 2)     // ENA, 1:16
+#define TIMER_DTD_CTRL ( (1<<2) | 2)     // ENA, 1:16
 
 #define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
 #define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
-#define TIMER_DS101_CTRL (1<<2 | 0)   // ENA, 1:1
+#define TIMER_DS101_CTRL ((1<<2) | 0)   // ENA, 1:1
 
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
@@ -42,8 +42,7 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;
-  TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;  TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
@@ -60,6 +59,7 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
+      TMR1H = 0; TMR1L = 0;	// Reset the timeout timer
  			while(!PIR1bits.TMR1IF && RxPC) {};	// Wait for stop bit
 			return PIR1bits.TMR1IF ? -1 : data;
 		}
@@ -71,7 +71,8 @@ int RxRS232Char()
 void TxRS232Char(char data)
 {
 	byte 	bitcount;
-	
+	data = ~data;  			// Invert sysmbol
+
 	TRIS_TxPC = OUTPUT;
 
 	PR6 = TIMER_DTD;
@@ -80,8 +81,7 @@ void TxRS232Char(char data)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 
 	TxPC = 1;        		// Issue the start bit
-	data = ~data;  			// Invert sysmbol
-   	// send 8 data bits and 3 stop bits
+ 	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
@@ -109,8 +109,7 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;
-  TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;  TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
@@ -127,6 +126,7 @@ int RxDTDChar()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
+      TMR1H = 0; TMR1L = 0;	// Reset the timeout timer
  			while(!PIR1bits.TMR1IF && RxDTD) {};	// Wait for stop bit
 			return PIR1bits.TMR1IF ? -1 : data;
 		}
@@ -138,6 +138,8 @@ int RxDTDChar()
 void TxDTDChar(char data)
 {
 	byte 	bitcount;
+
+	data = ~data;  			// Invert sysmbol
 	
 	TRIS_TxDTD = OUTPUT;
 
@@ -147,7 +149,6 @@ void TxDTDChar(char data)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 
 	TxDTD = 1;        		// Issue the start bit
-	data = ~data;  			// Invert sysmbol
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
@@ -170,22 +171,21 @@ int RxRS485Char()
 	byte bitcount, data;
 
 	TRIS_Data_N = INPUT;
+	TRIS_Data_P = INPUT;
 
 	PR6 = TIMER_DS101;
 	T6CON = TIMER_DS101_CTRL;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;
-	TMR1L = 0;	// Reset the timeout timer
+  TMR1H = 0;	TMR1L = 0;	// Reset the timeout timer
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	
 	while( !PIR1bits.TMR1IF )	// Until timeout
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(Data_N)
+		if(Data_N && !Data_P)
 		{
-			INTCONbits.GIE = 0;		// Disable interrupts
 			TMR6 = TIMER_DS101_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -195,7 +195,7 @@ int RxRS485Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
-			INTCONbits.GIE = 1;		// Enable interrupts
+      TMR1H = 0;	TMR1L = 0;	// Reset the timeout timer
  			while(!PIR1bits.TMR1IF && Data_N) {};	// Wait for stop bit
 			return PIR1bits.TMR1IF ? -1 : data;
 		}
@@ -207,39 +207,42 @@ void TxRS485Char(char data)
 {
 	byte 	bitcount;
 	TRIS_Data_N = OUTPUT;
+	TRIS_Data_P = OUTPUT;
 
 	data = ~data;
-	INTCONbits.GIE = 0;		// Disable interrupts
 
 	PR6 = TIMER_DS101;
 	T6CON = TIMER_DS101_CTRL;	
 	TMR6 = 0;
-
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+
 	Data_N = 1;      // Issue the start bit
+	Data_P = 0;      // Issue the start bit
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
 	// send 8 data bits
 	for(bitcount = 0; bitcount < 8; bitcount++)
 	{
-		Data_N = data & 0x01;// Set the output
+		Data_N = data & 0x01; // Set the output N
+		Data_P = ~Data_N;     // Set the output P
 		data >>= 1;				
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 	}
 
-	INTCONbits.GIE = 1;		// Enable interrupts
-
 	Data_N = 0;// Set the STOP bit 1
+	Data_P = 1;// Set the STOP bit 1
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
 	Data_N = 0;// Set the STOP bit 2	
+	Data_P = 1;// Set the STOP bit 1
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 
 	Data_N = 0;// Set the STOP bit 3	
+	Data_P = 1;// Set the STOP bit 1
 	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 } 

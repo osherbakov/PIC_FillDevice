@@ -29,9 +29,18 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (2)    // 2 Seconds
+#define TX_WAIT   (3)    // 3 Seconds
 
 static unsigned int Timeout;
+static void ResetTimeout(void)
+{
+  INTCONbits.GIE = 0; 
+	Timeout = seconds_counter + TX_WAIT;
+  INTCONbits.GIE = 1;
+  
+}
+
+
 char master_state;
 
 char	retry_flag;
@@ -52,7 +61,7 @@ void MasterStart(char slot)
 	master_state = MS_IDLE;	
 	CurrentAddress = MASTER_ADDRESS;
   CurrentNumber = MASTER_NUMBER;
-	Timeout = seconds_counter + TX_WAIT;
+	ResetTimeout();
 	retry_flag = 0;
 }	
 
@@ -92,7 +101,7 @@ void MasterProcessIdle()
 			frame_len = 0;
 
 			TxUFrame(SNRM);		// Request connection
-			Timeout = seconds_counter + TX_WAIT;
+    	ResetTimeout();
 			master_state = MS_CONNECT;
 			break;
 
@@ -110,7 +119,7 @@ void MasterProcessIdle()
 				{
 					TxRetry();
 					retry_flag = 1;
-					Timeout = seconds_counter + TX_WAIT;
+        	ResetTimeout();
 				}else
 				{
 					master_state = MS_ERROR;
@@ -168,8 +177,8 @@ void MasterProcessIFrame(char *p_data, int n_chars)
         TxSFrame(RR);
       break;
     }
-	Timeout = seconds_counter + TX_WAIT;
-	retry_flag = 0;
+  	ResetTimeout();
+  	retry_flag = 0;
 }
 
 
@@ -220,7 +229,7 @@ void MasterProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
-	Timeout = seconds_counter + TX_WAIT;
+	ResetTimeout();
 	retry_flag = 0;
 }
 
@@ -244,7 +253,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 
 				TxUFrame(SNRM);  // Send SNRM
 				master_state = MS_CHECK_RR;
-				Timeout = seconds_counter + TX_WAIT;
+      	ResetTimeout();
 				break;
 
 			case MS_CHECK_RR:
@@ -283,6 +292,6 @@ void MasterProcessUFrame(unsigned char Cmd)
 
 	  master_state = MS_DONE;
 	}
-	Timeout = seconds_counter + TX_WAIT;
+	ResetTimeout();
 	retry_flag = 0;
 }

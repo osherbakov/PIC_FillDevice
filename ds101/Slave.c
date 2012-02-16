@@ -23,8 +23,15 @@ char status;
 
 #define RX_WAIT   (10)    // 10 Seconds
 
-
 static unsigned int Timeout;
+static void ResetTimeout(void)
+{
+  INTCONbits.GIE = 0; 
+	Timeout = seconds_counter + RX_WAIT;
+  INTCONbits.GIE = 1;
+  
+}
+
 
 void SlaveStart(char slot)
 {
@@ -42,7 +49,7 @@ void SlaveStart(char slot)
 	CurrentAddress = SLAVE_ADDRESS;
   CurrentNumber = SLAVE_NUMBER;
 	Disconnected = TRUE;
-	Timeout = seconds_counter + RX_WAIT;
+	ResetTimeout();
 }
 
 
@@ -90,12 +97,12 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 {
 	char *p_data_saved = p_data;
 	int  n_saved_chars = n_chars;
-    if(frame_len == 0)	// No data left in the frame
-    {
-        frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
-        frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
-        p_data += 4;   n_chars -= 4;		// 4 chars were processed (FDU and Length)
-    }
+  if(frame_len == 0)	// No data left in the frame
+  {
+      frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
+      frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
+      p_data += 4;   n_chars -= 4;		// 4 chars were processed (FDU and Length)
+  }
   frame_len -= n_chars;    
 
 	//  Save all data packets except AXID FDU
@@ -218,7 +225,7 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
         TxSFrame(RR);
       break;
     }
-	Timeout = seconds_counter + RX_WAIT;
+  ResetTimeout();
 }
 
 void SlaveProcessSFrame(unsigned char Cmd)
@@ -235,7 +242,7 @@ void SlaveProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
-	Timeout = seconds_counter + RX_WAIT;
+	ResetTimeout();
 }
 
 void SlaveProcessUFrame(unsigned char Cmd)
@@ -273,7 +280,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  NR = 0;
 	  TxUFrame(UA);
 	}
-	Timeout = seconds_counter + RX_WAIT;
+	ResetTimeout();
 }	
 
 

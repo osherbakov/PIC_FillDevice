@@ -106,11 +106,11 @@ static void SetNextState(char nextState)
 			break;
 
 		case FILL_TX_RS485:
-			set_led_state(80,40);		// "Try RS485" blink pattern
+			set_led_state(80, 40);		// "Try RS485" blink pattern
 			break;
 
 		case FILL_RX_PC:
-			set_led_state(5, 150);		// "Connect Serial" blink pattern
+			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_RX_RS232:
@@ -122,7 +122,7 @@ static void SetNextState(char nextState)
 			break;
 
 		case FILL_RX_RS485:
-			set_led_state(80,40);		// "Try RS485" blink pattern
+			set_led_state(80, 40);		// "Try RS485" blink pattern
 			break;
 	
 		case ERROR:
@@ -206,14 +206,14 @@ void main()
 #endif
 
 	SetNextState(INIT);
-	DelayMs(500);
+	DelayMs(200);
 	
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
-  allow_type45_fill = (prev_switch_pos == PC_POS) ? TRUE : FALSE;
+  allow_type45_fill = (prev_button_pos == DOWN_POS) ? TRUE : FALSE;
 	
   bump_idle_counter();
   
@@ -365,13 +365,14 @@ void main()
 				// On the timeout - switch to next mode
 				if(result < 0)
 				{
-					SetNextState(FILL_TX_RS485);	
+//					SetNextState(FILL_TX_RS485);	
+					SetNextState(FILL_TX_RS232);	
 				}else
 				{
 					TestFillResult(result);
 				}
 				break;	
-
+/***********************************************
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -383,7 +384,7 @@ void main()
 					TestFillResult(result);
 				}
 				break;
-					
+***********************************************/					
 
 			case FILL_TX_MBITR:
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
@@ -462,7 +463,6 @@ void main()
  					  break;
   				}
 
-/***********************************
           // If Pin_C is -5V - that is DTD-232 Type 5
   				result = CheckFillDTD232Type5();
   				if(result > 0)
@@ -471,7 +471,7 @@ void main()
   					SetNextState(FILL_RX_DTD232);
 				    break;
   				}
-
+/********************************************************
   				result = CheckFillRS485Type5();
   				if(result > 0)
   				{
@@ -479,8 +479,7 @@ void main()
   					SetNextState(FILL_RX_RS485);
 				    break;
   				}
-************************************/
-				
+*********************************************************/				
 				}
 				break;
 

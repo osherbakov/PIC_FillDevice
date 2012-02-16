@@ -100,7 +100,8 @@ char CheckFillRS232Type5()
   	if(!RxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart(SerialBuffer, 4);
+  		open_eusart();
+  		set_eusart_rx(SerialBuffer, 4);
   	}	
 	}
 	
@@ -123,7 +124,8 @@ char CheckFillType4()
   	if(!RxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart(SerialBuffer, 4);
+  		open_eusart();
+  		set_eusart_rx(SerialBuffer, 4);
   	}	
 	}
 	
@@ -150,7 +152,7 @@ char CheckFillType4()
 }
 
 
-void open_eusart(unsigned char *p_rx_data, byte max_size)
+void open_eusart()
 {
 	TRIS_RxPC = INPUT;
 	TRIS_TxPC = INPUT;
@@ -162,20 +164,16 @@ void open_eusart(unsigned char *p_rx_data, byte max_size)
 	SPBRG1 = BRREG_CMD;
 	BAUDCON1 = DATA_POLARITY;
 
-	rx_data = (volatile byte *) p_rx_data;
 	rx_count = 0;
-	rx_count_1 = max_size - 1;
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
  	TXSTA1bits.TXEN = 1; // Enable Tx	
 	RCSTA1bits.SPEN = 1; // Enable EUSART
-
-	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 }
 
 
-void set_eusart_rx_buffer(unsigned char *p_rx_data, byte max_size)
+void set_eusart_rx(unsigned char *p_rx_data, byte max_size)
 {
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 0; // Disable Rx
@@ -184,7 +182,6 @@ void set_eusart_rx_buffer(unsigned char *p_rx_data, byte max_size)
 	rx_count_1 = max_size - 1;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
-	RCSTA1bits.SPEN = 1; // Enable EUSART
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 }
 
@@ -205,7 +202,8 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart(p_data, 6);
+		open_eusart();
+ 		set_eusart_rx(p_data, 6);
 	}
 	
 	// Wait to receive 6 characters
@@ -219,24 +217,24 @@ void PCInterface()
     	// The last char in /FILLN specifies Type(high nibble) 
     	//    and Slot Number (low nibble)
   		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
-		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
+		  set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, KEY_DUMP, 5))
   	{
     	// The last char in /DUMPN is the slot number
   		WaitReqSendPCFill(p_data[5] & 0x0F);
-		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
+		  set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, MEM_READ, 5))
   	{
     	// The last char in /READN is the slot number
   		ReadMemSendPCFill(p_data[5] & 0x0F);
-		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
+		  set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, TIME_CMD, 5))
   	{
     	// If there is more data to follow - set the time 
   		rx_count = 0; // Data consumed
   	  GetSetCurrentDayTime(p_data);
     	tx_eusart_str(p_data);
-		  set_eusart_rx_buffer(p_data, 6);  // Restart collecting data
+		  set_eusart_rx(p_data, 6);  // Restart collecting data
     } 	
   }  
 }
