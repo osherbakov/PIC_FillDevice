@@ -38,53 +38,52 @@ void setup_clocks()
 #endif
 	OSCCONbits.SCS = 0x02;	// Internal
 
-// Set up Timer 0 to count OSC_CLOCK in 16-bit mode
+// TIMER 0 - to count OSC_CLOCK in 16-bit mode
   TMR0H = 0;  // Reset the counter
   TMR0L = 0;
-  INTCONbits.TMR0IF =  0;   // Clear interrupt
   INTCON2bits.TMR0IP = 0;   // Low priority
+  INTCONbits.TMR0IF =  0;   // Clear interrupt
   INTCONbits.TMR0IE =  1;   // Enable interrupt
-  T0CON = 0x88;   // Enable TIMER0, 16-bit mode,no prescaler
+  T0CON = ((0x1 << 7) | (0x1 <3)); // Ena TIMER0, 16-bit mode,no prescaler
   
-// Set up timer 1 to count OSC_CLOCK in 16-bit mode
+// TIMER 1 - to count OSC_CLOCK in 16-bit mode
 //  It is used for 0.131072s timeout, when clock overflows
 // Used for timeouts in RS-232 and RS-485 soft USART
   TMR1H = 0;
   TMR1L = 0;	// Reset the timer
   T1GCONbits.TMR1GE = 0;	// No gating
-  T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
 	IPR1bits.TMR1IP = 0;	// Low priority
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
-  
+  T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
 
 //  TIMER 2 - 10 ms heartbeat timer
 // Set up the timer 2 to fire every 10 ms at low priority, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
-	T2CON = ((10-1) << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
+	T2CON = ((10-1) << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 
 // Set up the timer 4 to fire every 300us at high priority
 // for Have Quick data stream generation
 	PR4 = HQII_TIMER;
 	IPR5bits.TMR4IP = 1;	// HIGH priority
-	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
 	PIE5bits.TMR4IE = 0;	// Enable TIMER4 Interrupt
+	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
 
 // Set up the timer 6 to roll over every 300us but with no interrupts
 // for Have Quick data stream detection
 	PR6 = 0xFF;
 	IPR5bits.TMR6IP = 0;	// LOW priority
-	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
 	PIE5bits.TMR6IE = 0;	// Disable TIMER6 Interrupt
+	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 
 // Initialize the seconds counter
-    seconds_counter = 0;
+  seconds_counter = 0;
 }
 
 void setup_spi()

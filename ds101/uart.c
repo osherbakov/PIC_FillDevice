@@ -20,12 +20,7 @@ int (*ReadCharDS101)(void);
 
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
-//  All interrupts should be disabled during Tx and Rx at 64kBits
 //  TMR6 is used to count bits in Tx and Rx
-//  TMR1 is used as the timeout counter
-//  The biggest timeout is (8 * 2^16)/ (16M /4)= 2^(16 + 3 + 2)/2^4 = 
-//  2^17/1M = 0.131072 sec 
-
 //
 // Soft UART to communicate with RS232 port
 // Returns:
@@ -42,16 +37,15 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;  TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-	while( !PIR1bits.TMR1IF )	// Until timeout
+  set_timeout(3000);
+  while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxPC )
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+      set_timeout(200);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -59,9 +53,8 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
-      TMR1H = 0; TMR1L = 0;	// Reset the timeout timer
- 			while(!PIR1bits.TMR1IF && RxPC) {};	// Wait for stop bit
-			return PIR1bits.TMR1IF ? -1 : data;
+ 			while(is_not_timeout() && RxPC) {};	// Wait for stop bit
+			return is_not_timeout() ? data : -1;
 		}
 	}
 	return -1;
@@ -87,8 +80,8 @@ void TxRS232Char(char data)
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 		TxPC = data & 0x01;	// Set the output
-		data >>= 1;				// We use the fact that 
-						          // "0" bits are STOP bits
+		data >>= 1;				  // We use the fact that 
+						            // "0" bits are STOP bits
 	}
 } 
 
@@ -109,16 +102,15 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;  TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-	while( !PIR1bits.TMR1IF )	// Until timeout
+  set_timeout(3000);
+  while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxDTD )
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+      set_timeout(200);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -126,9 +118,8 @@ int RxDTDChar()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
-      TMR1H = 0; TMR1L = 0;	// Reset the timeout timer
- 			while(!PIR1bits.TMR1IF && RxDTD) {};	// Wait for stop bit
-			return PIR1bits.TMR1IF ? -1 : data;
+ 			while(is_not_timeout() && RxDTD) {};	// Wait for stop bit
+			return is_not_timeout() ? data : -1;
 		}
 	}
 	return -1;
@@ -155,8 +146,8 @@ void TxDTDChar(char data)
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 		TxDTD = data & 0x01;	// Set the output
-		data >>= 1;				// We use the fact that 
-						        // "0" bits are STOP bits
+		data >>= 1;				    // We use the fact that 
+						              // "0" bits are STOP bits
 	}
 } 
 
@@ -178,16 +169,15 @@ int RxRS485Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  TMR1H = 0;	TMR1L = 0;	// Reset the timeout timer
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	
-	while( !PIR1bits.TMR1IF )	// Until timeout
+  set_timeout(3000);
+  while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(Data_N && !Data_P)
 		{
 			TMR6 = TIMER_DS101_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+      set_timeout(200);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -195,9 +185,8 @@ int RxRS485Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
-      TMR1H = 0;	TMR1L = 0;	// Reset the timeout timer
- 			while(!PIR1bits.TMR1IF && Data_N) {};	// Wait for stop bit
-			return PIR1bits.TMR1IF ? -1 : data;
+ 			while(is_not_timeout() && Data_N) {};	// Wait for stop bit
+			return is_not_timeout() ? data : -1;
 		}
 	}
 	return -1;

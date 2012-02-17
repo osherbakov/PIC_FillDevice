@@ -264,7 +264,8 @@ void main()
 			case INIT:
         PinsToDefault();
         bump_idle_counter();
-
+        
+        // Start all from the beginning.................
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				{
@@ -272,7 +273,7 @@ void main()
 					if( power_pos == ZERO_POS)
 					{
 						SetNextState(ZERO_FILL);
-					}else	// Zero is not active - use reqular
+					}else	// Not Zeroizing - we are in a regular mode
 					{
 						// Type = 0 - empty slot
 						//		= 1 - Type 1 fill
@@ -298,10 +299,10 @@ void main()
   				  set_led_state(0, 100);	// Turn off LED
     				INTCONbits.GIE = 0;		// Disable interrupts
     				INTCONbits.PEIE = 0;
-   				  BootloadMode();
+   				  BootloadMode();       // Go to bootloader
 				  }else
 				  {
-					  SetNextState(PC_CONN);
+					  SetNextState(PC_CONN);// Switch to the PC connection mode
 					}
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
@@ -315,7 +316,7 @@ void main()
 				  set_pin_f_as_power();
 					enable_tx_hqii();				// Enable HQ output
 					SetNextState(HQ_TX);
-				}else if(switch_pos == SG_TIME_POS)
+				}else if(switch_pos == SG_TIME_POS) // SINCGARS Time only fill
 				{
           // SINCGARS TIME only fill - will use negative logic 
           set_pin_a_as_power();
@@ -365,7 +366,6 @@ void main()
 				// On the timeout - switch to next mode
 				if(result < 0)
 				{
-//					SetNextState(FILL_TX_RS485);	
 					SetNextState(FILL_TX_RS232);	
 				}else
 				{

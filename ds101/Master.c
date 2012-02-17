@@ -29,21 +29,29 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (3)    // 3 Seconds
+#define TX_WAIT   (4)    // 4 Seconds
 
+static char	retry_flag;
 static unsigned int Timeout;
 static void ResetTimeout(void)
 {
   INTCONbits.GIE = 0; 
 	Timeout = seconds_counter + TX_WAIT;
   INTCONbits.GIE = 1;
-  
+	retry_flag = 0;
+}
+
+static char IsTimeoutExpired(void)
+{
+  char  ret;
+  INTCONbits.GIE = 0; 
+	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
+  INTCONbits.GIE = 1;
+  return ret;
 }
 
 
-char master_state;
-
-char	retry_flag;
+static char master_state;
 
 static unsigned long short base_address;
 static unsigned char block_counter;   // Counter for blocks sent
@@ -62,7 +70,6 @@ void MasterStart(char slot)
 	CurrentAddress = MASTER_ADDRESS;
   CurrentNumber = MASTER_NUMBER;
 	ResetTimeout();
-	retry_flag = 0;
 }	
 
 char GetMasterStatus()
@@ -106,20 +113,20 @@ void MasterProcessIdle()
 			break;
 
 		case MS_CONNECT:
-			if(Timeout < seconds_counter)
+			if(IsTimeoutExpired())
 			{
 				master_state = MS_TIMEOUT;
 			}
 			break;
 
 		default:
-			if(Timeout < seconds_counter)
+			if(IsTimeoutExpired())
 			{
 				if(retry_flag == 0)
 				{
 					TxRetry();
-					retry_flag = 1;
         	ResetTimeout();
+					retry_flag = 1;
 				}else
 				{
 					master_state = MS_ERROR;
@@ -178,7 +185,6 @@ void MasterProcessIFrame(char *p_data, int n_chars)
       break;
     }
   	ResetTimeout();
-  	retry_flag = 0;
 }
 
 
@@ -230,7 +236,6 @@ void MasterProcessSFrame(unsigned char Cmd)
 	{
 	}
 	ResetTimeout();
-	retry_flag = 0;
 }
 
 void MasterProcessUFrame(unsigned char Cmd)
@@ -253,7 +258,6 @@ void MasterProcessUFrame(unsigned char Cmd)
 
 				TxUFrame(SNRM);  // Send SNRM
 				master_state = MS_CHECK_RR;
-      	ResetTimeout();
 				break;
 
 			case MS_CHECK_RR:
@@ -293,5 +297,4 @@ void MasterProcessUFrame(unsigned char Cmd)
 	  master_state = MS_DONE;
 	}
 	ResetTimeout();
-	retry_flag = 0;
 }

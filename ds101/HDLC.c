@@ -7,7 +7,7 @@
 #include <delay.h>
 
 
-#define TX_DELAY_MS	(40)
+#define TX_DELAY_MS	(100)
 
 RX_STATE hdlc_state = ST_IDLE;
 
@@ -69,8 +69,8 @@ int RxData(char *p_data)
 }
 
 
-char *p_data_retry;
-int n_chars_retry;
+static char *p_data_retry;
+static int n_chars_retry;
 
 void TxRetry()
 {

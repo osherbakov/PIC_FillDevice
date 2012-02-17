@@ -19,17 +19,28 @@ static char Disconnected;
 
 int frame_len;
 int frame_FDU;
-char status;
 
-#define RX_WAIT   (10)    // 10 Seconds
+static char status;
+
+#define RX_WAIT   (5)    // 5 Seconds
 
 static unsigned int Timeout;
+static char	retry_flag;
 static void ResetTimeout(void)
 {
   INTCONbits.GIE = 0; 
 	Timeout = seconds_counter + RX_WAIT;
   INTCONbits.GIE = 1;
-  
+	retry_flag = 0;
+}
+
+static char IsTimeoutExpired(void)
+{
+  char  ret;
+  INTCONbits.GIE = 0; 
+	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
+  INTCONbits.GIE = 1;
+  return ret;
 }
 
 
@@ -50,6 +61,7 @@ void SlaveStart(char slot)
   CurrentNumber = SLAVE_NUMBER;
 	Disconnected = TRUE;
 	ResetTimeout();
+	retry_flag = 1; // No retrys until first data sent
 }
 
 
@@ -111,120 +123,120 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 		SaveDataBlock(p_data_saved, n_saved_chars);
 	}	
 	
-    switch(frame_FDU)
-    {
-      case 0x0050:    // Get AXID
-		  // Send back requested AXID
-		  TxAXID(0);		
-      break;
+  switch(frame_FDU)
+  {
+    case 0x0050:    // Get AXID
+	  // Send back requested AXID
+	  TxAXID(0);		
+    break;
 
-	//*************************************************
-	//			KEY ISSUE SHA
-	//*************************************************
+//*************************************************
+//			KEY ISSUE SHA
+//*************************************************
 
-	  case 0x03FF:    // Issue the key with SHA
-        TxSFrame(RR);
-      break;
-      
-	//*************************************************
-	//			CIK FILL/ISSUE
-	//*************************************************
+  case 0x03FF:    // Issue the key with SHA
+      TxSFrame(RR);
+    break;
+    
+//*************************************************
+//			CIK FILL/ISSUE
+//*************************************************
 
-      case 0x02D8:    // CIK split issue
-        TxSFrame(RR);
-      break;
+    case 0x02D8:    // CIK split issue
+      TxSFrame(RR);
+    break;
 
-      case 0x02D0:    // CIK split issue continue
-        TxSFrame(RR);
-      break;
+    case 0x02D0:    // CIK split issue continue
+      TxSFrame(RR);
+    break;
 
-      case 0x01D8:    // CIK split fill
-        TxSFrame(RR);
-      break;
+    case 0x01D8:    // CIK split fill
+      TxSFrame(RR);
+    break;
 
-      case 0x01D0:    // CIK split fill continue
-        TxSFrame(RR);
-      break;
+    case 0x01D0:    // CIK split fill continue
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			KEY FILL/ISSUE
-	//*************************************************
+//*************************************************
+//			KEY FILL/ISSUE
+//*************************************************
 
-	  case 0x02B0:    // Key issue
-		// Send response
-        TxSFrame(RR);
-      break;
+  case 0x02B0:    // Key issue
+	// Send response
+      TxSFrame(RR);
+    break;
 
-	  case 0x0298:    // Key issue done
-        TxSFrame(RR);
-      break;
+  case 0x0298:    // Key issue done
+      TxSFrame(RR);
+    break;
 
-      case 0x01B0:    // Key fill
-		// Send response
-        TxSFrame(RR);
-      break;
+    case 0x01B0:    // Key fill
+	// Send response
+      TxSFrame(RR);
+    break;
 
-      case 0x0198:    // Key fill done
-        TxSFrame(RR);
-      break;
+    case 0x0198:    // Key fill done
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			FILE FILL/ISSUE
-	//*************************************************
+//*************************************************
+//			FILE FILL/ISSUE
+//*************************************************
 
-	  case 0x02B8:    // Program transfer issue
-        TxSFrame(RR);
-      break;
+  case 0x02B8:    // Program transfer issue
+      TxSFrame(RR);
+    break;
 
-      case 0x01B8:    // Program transfer fill
-        TxSFrame(RR);
-      break;
+    case 0x01B8:    // Program transfer fill
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			KEY FILL/ISSUE NAME
-	//*************************************************
-	  case 0x0190:    // Key fill name
-        TxSFrame(RR);
-      break;
+//*************************************************
+//			KEY FILL/ISSUE NAME
+//*************************************************
+  case 0x0190:    // Key fill name
+      TxSFrame(RR);
+    break;
 
-      case 0x0290:    // Key issue name 
-        TxSFrame(RR);
-      break;
+    case 0x0290:    // Key issue name 
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			TRKEK ISSUE
-	//*************************************************
-      case 0x02E0:    // Transfer TrKEK Issue
-		frame_len = 0;	// Force it to be in one frame
-        TxSFrame(RR);
-      break;
+//*************************************************
+//			TRKEK ISSUE
+//*************************************************
+    case 0x02E0:    // Transfer TrKEK Issue
+	frame_len = 0;	// Force it to be in one frame
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			USER FORMAT KEY
-	//*************************************************
-      case 0x0070:    // Send User format key
-        TxSFrame(RR);
-      break;
+//*************************************************
+//			USER FORMAT KEY
+//*************************************************
+    case 0x0070:    // Send User format key
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			SET DTD ADDRESS
-	//*************************************************
-      case 0x0010:    // Set DTD Address
-        NewAddress = *p_data;
-        TxSFrame(RR);
-      break;
+//*************************************************
+//			SET DTD ADDRESS
+//*************************************************
+    case 0x0010:    // Set DTD Address
+      NewAddress = *p_data;
+      TxSFrame(RR);
+    break;
 
-	//*************************************************
-	//			TERMINATE REMOTE CONNECTION
-	//*************************************************
-      case 0x0000:    // End of remote
-        TxSFrame(RR);
-      break;
+//*************************************************
+//			TERMINATE REMOTE CONNECTION
+//*************************************************
+    case 0x0000:    // End of remote
+      TxSFrame(RR);
+    break;
 
-      default:    
-        TxSFrame(RR);
-      break;
-    }
+    default:    
+      TxSFrame(RR);
+    break;
+  }
   ResetTimeout();
 }
 
@@ -286,9 +298,16 @@ void SlaveProcessUFrame(unsigned char Cmd)
 
 void SlaveProcessIdle()
 {
-	if(seconds_counter > Timeout)
+	if(IsTimeoutExpired())
 	{
-		status = ST_TIMEOUT;
+		if(retry_flag == 0)
+		{
+			TxRetry();
+    	ResetTimeout();
+			retry_flag = 1;
+		}else
+		{
+  		status = ST_TIMEOUT;
+		}	
 	}	
 }
-
