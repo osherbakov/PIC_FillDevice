@@ -224,8 +224,8 @@ void SetRTCData()
 
 void SetRTCDataPart1()
 {
-      // Stop adjusting XTAL because RTC will be reset soon
-	  InitClockData();
+  // Stop adjusting XTAL because RTC will be reset soon
+	InitClockData();
 
 	SWStartI2C();
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);

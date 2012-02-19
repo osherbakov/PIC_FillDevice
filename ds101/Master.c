@@ -15,7 +15,7 @@ char Key_buff[512];
 enum MASTER_STATE
 {
   MS_IDLE = 0,
-	MS_CONNECT,
+	MS_SEND_SNRM,
 	MS_AXID_EXCH,
 	MS_REQ_DISC,
 	MS_RECONNECT,
@@ -29,7 +29,7 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (4)    // 4 Seconds
+#define TX_WAIT   (3)    // 3 Seconds
 
 static char	retry_flag;
 static unsigned int Timeout;
@@ -45,7 +45,7 @@ static char IsTimeoutExpired(void)
 {
   char  ret;
   INTCONbits.GIE = 0; 
-	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
+	ret = (seconds_counter > Timeout) ? 1 : 0;
   INTCONbits.GIE = 1;
   return ret;
 }
@@ -109,16 +109,22 @@ void MasterProcessIdle()
 
 			TxUFrame(SNRM);		// Request connection
     	ResetTimeout();
-			master_state = MS_CONNECT;
+			master_state = MS_SEND_SNRM;
 			break;
 
-		case MS_CONNECT:
+		case MS_SEND_SNRM:
 			if(IsTimeoutExpired())
 			{
 				master_state = MS_TIMEOUT;
 			}
 			break;
-
+    
+    case MS_DONE:
+    case MS_ERROR:
+    case MS_TIMEOUT:
+      // Stay in this state
+      break;
+      
 		default:
 			if(IsTimeoutExpired())
 			{
@@ -244,7 +250,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 	{
 		switch(master_state)
 		{
-			case MS_CONNECT:
+			case MS_SEND_SNRM:
 				TxAXID(1);	// On connect ask for AXID
 				master_state = MS_AXID_EXCH;
 				break;

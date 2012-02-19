@@ -1,6 +1,8 @@
 #include "config.h"
 #include "delay.h"
 #include "HDLC.h"
+#include "Fill.h"
+#include "serial.h"
 
 #define DTD_BAUDRATE  (2400L)
 #define DS101_BAUDRATE	(64000L)
@@ -15,8 +17,18 @@
 #define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
 #define TIMER_DS101_CTRL ((1<<2) | 0)   // ENA, 1:1
 
+void (*OpenDS101)();
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
+
+
+void OpenRS232()
+{
+  close_eusart();
+	TRIS_RxPC = INPUT;
+	TRIS_TxPC = OUTPUT;
+  TxPC  = 0;  // Set up the stop bit
+}
 
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
@@ -37,7 +49,9 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(3000);
+  set_timeout(RX_TIMEOUT1_DTD);
+  data = 0;
+  
   while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -45,7 +59,7 @@ int RxRS232Char()
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(200);
+      set_timeout(RX_TIMEOUT2_DTD);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -54,7 +68,13 @@ int RxRS232Char()
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
  			while(is_not_timeout() && RxPC) {};	// Wait for stop bit
-			return is_not_timeout() ? data : -1;
+ 			if(is_not_timeout())
+ 			{
+   			return ((int)data) & 0x00FF;
+   		}else
+   		{
+     		return -1;
+     	}
 		}
 	}
 	return -1;
@@ -86,6 +106,15 @@ void TxRS232Char(char data)
 } 
 
 
+
+void OpenDTD()
+{
+  close_eusart();
+	TRIS_RxDTD = INPUT;
+	TRIS_TxDTD = OUTPUT;
+  TxDTD  = 0;  // Set up the stop bit
+}
+
 //
 // Soft UART to communicate with another DTD
 // Returns:
@@ -102,7 +131,7 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(3000);
+  set_timeout(RX_TIMEOUT1_DTD);
   while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -110,7 +139,7 @@ int RxDTDChar()
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(200);
+      set_timeout(RX_TIMEOUT2_DTD);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -119,7 +148,13 @@ int RxDTDChar()
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
  			while(is_not_timeout() && RxDTD) {};	// Wait for stop bit
-			return is_not_timeout() ? data : -1;
+ 			if(is_not_timeout())
+ 			{
+   			return ((int)data) & 0x00FF;
+   		}else
+   		{
+     		return -1;
+     	}
 		}
 	}
 	return -1;
@@ -152,6 +187,15 @@ void TxDTDChar(char data)
 } 
 
 
+
+void OpenRS485()
+{
+	TRIS_Data_N = INPUT;
+	TRIS_Data_P = INPUT;
+  WPUB_Data_P = 1;
+  WPUB_Data_N = 1;
+}
+
 //
 // Soft UART to communicate with the DS101 via RS-485 at 64Kbd
 // Returns:
@@ -169,7 +213,7 @@ int RxRS485Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(3000);
+  set_timeout(RX_TIMEOUT1_DTD);
   while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -177,7 +221,7 @@ int RxRS485Char()
 		{
 			TMR6 = TIMER_DS101_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(200);
+      set_timeout(RX_TIMEOUT2_DTD);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -186,7 +230,13 @@ int RxRS485Char()
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
  			while(is_not_timeout() && Data_N) {};	// Wait for stop bit
-			return is_not_timeout() ? data : -1;
+			if(is_not_timeout())
+ 			{
+   			return ((int)data) & 0x00FF;
+   		}else
+   		{
+     		return -1;
+     	}
 		}
 	}
 	return -1;

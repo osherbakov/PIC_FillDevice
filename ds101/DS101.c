@@ -118,12 +118,17 @@ void SetupDS101Mode(char slot, char mode )
     ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
-  	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus; 
+  	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus;
+  	OpenDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
+        ((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
     WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : 
         ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
     ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
+    OpenDS101();
+    DelayMs(300);
+    
     if(TxMode) 
     	MasterStart(slot);
     else

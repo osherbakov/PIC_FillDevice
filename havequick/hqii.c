@@ -295,10 +295,10 @@ char ReceiveHQTime(void )
 
   //  4. Finally, set up the RTC clock on the rising edge
 	CLOCK_LOW();
-	DelayI2C();
 	DATA_HI();	
 	DelayI2C();
 	CLOCK_HI();
+	DelayI2C();
 
 	SetRTCDataPart2();
 	

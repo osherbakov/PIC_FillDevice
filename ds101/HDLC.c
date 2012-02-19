@@ -26,9 +26,11 @@ int RxData(char *p_data)
     while(1)
     {
       symbol = ReadCharDS101();
-      if(symbol < 0) 
-         break;
-         
+      if(symbol < 0)
+      { 
+        return -1;   
+      }
+       
       ch = (char) symbol;   
       switch(hdlc_state)
       {
@@ -42,14 +44,11 @@ int RxData(char *p_data)
         case ST_DATA:
           if(ch == FLAG)
           {
+            hdlc_state = ST_IDLE;
             n_chars = p_data - p_Rx_buff;
-						if(n_chars)
-						{
-				    	// Get at least 2 chars and FCS should match
-	            return  ( (n_chars > 2)  && 
-								CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
+			    	// Get at least 2 chars and FCS should match
+            return  ( (n_chars > 2)  && CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
 									(n_chars - 2) : 0;
-						}
           }else if(ch == ESCAPE)
           {
             hdlc_state = ST_ESCAPE;
@@ -88,26 +87,26 @@ void TxData(char *p_data, int n_chars)
 	DelayMs(TX_DELAY_MS);
 
 	// Send 5 flags  
-    WriteCharDS101(FLAG);
-    WriteCharDS101(FLAG);
-    WriteCharDS101(FLAG);
-    WriteCharDS101(FLAG);
-    WriteCharDS101(FLAG);
+  WriteCharDS101(FLAG);
+  WriteCharDS101(FLAG);
+  WriteCharDS101(FLAG);
+  WriteCharDS101(FLAG);
+  WriteCharDS101(FLAG);
 
-    CRC16ini();
-    while(n_chars-- > 0)
+  CRC16ini();
+  while(n_chars-- > 0)
+  {
+    char ch = *p_data++;
+    if( (ch == FLAG) || (ch == ESCAPE) )
     {
-      char ch = *p_data++;
-      if( (ch == FLAG) || (ch == ESCAPE) )
-      {
-        WriteCharDS101(ESCAPE);
-      }
-      WriteCharDS101(ch);
-      CRC16nxt(ch);
+      WriteCharDS101(ESCAPE);
     }
-    // Send the CRC 16 now
-    crc = CRC16crc();
-    WriteCharDS101(crc & 0x00FF);
-    WriteCharDS101((crc >> 8) & 0x00FF);
-  	WriteCharDS101(FLAG);
+    WriteCharDS101(ch);
+    CRC16nxt(ch);
+  }
+  // Send the CRC 16 now
+  crc = CRC16crc();
+  WriteCharDS101(crc & 0x00FF);
+  WriteCharDS101((crc >> 8) & 0x00FF);
+	WriteCharDS101(FLAG);
 }

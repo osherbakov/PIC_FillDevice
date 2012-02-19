@@ -22,7 +22,7 @@ int frame_FDU;
 
 static char status;
 
-#define RX_WAIT   (5)    // 5 Seconds
+#define RX_WAIT   (7)    // 7 Seconds
 
 static unsigned int Timeout;
 static char	retry_flag;
@@ -58,10 +58,11 @@ void SlaveStart(char slot)
 	status = ST_OK;
 	block_counter = 0;
 	CurrentAddress = SLAVE_ADDRESS;
+	NewAddress = SLAVE_ADDRESS; 
   CurrentNumber = SLAVE_NUMBER;
 	Disconnected = TRUE;
 	ResetTimeout();
-	retry_flag = 1; // No retrys until first data sent
+	retry_flag = 1; // No retries until first data sent
 }
 
 

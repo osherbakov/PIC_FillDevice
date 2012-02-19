@@ -339,7 +339,7 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	{
 		byte_write(saved_base_address, records);
 		byte_write(saved_base_address + 1, required_fill);
-		result = ST_DONE;
+		result = ST_OK;
 	}
   return result;
 }

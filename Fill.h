@@ -55,9 +55,11 @@ typedef enum
 #define KEY_EOL  (0x0D)	// Key End of Line
 
 #define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
-#define  RX_TIMEOUT2_PC	 	(100)
+#define  RX_TIMEOUT2_PC	 	(100)     // 100ms
 #define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
 #define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
+#define  RX_TIMEOUT1_DTD	(2000)    // 2 seconds
+#define  RX_TIMEOUT2_DTD	(100)     // 100 ms
 
 
 // The proper delays to generate 8kHz

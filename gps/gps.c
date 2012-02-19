@@ -209,10 +209,10 @@ char ReceiveGPSTime()
 //  5. Finally, set up the RTC clock - according to the spec,
 //	the RTC chain is reset on ACK after writing to seconds register.
 	CLOCK_LOW();
-	DelayI2C();
 	DATA_HI();	
 	DelayI2C();
 	CLOCK_HI();
+	DelayI2C();
 
 	SetRTCDataPart2();
 	

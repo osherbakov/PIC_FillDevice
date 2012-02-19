@@ -98,7 +98,7 @@ static void SetNextState(char nextState)
 			break;
 			
 		case FILL_TX_RS232:
-			set_led_state(40, 80);		// "Try RS232" blink pattern
+			set_led_state(5, 150);		// "Connect Serial" blink pattern
 			break;
 
 		case FILL_TX_DTD232:

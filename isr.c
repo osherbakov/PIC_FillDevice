@@ -14,6 +14,7 @@ volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
 volatile signed int timeout_counter;
+volatile char timeout_flag;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
@@ -87,7 +88,7 @@ void high_isr (void)
 		}
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
-/********************** Comment it out for the time being *******************
+//********************** Comment it out for the time being *******************
       // Get statistics for the clock adjustment
 	  	TL = TMR0L;	// Read LSB first to latch the data
 	 		TH = TMR0H;
@@ -96,7 +97,7 @@ void high_isr (void)
       curr_lsb = ((int)TH << 8) + TL;
       UpdateClockData();
       ProcessClockData();
-****************************************************************************/      
+//****************************************************************************/      
 
       // Adjust current time
 			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
@@ -168,7 +169,13 @@ void low_isr ()
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
-		timeout_counter--;
+  	if(timeout_counter > 0)
+  	{
+		  timeout_counter -= 10;
+		}else
+		{
+  		timeout_flag = 1;
+  	}
 		rtc_date.MilliSeconds_10++;
 		if(rtc_date.MilliSeconds_10 >= 100)
 		{

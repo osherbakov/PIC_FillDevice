@@ -64,7 +64,7 @@ void setup_clocks()
 	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
-	T2CON = ((10-1) << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
+	T2CON = (9 << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 
 // Set up the timer 4 to fire every 300us at high priority
 // for Have Quick data stream generation

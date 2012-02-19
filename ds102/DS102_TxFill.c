@@ -398,7 +398,7 @@ char SendDS102Fill(byte stored_slot)
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{
-			wait_result = ST_OK;
+			wait_result = ST_DONE;
 			break;
 		}
     if(wait_result) 

@@ -5,13 +5,12 @@
 extern void	Delay1K(unsigned int cnt);
 
 extern volatile signed int timeout_counter;
+extern volatile char timeout_flag;
 extern volatile unsigned int seconds_counter;
 
-#define set_timeout(a) 	do{INTCONbits.GIE = 0; \
-      timeout_counter = (((int)(a))/ 10);      \
-      INTCONbits.GIE = 1;}while(0)
-      
-#define is_not_timeout() 	(timeout_counter >= 0)
+extern void set_timeout(int timeout_in_ms);
+
+#define is_not_timeout() (timeout_flag == 0)
 
 #define DelayMs(x) 		Delay1K((XTAL_FREQ * ((int)(x))) / 4 )
 #define DelayUs(x) 		Delay10TCYx((XTAL_FREQ * ((int)(x))) / (4 * 10) )
