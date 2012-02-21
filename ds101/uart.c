@@ -18,11 +18,20 @@
 #define TIMER_DS101_CTRL ((1<<2) | 0)   // ENA, 1:1
 
 void (*OpenDS101)();
+void (*IdleDS101)();
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
 
 
 void OpenRS232()
+{
+  close_eusart();
+	TRIS_RxPC = INPUT;
+	TRIS_TxPC = OUTPUT;
+  TxPC  = 0;  // Set up the stop bit
+}
+
+void IdleRS232()
 {
   close_eusart();
 	TRIS_RxPC = INPUT;
@@ -115,6 +124,15 @@ void OpenDTD()
   TxDTD  = 0;  // Set up the stop bit
 }
 
+void IdleDTD()
+{
+  close_eusart();
+	TRIS_RxDTD = INPUT;
+	TRIS_TxDTD = OUTPUT;
+  TxDTD  = 0;  // Set up the stop bit
+}
+
+
 //
 // Soft UART to communicate with another DTD
 // Returns:
@@ -194,6 +212,14 @@ void OpenRS485()
 	TRIS_Data_P = INPUT;
   WPUB_Data_P = 1;
   WPUB_Data_N = 1;
+}
+
+void IdleRS485()
+{
+	TRIS_Data_N = OUTPUT;
+	TRIS_Data_P = OUTPUT;
+  Data_P = 1;
+  Data_N = 0;
 }
 
 //

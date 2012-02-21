@@ -4,8 +4,6 @@
 extern unsigned char CurrentAddress;
 extern int			 CurrentNumber;
 extern char			*CurrentName;
-extern unsigned char CurrentCommand;
-extern unsigned char ReceivedAddress;
 
 extern int frame_len;
 extern int frame_FDU;
@@ -19,7 +17,7 @@ extern void MasterProcessIFrame(char *buffer, int size);
 extern void MasterProcessSFrame(unsigned char Cmd);
 extern void MasterProcessUFrame(unsigned char Cmd);
 extern void MasterProcessIdle(void);
-extern char IsMasterValidAddressAndCommand(void);
+extern char IsMasterValidAddressAndCommand(unsigned char Address, unsigned char Command);
 extern char GetMasterStatus(void);
 
 
@@ -28,7 +26,7 @@ extern void SlaveProcessIFrame(char *buffer, int size);
 extern void SlaveProcessSFrame(unsigned char Cmd);
 extern void SlaveProcessUFrame(unsigned char Cmd);
 extern void SlaveProcessIdle(void);
-extern char IsSlaveValidAddressAndCommand(void);
+extern char IsSlaveValidAddressAndCommand(unsigned char Address, unsigned char Command);
 extern char GetSlaveStatus(void);
 
 extern void TxIFrame(char *pdata, int n_chars);
@@ -54,7 +52,6 @@ extern char StoreDTD232Fill(char slot, char mode);
 extern char StoreRS485Fill(char slot, char mode);
 
 #define SLAVE_ADDRESS	(0x35)
-#define MASTER_ADDRESS	(0xFF)
 
 #define SLAVE_NUMBER	(56)
 #define MASTER_NUMBER	(56)

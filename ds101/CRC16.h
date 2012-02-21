@@ -1,13 +1,14 @@
 #ifndef __CRC16_H_
 #define __CRC16_H_
 
-#ifndef TRUE
-	#define TRUE (1)
-#endif
-
 #ifndef FALSE
 	#define FALSE (0)
 #endif
+
+#ifndef TRUE
+	#define TRUE (!FALSE)
+#endif
+
 
 extern  void CRC16ini(void);
 extern  void CRC16nxt(unsigned char ch);

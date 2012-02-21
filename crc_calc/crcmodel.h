@@ -24,8 +24,8 @@ typedef unsigned char  byte;
 typedef unsigned char * p_ubyte_;
 
 #ifndef TRUE
-#define FALSE 0
-#define TRUE  1
+#define FALSE (0)
+#define TRUE  (!FALSE)
 #endif
 
 /* Change to the second definition if you don't have prototypes. */

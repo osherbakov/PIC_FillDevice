@@ -15,7 +15,7 @@ typedef unsigned char byte;
 #endif
 
 #ifndef FALSE
-#define FALSE (0x00)
+#define FALSE (0)
 #endif
 
 #ifndef TRUE

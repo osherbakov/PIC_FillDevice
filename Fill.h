@@ -11,9 +11,7 @@ typedef enum
 	MODE2 = 0x02,	// SINCGARS Type 2 fill
 	MODE3 = 0x03,	// SINCGARS Type 3 fill
 	MODE4 = 0x04,	// Serial PC/MBITR fill
-	MODE5 = 0x05,	// DS-101 RS232 fill
-	MODE6 = 0x06, // DS-101 DTS232 fill
-	MODE7 = 0x07  // DS-101 RS485 fill
+	MODE5 = 0x05	// DS-101 RS232/DTD/RS485 fill
 } FILL_TYPE;
 
 typedef enum

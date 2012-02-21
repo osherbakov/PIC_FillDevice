@@ -366,13 +366,13 @@ void main()
 				// On the timeout - switch to next mode
 				if(result < 0)
 				{
-					SetNextState(FILL_TX_RS232);	
+					SetNextState(FILL_TX_RS485);	
 				}else
 				{
 					TestFillResult(result);
 				}
 				break;	
-/***********************************************
+
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -384,7 +384,6 @@ void main()
 					TestFillResult(result);
 				}
 				break;
-***********************************************/					
 
 			case FILL_TX_MBITR:
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
@@ -511,7 +510,7 @@ void main()
 				break;
 
 			case FILL_RX_DTD232:
-				result = StoreDTD232Fill(switch_pos, MODE6);
+				result = StoreDTD232Fill(switch_pos, MODE5);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);
@@ -522,7 +521,7 @@ void main()
 				break;
 
 			case FILL_RX_RS485:
-				result = StoreRS485Fill(switch_pos, MODE7);
+				result = StoreRS485Fill(switch_pos, MODE5);
 				if(result < 0)
 				{
 					SetNextState(FILL_RX);

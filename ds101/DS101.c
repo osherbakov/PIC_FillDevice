@@ -16,9 +16,7 @@ char slave_name[14] = "PRC152 radio";
 char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
-unsigned char ReceivedAddress;
 unsigned char CurrentAddress;
-unsigned char CurrentCommand;
 int			  CurrentNumber;
 char		  *CurrentName;
 
@@ -30,7 +28,7 @@ void (*ProcessIFrame)(char *pBuff, int size);
 void (*ProcessSFrame)(unsigned char Cmd);
 void (*ProcessUFrame)(unsigned char Cmd);
 void (*ProcessIdle)(void);
-char (*IsValidAddressAndCommand)(void);
+char (*IsValidAddressAndCommand)(unsigned char  Address, unsigned char  Command);
 char (*GetStatus)(void);
 
 
@@ -38,8 +36,8 @@ void TxSFrame(unsigned char cmd)
 {
   if (PF)
   {
-	char *p_buff = &RxTx_buff[0];
-	p_buff[0] = CurrentAddress;  
+	  char *p_buff = &RxTx_buff[0];
+	  p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | (NR << 5) | PF_BIT;
     TxData(p_buff, 2);
   }
@@ -49,8 +47,8 @@ void TxUFrame(unsigned char cmd)
 {
   if (PF)
   {
-	char *p_buff = &RxTx_buff[0];
-	p_buff[0] = CurrentAddress;  
+  	char *p_buff = &RxTx_buff[0];
+	  p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | PF_BIT;
     TxData(p_buff, 2);
   }
@@ -61,8 +59,8 @@ void TxIFrame(char *p_data, int n_chars)
   int i;
   if (PF)
   {
-	char *p_buff = &RxTx_buff[0];	  
-	p_buff[0] = CurrentAddress;  
+  	char *p_buff = &RxTx_buff[0];	  
+  	p_buff[0] = CurrentAddress;  
     p_buff[1] = (NR << 5) | (NS << 1) | PF_BIT;
     memcpy((void *)&p_buff[2], (void *)p_data, n_chars);
     TxData(p_buff, n_chars + 2);
@@ -78,10 +76,10 @@ void TxAXID(char mode)
 	AXID_buff[0] = 0x00;  
 	AXID_buff[1] = mode ? 0x50 : 0x60;	// 0x0050 - Request, 0x0060 - reply AXID FDU 
 
-    AXID_buff[2] = 0x00;    
+  AXID_buff[2] = 0x00;    
 	AXID_buff[3] = 0x11;	// Length = 17
 
-    AXID_buff[4] = 0x01;	// Frames = 0x1
+  AXID_buff[4] = 0x01;	// Frames = 0x1
     
 	AXID_buff[5] = (CurrentNumber >> 8) & 0x00FF;	
 	AXID_buff[6] = CurrentNumber & 0x00FF;	// Station Number
@@ -119,6 +117,8 @@ void SetupDS101Mode(char slot, char mode )
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
   	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus;
+  	IdleDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? IdleRS485 : 
+        ((mode == TX_RS232) || (mode == RX_RS232)) ? IdleRS232 : IdleDTD;
   	OpenDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
         ((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
     WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : 
@@ -127,7 +127,7 @@ void SetupDS101Mode(char slot, char mode )
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
     OpenDS101();
-    DelayMs(300);
+    DelayMs(200);
     
     if(TxMode) 
     	MasterStart(slot);
@@ -138,8 +138,10 @@ void SetupDS101Mode(char slot, char mode )
 
 char ProcessDS101(void)
 {
-    int  nSymb;
-    char *p_data;
+  int  nSymb;
+  char *p_data;
+  unsigned char Address;
+  unsigned char Command;
 
   while(GetStatus() == ST_OK)
   {
@@ -150,21 +152,21 @@ char ProcessDS101(void)
     if(nSymb > 0)    
     {
         // Extract all possible info from the incoming packet
-        ReceivedAddress = p_data[0];
-        CurrentCommand = p_data[1];
+        Address = p_data[0];
+        Command = p_data[1];
         p_data +=2; nSymb -= 2;  // 2 chars were processed
         
 				// Extract the PF flag and detect the FRAME type
-        PF = CurrentCommand & PMASK;      // Poll/Final flag
+        PF = Command & PMASK;      // Poll/Final flag
 
 				// Only accept your or broadcast data, 
-        if( IsValidAddressAndCommand() )
+        if( IsValidAddressAndCommand(Address, Command) )
         {
-          unsigned char NRR = (CurrentCommand >> 5) & 0x07;
-          unsigned char NSR = (CurrentCommand >> 1) & 0x07;
+          unsigned char NRR = (Command >> 5) & 0x07;
+          unsigned char NSR = (Command >> 1) & 0x07;
 
 		  		// Select the type of the frame to process
-          if(IsIFrame(CurrentCommand))          // IFRAME
+          if(IsIFrame(Command))          // IFRAME
           {
             if( (NSR == NR) && (NRR == NS)) 
             {
@@ -174,18 +176,18 @@ char ProcessDS101(void)
             {
               TxSFrame(REJ);				// Reject frame
             }
-          }else if(IsSFrame(CurrentCommand))    // SFRAME
+          }else if(IsSFrame(Command))    // SFRAME
           {
             if( NRR == NS ) 
             {
-							ProcessSFrame(CurrentCommand & SMASK);
+							ProcessSFrame(Command & SMASK);
 	        	}else
             {
               TxSFrame(REJ);				// Reject frame
             }
-          }else if(IsUFrame(CurrentCommand))    // UFRAME
+          }else if(IsUFrame(Command))    // UFRAME
           {
-						ProcessUFrame(CurrentCommand & UMASK);
+						ProcessUFrame(Command & UMASK);
           }
         }
     }

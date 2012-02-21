@@ -29,7 +29,7 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (3)    // 3 Seconds
+#define TX_WAIT   (2)    // 3 Seconds
 
 static char	retry_flag;
 static unsigned int Timeout;
@@ -67,7 +67,7 @@ void MasterStart(char slot)
 	PF = 1;
 	frame_len = 0;
 	master_state = MS_IDLE;	
-	CurrentAddress = MASTER_ADDRESS;
+	CurrentAddress = BROADCAST;
   CurrentNumber = MASTER_NUMBER;
 	ResetTimeout();
 }	
@@ -142,18 +142,18 @@ void MasterProcessIdle()
 	}
 }
 
-char IsMasterValidAddressAndCommand()
+char IsMasterValidAddressAndCommand(unsigned char Address, unsigned char Command)
 {
   // Valid commands for the Master mode are either broadcast (0xFF)
   // or with the explicit address specified.
   // Additionally, the UA means that SNRM was accepted
-	if((ReceivedAddress == 0xFF) || (ReceivedAddress == CurrentAddress))
+	if((Address == BROADCAST) || (Address == CurrentAddress))
 	{
 		return TRUE;
-	}else if (IsUFrame(CurrentCommand) && ( (UMASK & CurrentCommand) == UA) )
+	}else if (IsUFrame(Command) && ( (UMASK & Command) == UA) )
 	{
 		// If the response is UA - assign that address
-		CurrentAddress = ReceivedAddress;
+		CurrentAddress = Address;
 		return TRUE;
 	}
 	return FALSE;

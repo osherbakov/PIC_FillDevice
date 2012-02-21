@@ -14,7 +14,7 @@ static unsigned short long saved_base_address;  // EEPROM block start address (s
 static unsigned char block_counter;             // Counter for blocks sent
 
 static char NewAddress;
-static char Disconnected;
+static char Connected;
 
 
 int frame_len;
@@ -22,7 +22,7 @@ int frame_FDU;
 
 static char status;
 
-#define RX_WAIT   (7)    // 7 Seconds
+#define RX_WAIT   (9)    // 9 Seconds
 
 static unsigned int Timeout;
 static char	retry_flag;
@@ -60,7 +60,7 @@ void SlaveStart(char slot)
 	CurrentAddress = SLAVE_ADDRESS;
 	NewAddress = SLAVE_ADDRESS; 
   CurrentNumber = SLAVE_NUMBER;
-	Disconnected = TRUE;
+	Connected = FALSE;
 	ResetTimeout();
 	retry_flag = 1; // No retries until first data sent
 }
@@ -72,18 +72,21 @@ char GetSlaveStatus()
 	return status;
 }	
 
-char IsSlaveValidAddressAndCommand()
+char IsSlaveValidAddressAndCommand(unsigned char Address, unsigned char Command)
 {
-	if((ReceivedAddress == 0xFF) || (ReceivedAddress == CurrentAddress))
+	if((Address == BROADCAST) || (Address == CurrentAddress))
 	{
     // If no connection was established - return the DM (Disconnect Mode)
     // Status message on every request
-    if(Disconnected && ( IsIFrame(CurrentCommand) || IsSFrame(CurrentCommand) ) )
+    if(!Connected && ( IsIFrame(Command) || IsSFrame(Command) ) )
 		{
         TxUFrame(DM);  // Send DM
 			  return FALSE;
 		}
-		NewAddress = CurrentAddress; 
+		if(Address != BROADCAST)
+		{
+		  NewAddress = Address; 
+		}
 		return TRUE;
 	}
 	return FALSE;
@@ -263,7 +266,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	if(Cmd == SNRM)            // SNRM
 	{
 	  // Reset all to defaults on connect 
-	  Disconnected = FALSE;
+	  Connected = TRUE;
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
@@ -272,7 +275,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	}else if(Cmd == DISC)      // DISC
 	{
 	  // Reset all to defaults on disconnect
-	  Disconnected = TRUE;
+	  Connected = FALSE;
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
