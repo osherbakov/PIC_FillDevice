@@ -58,9 +58,7 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(RX_TIMEOUT1_DTD);
-  data = 0;
-  
+  set_timeout(RX_TIMEOUT1_RS);
   while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -68,7 +66,7 @@ int RxRS232Char()
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(RX_TIMEOUT2_DTD);
+      set_timeout(RX_TIMEOUT2_RS);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows

@@ -366,7 +366,7 @@ void main()
 				// On the timeout - switch to next mode
 				if(result < 0)
 				{
-					SetNextState(FILL_TX_RS485);	
+					SetNextState(FILL_TX_RS232);	
 				}else
 				{
 					TestFillResult(result);

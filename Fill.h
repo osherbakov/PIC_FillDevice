@@ -56,9 +56,10 @@ typedef enum
 #define  RX_TIMEOUT2_PC	 	(100)     // 100ms
 #define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
 #define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
+#define  RX_TIMEOUT1_RS	  (2000)    // 2 seconds
+#define  RX_TIMEOUT2_RS	  (100)     // 100 ms
 #define  RX_TIMEOUT1_DTD	(2000)    // 2 seconds
 #define  RX_TIMEOUT2_DTD	(100)     // 100 ms
-
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing

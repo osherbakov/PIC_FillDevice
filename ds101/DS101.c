@@ -127,7 +127,8 @@ void SetupDS101Mode(char slot, char mode )
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
     OpenDS101();
-    DelayMs(200);
+    IdleDS101();
+    DelayMs(20);
     
     if(TxMode) 
     	MasterStart(slot);

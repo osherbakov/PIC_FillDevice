@@ -7,7 +7,7 @@
 #include <delay.h>
 
 
-#define TX_DELAY_MS	(100)
+#define TX_DELAY_MS	(50)
 
 RX_STATE hdlc_state = ST_IDLE;
 

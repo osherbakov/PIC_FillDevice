@@ -22,7 +22,7 @@ int frame_FDU;
 
 static char status;
 
-#define RX_WAIT   (9)    // 9 Seconds
+#define RX_WAIT   (7)    // 7 Seconds
 
 static unsigned int Timeout;
 static char	retry_flag;
@@ -282,7 +282,8 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  TxUFrame(UA);
 	  // After the disconnect  - change the address
 	  CurrentAddress = NewAddress;
-		if(block_counter > 0)
+	  // Did we get any data? Yes - Signal as ST_DONE
+		if(block_counter > 0) 
 		{
 			status = ST_DONE;
 		}
@@ -302,7 +303,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 
 void SlaveProcessIdle()
 {
-	if(IsTimeoutExpired())
+	if( (status != ST_DONE) && IsTimeoutExpired() )
 	{
 		if(retry_flag == 0)
 		{
