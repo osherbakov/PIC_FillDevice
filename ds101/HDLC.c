@@ -84,7 +84,6 @@ void TxData(char *p_data, int n_chars)
 	p_data_retry = p_data;
 	n_chars_retry = n_chars;
 	
-	IdleDS101();
 	DelayMs(TX_DELAY_MS);
 
 	// Send 5 flags  

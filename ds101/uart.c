@@ -18,7 +18,6 @@
 #define TIMER_DS101_CTRL ((1<<2) | 0)   // ENA, 1:1
 
 void (*OpenDS101)();
-void (*IdleDS101)();
 void (*WriteCharDS101)(char ch);
 int (*ReadCharDS101)(void);
 
@@ -30,15 +29,6 @@ void OpenRS232()
 	TRIS_TxPC = OUTPUT;
   TxPC  = 0;  // Set up the stop bit
 }
-
-void IdleRS232()
-{
-  close_eusart();
-	TRIS_RxPC = INPUT;
-	TRIS_TxPC = OUTPUT;
-  TxPC  = 0;  // Set up the stop bit
-}
-
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
 //  TMR6 is used to count bits in Tx and Rx
@@ -115,14 +105,6 @@ void TxRS232Char(char data)
 
 
 void OpenDTD()
-{
-  close_eusart();
-	TRIS_RxDTD = INPUT;
-	TRIS_TxDTD = OUTPUT;
-  TxDTD  = 0;  // Set up the stop bit
-}
-
-void IdleDTD()
 {
   close_eusart();
 	TRIS_RxDTD = INPUT;
@@ -210,14 +192,6 @@ void OpenRS485()
 	TRIS_Data_P = INPUT;
   WPUB_Data_P = 1;
   WPUB_Data_N = 1;
-}
-
-void IdleRS485()
-{
-	TRIS_Data_N = OUTPUT;
-	TRIS_Data_P = OUTPUT;
-  Data_P = 1;
-  Data_N = 0;
 }
 
 //

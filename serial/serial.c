@@ -83,8 +83,11 @@ char CheckFillDTD232Type5()
 {
 	if( !RCSTA1bits.SPEN )
 	{
-  	if( !RxDTD )
+  	TRIS_RxDTD = 1;
+  	TRIS_TxDTD = 1;
+  	if(!RxDTD && TxDTD)
   	{
+  		 close_eusart();
   		 return MODE5;
   	}	
   } 	
@@ -97,7 +100,9 @@ char CheckFillRS232Type5()
   // Coming in first time - enable eusart and setup buffer
 	if( !RCSTA1bits.SPEN )
 	{
-  	if(!RxPC)
+  	TRIS_RxPC = 1;
+  	TRIS_TxPC = 1;
+  	if(!RxPC && TxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
   		open_eusart();
@@ -121,7 +126,9 @@ char CheckFillType4()
 {
 	if( !RCSTA1bits.SPEN)
 	{
-  	if(!RxPC)
+  	TRIS_RxPC = 1;
+  	TRIS_TxPC = 1;
+  	if(!RxPC && TxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
   		open_eusart();
