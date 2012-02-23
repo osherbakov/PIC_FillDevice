@@ -151,7 +151,7 @@ char CheckFillType4()
 			rx_count = 0; // Data consumed
 			// Options request - send all options
 			send_options();
-			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+			flush_eusart();
 			return MODE4;
 		}
 	}
@@ -200,8 +200,19 @@ void close_eusart()
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA = 0x00; 	      // Disable Tx	
 	RCSTA = 0x00;				  // Disable EUSART
+	rx_count = 0;
+	tx_count = 0;
 }
 
+void flush_eusart()
+{
+  if(	PIE1bits.TX1IE )
+  {
+		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+	}
+}
+  
+  
 void PCInterface()
 {
  	byte *p_data = &data_cell[0];
@@ -314,7 +325,7 @@ volatile byte rx_count_1; // Max index in the buffer
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
- 	while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+  flush_eusart();
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated

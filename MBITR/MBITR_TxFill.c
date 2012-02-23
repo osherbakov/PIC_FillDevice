@@ -112,8 +112,8 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxMBITR ? 0x80 : 0x00);
 			}
-			while(is_not_timeout() && RxMBITR) {};	// Wait for stop bit
-			if(!is_not_timeout())
+			while(!PIR5bits.TMR6IF){} ;
+			if(RxMBITR)
 			{
   			break;
   		}

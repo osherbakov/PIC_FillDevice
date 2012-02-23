@@ -95,7 +95,7 @@ char ReadMemSendPCFill(byte stored_slot)
 			base_address += byte_cnt;
 			tx_eusart(p_data, byte_cnt);
 			bytes -= byte_cnt;
-			while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 	}
+	flush_eusart();
 	return ST_OK;
 }

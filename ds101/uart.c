@@ -56,7 +56,6 @@ int RxRS232Char()
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(RX_TIMEOUT2_RS);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -64,13 +63,13 @@ int RxRS232Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
- 			while(is_not_timeout() && RxPC) {};	// Wait for stop bit
- 			if(is_not_timeout())
+ 			while(!PIR5bits.TMR6IF){} ;	// Wait for stop bit
+ 			if(RxPC)
  			{
-   			return ((int)data) & 0x00FF;
+     		return -1;  // No stop bit
    		}else
    		{
-     		return -1;
+   			return ((int)data) & 0x00FF;
      	}
 		}
 	}
@@ -137,7 +136,6 @@ int RxDTDChar()
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(RX_TIMEOUT2_DTD);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -145,13 +143,13 @@ int RxDTDChar()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
- 			while(is_not_timeout() && RxDTD) {};	// Wait for stop bit
- 			if(is_not_timeout())
+			while(!PIR5bits.TMR6IF){} ; // Wait for stop bit
+ 			if(RxDTD)
  			{
-   			return ((int)data) & 0x00FF;
+     		return -1;
    		}else
    		{
-     		return -1;
+   			return ((int)data) & 0x00FF;
      	}
 		}
 	}
@@ -219,7 +217,6 @@ int RxRS485Char()
 		{
 			TMR6 = TIMER_DS101_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-      set_timeout(RX_TIMEOUT2_DTD);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -227,13 +224,13 @@ int RxRS485Char()
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
- 			while(is_not_timeout() && Data_N) {};	// Wait for stop bit
-			if(is_not_timeout())
+			while(!PIR5bits.TMR6IF){} ;
+			if(Data_N)
  			{
-   			return ((int)data) & 0x00FF;
+     		return -1;
    		}else
    		{
-     		return -1;
+   			return ((int)data) & 0x00FF;
      	}
 		}
 	}
