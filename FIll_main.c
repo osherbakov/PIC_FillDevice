@@ -14,12 +14,15 @@ static enum
 	BIST,
 	BIST_ERR,
 	FILL_TX,
+	FILL_TX_DS102_WAIT,
 	FILL_TX_MBITR,
 	FILL_TX_RS232,
 	FILL_TX_DTD232,
 	FILL_TX_RS485, 
 	FILL_TX_DS102,
 	FILL_RX,
+	FILL_RX_DS102_WAIT,
+	FILL_RX_RS232_WAIT,
 	FILL_RX_TYPE23,
 	FILL_RX_DS102,
 	FILL_RX_PC,
@@ -78,8 +81,10 @@ static void SetNextState(char nextState)
 			set_led_state(5, 5);		// About to zero-out pattern
 			break;
 
-		case FILL_RX :
+		case FILL_RX_DS102_WAIT:
+		case FILL_RX_RS232_WAIT:
 		case HQ_RX :
+		case FILL_RX :
 			set_led_state(15, 15);		// "Key empty" blink pattern
 			break;
 
@@ -89,6 +94,7 @@ static void SetNextState(char nextState)
 
 		case FILL_TX :
 		case FILL_TX_TIME :
+		case FILL_TX_DS102_WAIT:
 				set_led_state(50, 150);	// "Key valid" blink pattern
 			break;
 
@@ -341,14 +347,34 @@ void main()
 					set_pin_a_as_gnd();						//  Set GND on Pin A
           set_pin_f_as_power();
 					SetNextState(FILL_TX_MBITR);
-				}else if( CheckType123Equipment(fill_type) > 0 )
-				{
-					set_pin_a_as_power();						//  Set POWER on Pin A for Type 1,2,3
+				}else 
+				{       // Any type 1,2,3 fill - DS-102
+					set_pin_a_as_power();						//  Set +5V on Pin A for Type 1,2,3
           set_pin_f_as_io();
-					SetNextState(FILL_TX_DS102);
+					SetNextState(FILL_TX_DS102_WAIT);
 				}
 				break;
-				
+
+      // DS-102 Fills	- type 1,2, and 3
+			case FILL_TX_DS102_WAIT:
+				if( CheckType123Equipment(fill_type) > 0 )
+				{
+				  SetNextState(FILL_TX_DS102);
+				}
+				break;
+
+			case FILL_TX_DS102:
+				// Check if the fill was initialed on the Rx device
+				TestFillResult(WaitReqSendDS102Fill(switch_pos, fill_type));
+				// For Type1 fills we can simulate KOI18 and start
+				//     sending data on button press....
+				if( (fill_type == MODE1) && TestButtonPress() )
+				{
+					TestFillResult(SendDS102Fill(switch_pos));
+				}
+				break;
+
+      // DS-101 Fills				
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -389,17 +415,7 @@ void main()
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
 				break;
 
-			case FILL_TX_DS102:
-				// Check if the fill was initialed on the Rx device
-				TestFillResult(WaitReqSendDS102Fill(switch_pos, fill_type));
-				// For Type1 fills we can simulate KOI18 and start
-				//     sending data on button press....
-				if( (fill_type == MODE1) && TestButtonPress() )
-				{
-					TestFillResult(SendDS102Fill(switch_pos));
-				}
-				break;
-
+      // SINCGARS time fill
 			case FILL_TX_TIME:
 				if( CheckType123Equipment(fill_type) > 0 )
 				{
@@ -416,70 +432,37 @@ void main()
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
+        PinsToDefault();
 			  if( !allow_type45_fill )
-			  {
-  			  // Only Type 1, 2 and 3 fills are allowed
-  			  //  in DS-102 mode
-          set_pin_a_as_power();
-				  set_pin_f_as_io();
-
-			    // For Type 2 and 3 pins D and F should go low
-				  result = CheckFillType23();
-				  if(result > 0)
-				  {
-  					// Process Type 2, and 3 fills
-  					fill_type = result;
-  					SetNextState(FILL_RX_TYPE23);
-  					break;
-  				}
-  				// If button pressed - Type 1!!!
-  				if( TestButtonPress() )
-  				{
-  					fill_type = MODE1;
-  					SetNextState(FILL_RX_DS102);
-  				}
+			  { // Only Type 1, 2 and 3 fills are allowed in DS-102 mode
+          set_pin_a_as_power();         // Set +5V on Pin A
+          set_pin_f_as_io();
+  			  SetType123PinsRx();
+ 					SetNextState(FILL_RX_DS102_WAIT);
         }else
-        {
-          // Only RS-232 and RS-485 fills are allowed 
+        { // Only RS-232 and RS-485 fills are allowed 
 					set_pin_a_as_gnd();						//  Set GND on Pin A
           set_pin_f_as_power();
-          
-          // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
-   				result = CheckFillType4();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_PC);
- 					  break;
-  				}
-
-          // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
-   				result = CheckFillRS232Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_RS232);
- 					  break;
-  				}
-
-          // If Pin_C is -5V - that is DTD-232 Type 5
-  				result = CheckFillDTD232Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_DTD232);
-				    break;
-  				}
-/********************************************************
-  				result = CheckFillRS485Type5();
-  				if(result > 0)
-  				{
-  					fill_type = result;
-  					SetNextState(FILL_RX_RS485);
-				    break;
-  				}
-*********************************************************/				
+  				SetNextState(FILL_RX_RS232_WAIT);
 				}
+				break;
+      
+      // Wait for Type 2,3 DS-102 Fills
+			case FILL_RX_DS102_WAIT:
+			  result = CheckFillType23();
+			  if(result > 0)
+			  {
+					// Process Type 2, and 3 fills
+					fill_type = result;
+					SetNextState(FILL_RX_TYPE23);
+					break;
+				}
+				// If button pressed - Type 1!!!
+				if( TestButtonPress() )
+				{
+					fill_type = MODE1;
+					SetNextState(FILL_RX_DS102);
+ 				}
 				break;
 
 			case FILL_RX_TYPE23:
@@ -490,11 +473,51 @@ void main()
 				}
 				break;
 
-			case FILL_RX_DS102:
+			case FILL_RX_DS102: // Do actual DS-102 fill
 				TestFillResult(StoreDS102Fill(switch_pos, fill_type));
 				break;
+
+      // Wait for serial RS-232 or DS-101 fills				
+      case FILL_RX_RS232_WAIT:
+        // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+ 				result = CheckFillType4();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_PC);
+				  break;
+				}
+
+        // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+ 				result = CheckFillRS232Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_RS232);
+				  break;
+				}
+
+        // If Pin_C is -5V - that is DTD-232 Type 5
+				result = CheckFillDTD232Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_DTD232);
+			    break;
+				}
 				
-			case FILL_RX_PC:
+/********************************************************
+				result = CheckFillRS485Type5();
+				if(result > 0)
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_RS485);
+			    break;
+				}
+*********************************************************/				
+        break;
+     
+			case FILL_RX_PC:  
 				TestFillResult(StorePCFill( switch_pos, MODE4));
 				break;
 

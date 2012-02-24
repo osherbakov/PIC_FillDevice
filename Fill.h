@@ -52,14 +52,12 @@ typedef enum
 #define KEY_NAK  (0x15)	// Key nack
 #define KEY_EOL  (0x0D)	// Key End of Line
 
-#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds
-#define  RX_TIMEOUT2_PC	 	(100)     // 100ms
-#define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds
-#define  RX_TIMEOUT2_MBITR 	(100)   // 100ms
-#define  RX_TIMEOUT1_RS	  (2000)    // 2 seconds
-#define  RX_TIMEOUT2_RS	  (50)     // 50 ms
-#define  RX_TIMEOUT1_DTD	(2000)    // 2 seconds
-#define  RX_TIMEOUT2_DTD	(50)     // 50 ms
+#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT2_PC	 	(100)     // 100ms - timeout after that
+#define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT2_MBITR 	(100)   // 100ms - timeout after that
+#define  RX_TIMEOUT1_RS	  (2000)    // 2 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT1_DTD	(2000)    // 2 seconds - timeout until 1st symbol
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing
@@ -70,17 +68,17 @@ extern byte	 data_cell[];
 extern byte	 TOD_cell[];
 extern void  FillTODData(void);
 extern void  ExtractTODData(void);
-extern char  ExtractYear(byte *p_buff, byte n_count);
-extern char  ExtractDate(byte *p_buff, byte n_count);
-extern char  ExtractTime(byte *p_buff, byte n_count);
 
 extern void GetSetCurrentDayTime(byte *p_buffer);
 
 // Clear a selected slot
 extern char ClearFill(byte stored_slot);
+
 // Get the fill info from the slot
 extern char CheckFillType(byte stored_slot);
 
+// To receive fill - set up pins properly
+extern void SetType123PinsRx(void);
 // To receive fill - check for different fill types
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);
@@ -92,7 +90,6 @@ extern char CheckType123Equipment(byte fill_type);
 // Actual functions to get and store fills
 extern char StoreDS102Fill(byte stored_slot, byte fill_type);
 extern char StorePCFill(byte stored_slot, byte fill_type);
-
 
 // Functions to wait for the request and send fill
 extern char WaitReqSendDS102Fill(byte stored_slot, byte fill_type);

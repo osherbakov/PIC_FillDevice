@@ -10,7 +10,8 @@ extern volatile unsigned int seconds_counter;
 
 extern void set_timeout(int timeout_in_ms);
 
-#define is_not_timeout() (timeout_flag == 0)
+#define is_timeout() (timeout_flag)
+#define is_not_timeout() (!timeout_flag)
 
 #define DelayMs(x) 		Delay1K((XTAL_FREQ * ((int)(x))) / 4 )
 #define DelayUs(x) 		Delay10TCYx((XTAL_FREQ * ((int)(x))) / (4 * 10) )

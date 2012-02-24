@@ -4,6 +4,7 @@
 #include "serial.h"
 #include "Fill.h"
 #include "gps.h"
+#include "delay.h"
 #include <ctype.h>
 
 // Generic cell that can keep all the data
@@ -79,6 +80,7 @@ char ClearFill(byte stored_slot)
 {
 	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
    byte_write(base_address, 0x00);
+   DelayMs(300);    // Debounce the button
    return ST_OK;
 }
 
@@ -138,7 +140,7 @@ void  ExtractTODData()
 	CalculateWeekDay();
 }
 
-char  ExtractTime(byte *p_buff, byte n_count)
+static char  ExtractTime(byte *p_buff, byte n_count)
 {
   // find the block that has 6 digits
   while(1)
@@ -169,7 +171,7 @@ char  ExtractTime(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
-char  ExtractDate(byte *p_buff, byte n_count)
+static char  ExtractDate(byte *p_buff, byte n_count)
 {
   byte month;
   // find the block that has 2 Digits and 3 Letters
@@ -209,7 +211,7 @@ char  ExtractDate(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
-char  ExtractYear(byte *p_buff, byte n_count)
+static char  ExtractYear(byte *p_buff, byte n_count)
 {
   // find the block that has 4 digits only
   while(1)

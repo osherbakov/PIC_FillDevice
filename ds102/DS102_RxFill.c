@@ -129,9 +129,9 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
     if( PreviousState != NewState  )
     {
       PreviousState = NewState;
-		  set_timeout(tF);
       if( NewState == LOW )
       {
+  		  set_timeout(tF);
   	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
 				if( bit_count >= 8)
@@ -342,4 +342,25 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 		result = ST_DONE;
 	}
   return result;
+}
+
+void SetType123PinsRx()
+{
+  pinMode(PIN_B, INPUT);
+  pinMode(PIN_C, OUTPUT);
+  pinMode(PIN_D, INPUT);
+  pinMode(PIN_E, INPUT);
+  pinMode(PIN_F, INPUT);
+
+  digitalWrite(PIN_B, HIGH);
+  digitalWrite(PIN_C, HIGH);
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_F, HIGH);
+
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
+  // Set up pins mode and levels
+  delay(tB);
+  
 }
