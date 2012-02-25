@@ -68,6 +68,7 @@ extern byte	 data_cell[];
 extern byte	 TOD_cell[];
 extern void  FillTODData(void);
 extern void  ExtractTODData(void);
+extern char  IsValidYear(void);
 
 extern void GetSetCurrentDayTime(byte *p_buffer);
 

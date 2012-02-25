@@ -131,11 +131,11 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
       PreviousState = NewState;
       if( NewState == LOW )
       {
-  		  set_timeout(tF);
   	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
 				if( bit_count >= 8)
 				{
+    		  set_timeout(tF);
 					*p_cell++ = Data;
 					bit_count = 0;
 					byte_count++;
@@ -168,6 +168,8 @@ static void SetTimeFromCell(void)
   char ms_100;
   
 	ExtractTODData();
+	if( !IsValidYear()) return;
+	
 	CalculateNextSecond();
 	// The time is in chunks of 1/10 sec
 	// Additionally, we used 	

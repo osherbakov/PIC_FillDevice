@@ -140,6 +140,12 @@ void  ExtractTODData()
 	CalculateWeekDay();
 }
 
+char IsValidYear()
+{
+	return (rtc_date.Century	>= 0x20) &&
+	          (rtc_date.Year	>= 0x12);
+}
+
 static char  ExtractTime(byte *p_buff, byte n_count)
 {
   // find the block that has 6 digits
