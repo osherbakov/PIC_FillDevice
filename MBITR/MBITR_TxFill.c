@@ -39,7 +39,6 @@ char WaitReqSendMBITRFill(byte stored_slot)
 {
 	byte    bytes, byte_cnt;
   byte  	fill_type, records;
-	byte    *p_data;
 	char    wait_result;
 	unsigned short long base_address;
 
@@ -48,7 +47,6 @@ char WaitReqSendMBITRFill(byte stored_slot)
 	if( WaitMBITRReq(REQ_FIRST) < 0 ) return -1;
 
 	wait_result = ST_OK;
-	p_data = &data_cell[0];
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++);
 	if(records == 0xFF) records = 0x00;
@@ -61,9 +59,10 @@ char WaitReqSendMBITRFill(byte stored_slot)
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, p_data, byte_cnt);
+			array_read(base_address, &data_cell[0], byte_cnt);
+			tx_mbitr(&data_cell[0], byte_cnt);
+			// Adjust counters and pointers
 			base_address += byte_cnt;
-			tx_mbitr(p_data, byte_cnt);
 			bytes -= byte_cnt;
 		}
 		records--;

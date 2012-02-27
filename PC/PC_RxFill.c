@@ -28,11 +28,7 @@ char SendPCNak(byte ack_type)
 static byte GetPCFill(unsigned short long base_address)
 {
 	byte records, byte_cnt, record_size;
-	byte  *p_data;
 	unsigned short long saved_base_address;
-
-	p_data = &data_cell[0];
-
 	records = 0;
 	record_size = 0;
 
@@ -41,7 +37,7 @@ static byte GetPCFill(unsigned short long base_address)
 	SendPCAck(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
-		byte_cnt = rx_eusart(p_data, FILL_MAX_SIZE);
+		byte_cnt = rx_eusart(&data_cell[0], FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue
@@ -53,7 +49,7 @@ static byte GetPCFill(unsigned short long base_address)
 		}
 		if(byte_cnt)
 		{
-			array_write(base_address, p_data, byte_cnt);
+			array_write(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
 		}
 		if(byte_cnt < FILL_MAX_SIZE)

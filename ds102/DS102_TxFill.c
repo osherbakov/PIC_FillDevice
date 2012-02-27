@@ -367,7 +367,6 @@ char SendDS102Fill(byte stored_slot)
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
 			array_read(base_address, &data_cell[0], byte_cnt);
-			base_address += byte_cnt;
 			// Check if the cell that we are about to send is the 
 			// TOD cell - replace it with the real Time cell
 			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
@@ -375,11 +374,13 @@ char SendDS102Fill(byte stored_slot)
 			{
 				FillTODData();
 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-	  		SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
+	  		SendDS102Cell(TOD_cell, byte_cnt);
 			}else
 			{
 				SendDS102Cell(&data_cell[0], byte_cnt);
 			}
+			// Adjust counters and pointers
+			base_address += byte_cnt;
 			bytes -= byte_cnt;
 		}
 		records--;

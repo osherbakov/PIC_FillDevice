@@ -25,11 +25,9 @@ char WaitReqSendPCFill(byte stored_slot)
 {
   byte  	fill_type, records;
 	byte    bytes, byte_cnt;
-	byte    *p_data;
 	char    wait_result;
 	unsigned short long base_address;
 
-	p_data = &data_cell[0];
 	wait_result = ST_OK;
 	
   base_address = get_eeprom_address(stored_slot & 0x0F);
@@ -44,11 +42,11 @@ char WaitReqSendPCFill(byte stored_slot)
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, p_data, byte_cnt);
+			array_read(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
 			// Check if the cell that we are about to send is the 
 			// TOD cell - replace it with the real Time cell
-			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				FillTODData();
@@ -56,7 +54,7 @@ char WaitReqSendPCFill(byte stored_slot)
 		  	tx_eusart(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
-				tx_eusart(p_data, byte_cnt);
+				tx_eusart(&data_cell[0], byte_cnt);
 			}
 			bytes -= byte_cnt;
 		}
@@ -82,20 +80,19 @@ char ReadMemSendPCFill(byte stored_slot)
 {
 	unsigned int bytes, byte_cnt;
   unsigned short long base_address;	
-	byte  *p_data;
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);
-	p_data = &data_cell[0];
 	
 	bytes = 0x1000;
 	while(bytes)	
 	{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, p_data, byte_cnt);
+			array_read(base_address, &data_cell[0], byte_cnt);
+			tx_eusart(&data_cell[0], byte_cnt);
+    	flush_eusart();
+    	// Adjust counters and pointers
 			base_address += byte_cnt;
-			tx_eusart(p_data, byte_cnt);
 			bytes -= byte_cnt;
 	}
-	flush_eusart();
 	return ST_OK;
 }
