@@ -13,9 +13,7 @@
 
 #define HQ_DETECT_TIMEOUT_MS (8000)  	// 8sec to detect
 
-#define HQ_BIT_TIME_US		  (600)  	// 600us for one bit.
-
-#define TIMER_300MS_PERIOD ( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2) / 16)
+#define TIMER_300MS_PERIOD ( ((XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16)
 #define TIMER_DELAY_EDGE ( TIMER_300MS_PERIOD + (TIMER_300MS_PERIOD / 2 ) - 4)
 #define TIMER_WAIT_EDGE ( TIMER_300MS_PERIOD - 4 )
 
@@ -35,12 +33,12 @@ unsigned char hamming_table[] =
 	0b00111001		// 9  - 0x39
 };
 
-static unsigned char HQ_Hours;
-static unsigned char HQ_Minutes;
-static unsigned char HQ_Seconds;
-static unsigned char HQ_JulianDayH;
-static unsigned char HQ_JulianDayL;
-static unsigned char HQ_Year;
+unsigned char HQ_Hours;
+unsigned char HQ_Minutes;
+unsigned char HQ_Seconds;
+unsigned char HQ_JulianDayH;
+unsigned char HQ_JulianDayL;
+unsigned char HQ_Year;
 
 
 #define SYNC_PATTERN		(0x11e9)
@@ -122,6 +120,8 @@ static void ExtractHQDate(void)
 	rtc_date.Seconds = HQ_Seconds;
 	rtc_date.Century = 0x20;
 	rtc_date.Year = HQ_Year;
+	rtc_date.JulianDayH = HQ_JulianDayH;
+	rtc_date.JulianDayL = HQ_JulianDayL;
 	
   CalculateMonthAndDay();
   CalculateWeekDay();
@@ -148,8 +148,10 @@ static char hq_pin;
 static char WaitEdge(unsigned char timeout)
 {
 	char ret_value = current_pin;
+	PR6 = timeout;	
 	TMR6 = 0;
-	while(TMR6 < timeout)
+	PIR5bits.TMR6IF = 0;
+	while(!PIR5bits.TMR6IF)
 	{
 		hq_pin = HQ_PIN;
 		if(hq_pin != current_pin)
@@ -169,8 +171,10 @@ static char WaitEdge(unsigned char timeout)
 static char WaitTimer(unsigned char timeout)
 {
 	char ret_value = -1;
+	PR6 = timeout;
 	TMR6 = 0;
-	while(TMR6 < timeout)
+	PIR5bits.TMR6IF = 0;
+	while(!PIR5bits.TMR6IF)
 	{
 		hq_pin = HQ_PIN;
 		if(hq_pin != current_pin)
@@ -197,7 +201,6 @@ byte RHQD_State;
 
 static char GetHQTime(void)
 {
-	PR6 = 0xFF;
 	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 
 	RHQD_State = INIT;
@@ -273,19 +276,15 @@ char ReceiveHQTime(void )
 	TRIS_HQ_PIN = INPUT;
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
-	do
-	{
   //	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-		if( GetHQTime() )	
+	if( GetHQTime() )	
 		  return ST_TIMEOUT;
 	
 	//  2. Find the next time that we will have HQ stream
-		CalculateNextSecond();
-	} while( !rtc_date.Valid );
+	CalculateNextSecond();
 
 	INTCONbits.GIE = 0;		// Disable interrupts
-	INTCONbits.PEIE = 0;
 	SetRTCDataPart1();
 	
   //	3. Find the next HQ stream rising edge
@@ -294,25 +293,20 @@ char ReceiveHQTime(void )
 	while(!HQ_PIN){};		
 
   //  4. Finally, set up the RTC clock on the rising edge
-	CLOCK_LOW();
-	DATA_HI();	
-	DelayI2C();
-	CLOCK_HI();
-	DelayI2C();
-
+	SWAckI2C(READ);
 	SetRTCDataPart2();
 	
   // Reset the 10 ms clock
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
 
-	INTCONbits.RBIF = 0;	// Clear bit
+	INTCONbits.RBIF = 0;	// Clear Edge interrupts bit
 	INTCONbits.GIE = 1;		// Enable interrupts
-	INTCONbits.PEIE = 1;
 	
 //  5. Get the HQ time again and compare with the current RTC
+	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream again for the final check
 	if( GetHQTime() )	
-	  return ST_TIMEOUT;
+	  return ST_ERR;
 	  
 	GetRTCData();
 	return ( 
@@ -321,7 +315,8 @@ char ReceiveHQTime(void )
 		  (HQ_Seconds == rtc_date.Seconds) && 
   		  (HQ_JulianDayH == rtc_date.JulianDayH) && 
     		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
-    		    (HQ_Year == rtc_date.Year) 
+    		    (HQ_Year == rtc_date.Year) &&
+    		      (0x20 == rtc_date.Century)
 		          ) ? ST_DONE : ST_ERR;
 }
 

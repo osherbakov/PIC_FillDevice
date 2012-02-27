@@ -174,7 +174,7 @@ static void  PinsToDefault(void)
 	disable_tx_hqii();
 	close_eusart();
   set_pin_f_as_io();
-	set_pin_a_as_power(); // Remove ground from pin A
+	set_pin_a_as_power(); // Set pin A as +5V
 	TRIS_PIN_B = 1;
 	TRIS_PIN_C = 1;
 	TRIS_PIN_D = 1;

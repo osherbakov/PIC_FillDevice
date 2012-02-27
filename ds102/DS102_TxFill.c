@@ -14,7 +14,7 @@
 #define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
 #define tE  	100   // REQ -> Fill		(0 - 2.3 sec)
 
-#define tZ  	300   // End -> New Fill	
+#define tZ  	500   // End -> New Fill	
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
 //--------------------------------------------------------------
@@ -115,17 +115,16 @@ static char GetEquipmentMode23Type(void)
 
   i = 0;
   pinMode(PIN_B, INPUT);
-  pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
   
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
   
   PreviousState = LOW;
   set_timeout(tB);
   while(is_not_timeout())
   {
-    NewState = digitalRead(PIN_E);
+    NewState = pin_E();
 	  // Find the state change
     if( PreviousState != NewState  )
     {
@@ -134,7 +133,7 @@ static char GetEquipmentMode23Type(void)
         i++;
         if( i >= 40)
         {
-          return (digitalRead(PIN_B) == LOW) ? MODE2 : MODE3;
+          return (pin_B() == LOW) ? MODE2 : MODE3;
         }
       }
       PreviousState = NewState;
@@ -156,12 +155,13 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
   char   Result = ST_TIMEOUT;
 
-	// For MODE1 fill we keep PIN_B low and don't read it
-  if(fill_type != MODE1)
+	// For MODE23 fill we read PIN_B 
+  if( fill_type != MODE1 )
   {
   	pinMode(PIN_B, INPUT);
-	  WPUB_PIN_B = 1;
+	  WPUB_PIN_B = 0;
   }
+  
   pinMode(PIN_C, INPUT); 
 
   if( req_type == REQ_FIRST)
@@ -175,7 +175,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   PreviousState = HIGH;
   while( is_not_timeout() )  
   {
-    NewState = digitalRead(PIN_C);
+    NewState = pin_C();
     if(PreviousState != NewState)  
     {
       // check if we should return now or wait for the PIN_C to go HIGH
@@ -189,7 +189,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     }
 
 	  // Do not check for pin B in MODE1 fill
-    if( (fill_type != MODE1) && (digitalRead(PIN_B) == LOW) ) 
+    if( (req_type != REQ_FIRST) && (fill_type != MODE1) && (pin_B() == LOW) ) 
     {
       Result = ST_ERR;  // Bad CRC
     }
@@ -197,8 +197,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   // Timeout occured - must return -1, except some special cases
   // For Type 1 Fill the first request may be just a long pull of PIN_C
   // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
-  if( (fill_type == MODE1) && 
-          ( (PreviousState == LOW) || (req_type == REQ_LAST) ) )
+  if( (fill_type == MODE1) && (NewState == LOW) )
   {
 		Result = ST_OK;
   }
@@ -229,8 +228,8 @@ static void AcquireMode23Bus(void)
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
 
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);
@@ -324,12 +323,12 @@ char WaitReqSendTODFill()
 	  if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
 	  {
 		  FillTODData();
-		  cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
+		  cm_append(&TOD_cell[0], MODE2_3_CELL_SIZE);
+		  SendDS102Cell(&TOD_cell[0], MODE2_3_CELL_SIZE);
 	  }else
 	  {
-		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
-		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
+		  cm_append(&nofill_cell[0], MODE2_3_CELL_SIZE);
+		  SendDS102Cell(&nofill_cell[0], MODE2_3_CELL_SIZE);
 	  }
 	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
 
@@ -351,7 +350,6 @@ char SendDS102Fill(byte stored_slot)
 {
   byte  	fill_type, records;
 	byte    bytes, byte_cnt;
-	byte    *p_data;
 	unsigned short long base_address;
 	
 	char    wait_result = ST_TIMEOUT;
@@ -362,23 +360,17 @@ char SendDS102Fill(byte stored_slot)
 	// Get the fill type from the EEPROM
 	fill_type = byte_read(base_address++);
 
-	p_data = &data_cell[0];
-	
 	while(records)	
 	{
 		bytes = byte_read(base_address++);
-		if(bytes !=  MODE2_3_CELL_SIZE)
-		{
-  		break;
-  	}
 		while(bytes )
 		{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, p_data, byte_cnt);
+			array_read(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
 			// Check if the cell that we are about to send is the 
 			// TOD cell - replace it with the real Time cell
-			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				FillTODData();
@@ -386,7 +378,7 @@ char SendDS102Fill(byte stored_slot)
 	  		SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
 			}else
 			{
-				SendDS102Cell(p_data, byte_cnt);
+				SendDS102Cell(&data_cell[0], byte_cnt);
 			}
 			bytes -= byte_cnt;
 		}

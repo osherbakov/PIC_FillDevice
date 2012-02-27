@@ -199,7 +199,6 @@ char ReceiveGPSTime()
 	}while(!rtc_date.Valid);
 	
 	INTCONbits.GIE = 0;		// Disable interrupts
-	INTCONbits.PEIE = 0;
 	SetRTCDataPart1();
 
 //	4. Find the 1PPS rising edge
@@ -208,11 +207,7 @@ char ReceiveGPSTime()
 
 //  5. Finally, set up the RTC clock - according to the spec,
 //	the RTC chain is reset on ACK after writing to seconds register.
-	CLOCK_LOW();
-	DATA_HI();	
-	DelayI2C();
-	CLOCK_HI();
-	DelayI2C();
+	SWAckI2C(READ);
 
 	SetRTCDataPart2();
 	
@@ -220,13 +215,13 @@ char ReceiveGPSTime()
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
 
-	INTCONbits.RBIF = 0;	// Clear bit
+	INTCONbits.RBIF = 0;	// Clear Edge interrupt bit
 	INTCONbits.GIE = 1;		// Enable interrupts
-	INTCONbits.PEIE = 1;
   
 //  6. Get the GPS time again and compare with the current RTC
+	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	if( GetGPSTime() )	
-	  return ST_TIMEOUT;
+	  return ST_ERR;
 	  
 	GetRTCData();
 	p_time = (byte *) &gps_time;
