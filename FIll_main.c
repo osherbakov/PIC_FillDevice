@@ -119,6 +119,10 @@ static void SetNextState(char nextState)
 			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
 
+    case FILL_RX_DS102:
+			set_led_state(100, 10);		// "Key loading" blink pattern
+			break;
+    
 		case FILL_RX_RS232:
 			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
@@ -140,7 +144,7 @@ static void SetNextState(char nextState)
 			break;
 	
 		default:
-			set_led_state(150, 5);		// "Key loading" blink pattern
+			set_led_state(100, 10);		// "Key loading" blink pattern
 			break;
 	}
 	current_state = nextState;

@@ -45,7 +45,7 @@ static char GetQueryByte(void)
   WPUB_PIN_E = 1;
 
   bit_count = 0;
-  PreviousState = LOW;
+  PreviousState = digitalRead(PIN_E);
   set_timeout(tZ);
 
   // We exit on timeout or Pin F going high
@@ -114,7 +114,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 
   byte_count = 0;
   bit_count = 0;
-  PreviousState = LOW;
+  PreviousState = digitalRead(PIN_E);
   set_timeout(tE);
 
   while( is_not_timeout() &&  (byte_count < count) )
@@ -131,11 +131,11 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
       PreviousState = NewState;
       if( NewState == LOW )
       {
+   		  set_timeout(tF);
   	    Data = (Data >> 1) | (digitalRead(PIN_D) ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
 				if( bit_count >= 8)
 				{
-    		  set_timeout(tF);
 					*p_cell++ = Data;
 					bit_count = 0;
 					byte_count++;
