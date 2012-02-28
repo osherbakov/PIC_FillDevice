@@ -13,10 +13,9 @@
 // Delays in ms
 //--------------------------------------------------------------
 #define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  	60     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  	60     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  	60     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  	300    // End of fill - > response (4ms - 2sec)
+#define tD  	70     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	70     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	70     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
 
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
@@ -32,6 +31,7 @@
 #define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
 #define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
+#define tF  	200    // End of fill - > response (4ms - 2sec)
 
 static char GetQueryByte(void)
 {
@@ -266,19 +266,17 @@ char CheckFillType23()
 static byte GetFill(unsigned short long base_address, byte fill_type)
 {
 	byte records, byte_cnt, record_size;
-	byte *p_data;
 	unsigned short long saved_base_address;
 
 	records = 0;
 	record_size = 0;
-	p_data = &data_cell[0];
 
 	saved_base_address = base_address++;  // First byte is record size
 
 	SendFillRequest(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
-		byte_cnt = ReceiveDS102Cell(fill_type, p_data, FILL_MAX_SIZE);
+		byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
 		// We can get byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue collecting
@@ -291,7 +289,7 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 		// Any data present - save it in EEPROM
 		if(byte_cnt)
 		{
-			array_write(base_address, p_data, byte_cnt);
+			array_write(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
 		}
 		// Block of data received - save size and request next
@@ -304,7 +302,7 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 			saved_base_address = base_address++;
       // Check if the cell that we received is the 
       // TOD cell - set up time
-			if( (p_data[0] == TOD_TAG_0) && (p_data[1] == TOD_TAG_1) && 
+			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				SetTimeFromCell();

@@ -108,3 +108,70 @@ void enable_tx_hqii()
   hq_enabled = 1;
 }  
 
+char pin_B()
+{
+  unsigned int  Value;
+  // Set up it to be analog input
+  TRISBbits.RB1 = 1;
+  ANSELBbits.ANSB1 = 1;
+  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON1 = 0;
+  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
+  ADCON0bits.GO = 1;
+  while(ADCON0bits.GO) {/* wait for the done */};
+  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
+  ADCON0 = 0;   // Disable ADC logic
+  ANSELBbits.ANSB1 = 0;
+  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+}
+
+char pin_C()
+{
+  unsigned int  Value;
+  // Set up it to be analog input
+  TRISCbits.RC6 = 1;
+  ANSELCbits.ANSC6 = 1;
+  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON1 = 0;
+  ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
+  ADCON0bits.GO = 1;
+  while(ADCON0bits.GO) {/* wait for the done */};
+  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
+  ADCON0 = 0;   // Disable ADC logic
+  ANSELCbits.ANSC6 = 0;
+  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+}
+
+char pin_D()
+{
+  unsigned int  Value;
+  // Set up it to be analog input
+  TRISCbits.RC7 = 1;
+  ANSELCbits.ANSC7 = 1;
+  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON1 = 0;
+  ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
+  ADCON0bits.GO = 1;
+  while(ADCON0bits.GO) {/* wait for the done */};
+  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
+  ADCON0 = 0;   // Disable ADC logic
+  ANSELCbits.ANSC7 = 0;
+  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+}
+
+char pin_E()
+{
+  unsigned int  Value;
+  // Set up it to be analog input
+  TRISBbits.RB2 = 1;
+  ANSELBbits.ANSB2 = 1;
+  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON1 = 0;
+  ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
+  ADCON0bits.GO = 1;
+  while(ADCON0bits.GO) {/* wait for the done */};
+  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
+  ADCON0 = 0;   // Disable ADC logic
+  ANSELBbits.ANSB2 = 0;
+  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+}

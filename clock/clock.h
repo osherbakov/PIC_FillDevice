@@ -11,7 +11,7 @@
 
 #define ONE_SEC_TICKS ( (XTAL_FREQ/4) * 1000000L)
 
-#define	NUM_SAMPLES		(8)		// Number of samples collected
+#define	NUM_SAMPLES		(6)		// Number of samples collected
 #define NUM_MARGIN		(4)		// Margin number
 
 extern volatile unsigned char curr_msb;	// MSB for the current sample (8 bits)

@@ -7,8 +7,8 @@
 #define GPS_DETECT_TIMEOUT_MS	(8000)  // 8sec to detect
 
 #define HQ_BIT_TIME_US		(600)  // 600us for one bit.
-#define HQII_TIMER (( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2) / 16) - 1 )
-#define HQII_TIMER_CTRL (1<<2 | 2)	// 16:1 pre, on
+#define HQII_TIMER ((( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16) - 1 )
+#define HQII_TIMER_CTRL ( (1<<2) | 2)	// 16:1 pre, on
 
 extern byte is_equal(byte *p1, byte *p2, byte n);
 

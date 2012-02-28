@@ -76,28 +76,29 @@ void high_isr (void)
 		{
 			HQ_PIN = 1;	
 			TMR4 = 10;					// Preload to compensate for the delay 
+			PR4 = HQII_TIMER;
 			T4CONbits.TMR4ON = 1;		// Turn on the timer
 			PIR5bits.TMR4IF = 0;		// Clear Interrupt
 			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
 			// Calculate next value
-			hq_current_bit = 0x00;
+			hq_current_bit = 0;
 			hq_current_byte = (START_FRAME_DATA << 1);
-			hq_byte_counter = 1;    // First bytes sent
+			hq_byte_counter = 1;    // First byte sent
 			hq_bit_counter = 0;     // Bit 0 was sent
 			hq_active = 0;          // Don't do anything on next H->L until enabled
 		}
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
-/********************** Comment it out for the time being *******************
       // Get statistics for the clock adjustment
 	  	TL = TMR0L;	// Read LSB first to latch the data
 	 		TH = TMR0H;
       TMR0H = 0;  // Reset the counter - MSB first
       TMR0L = 0;
-      curr_lsb = ((int)TH << 8) + TL;
+      curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
       UpdateClockData();
+/********************** Comment it out for the time being *******************/
       ProcessClockData();
-****************************************************************************/      
+/****************************************************************************/      
 
       // Adjust current time
 			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
@@ -147,7 +148,7 @@ void high_isr (void)
 					hq_current_byte = hq_data[hq_byte_counter - START_FRAME_SIZE];
 				}else 
 				{
-					HQ_PIN = 0x00;
+					HQ_PIN = 0;
 					T4CONbits.TMR4ON = 0;		// Turn off the timer
 					PIE5bits.TMR4IE = 0;		// Disable interrupts
 				}

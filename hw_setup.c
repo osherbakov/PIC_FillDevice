@@ -12,7 +12,7 @@ extern void setup_clocks();
 extern void setup_spi();
 extern void setup_start_io();
 
-#define TMR2_FREQ  (100)
+#define TMR2_FREQ  (100)  // 100 Hz timer tick - 10ms
 #define CNT_10MS ((( XTAL_FREQ * 1000000L) / ( 4L * TMR2_FREQ * 10L * 16L )) - 1 )
 
 void setup_clocks()
@@ -44,7 +44,7 @@ void setup_clocks()
   INTCON2bits.TMR0IP = 0;   // Low priority
   INTCONbits.TMR0IF =  0;   // Clear interrupt
   INTCONbits.TMR0IE =  1;   // Enable interrupt
-  T0CON = ((0x1 << 7) | (0x1 <3)); // Ena TIMER0, 16-bit mode,no prescaler
+  T0CON = ((0x1 << 7) | (0x1 << 3)); // Ena TIMER0, 16-bit mode,no prescaler
   
 // TIMER 1 - to count OSC_CLOCK in 16-bit mode
 //  It is used for 0.131072s timeout, when clock overflows
@@ -71,11 +71,11 @@ void setup_clocks()
 	PR4 = HQII_TIMER;
 	IPR5bits.TMR4IP = 1;	// HIGH priority
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
-	PIE5bits.TMR4IE = 0;	// Enable TIMER4 Interrupt
+	PIE5bits.TMR4IE = 0;	// Disable TIMER4 Interrupt
 	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
 
-// Set up the timer 6 to roll over every 300us but with no interrupts
-// for Have Quick data stream detection
+// Set up the timer 6 to roll over the set amount with no interrupts
+// It is used as a general timeout counter, looking at PIR5bits.TMR6IF flag
 	PR6 = 0xFF;
 	IPR5bits.TMR6IP = 0;	// LOW priority
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
