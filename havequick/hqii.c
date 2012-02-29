@@ -278,11 +278,11 @@ char ReceiveHQTime(void )
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
   //	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-	if( GetHQTime() )	
+		if( GetHQTime() )	
 		  return ST_TIMEOUT;
 	
 	//  2. Find the next time that we will have HQ stream
-	CalculateNextSecond();
+		CalculateNextSecond();
 
 	INTCONbits.GIE = 0;		// Disable interrupts
 	SetRTCDataPart1();
@@ -293,14 +293,19 @@ char ReceiveHQTime(void )
 	while(!HQ_PIN){};		
 
   //  4. Finally, set up the RTC clock on the rising edge
-	SWAckI2C(READ);
+	CLOCK_LOW();
+	DATA_HI();	
+	DelayI2C();
+	CLOCK_HI();
+	DelayI2C();
+
 	SetRTCDataPart2();
 	
   // Reset the 10 ms clock
   rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
 
-	INTCONbits.RBIF = 0;	// Clear Edge interrupts bit
+	INTCONbits.RBIF = 0;	// Clear bit
 	INTCONbits.GIE = 1;		// Enable interrupts
 	
 //  5. Get the HQ time again and compare with the current RTC

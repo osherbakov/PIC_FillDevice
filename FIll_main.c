@@ -119,6 +119,10 @@ static void SetNextState(char nextState)
 			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
 
+    case FILL_RX_DS102:
+			set_led_state(100, 10);		// "Key loading" blink pattern
+			break;
+    
 		case FILL_RX_RS232:
 			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
@@ -174,7 +178,7 @@ static void  PinsToDefault(void)
 	disable_tx_hqii();
 	close_eusart();
   set_pin_f_as_io();
-	set_pin_a_as_power(); // Set pin A as +5V
+	set_pin_a_as_power(); // Remove ground from pin A
 	TRIS_PIN_B = 1;
 	TRIS_PIN_C = 1;
 	TRIS_PIN_D = 1;
@@ -197,8 +201,20 @@ void main()
   
 	setup_start_io();
   PinsToDefault();	
-  	
+
 #ifdef  DO_TEST
+  while(1)
+  {
+    byte min, max, threshold, pins_high;
+    pins_high = pin_C() + pin_D() + pin_E() + pin_B();
+  	
+    max = pin_MAX();
+    min = pin_MIN();
+    threshold = pin_Threshold();
+    
+    result = max - min;
+  }
+
   byte  test_str[] = "  123455 15JUN 2012 ";
   
   // Perform BIST (self-test)

@@ -108,70 +108,93 @@ void enable_tx_hqii()
   hq_enabled = 1;
 }  
 
-char pin_B()
+unsigned char ADC_Max = 0x7F;
+unsigned char ADC_Min = 0x00;
+unsigned char ADC_Threshold;
+unsigned char ADC_Last;
+
+static char ReadPin(void)
 {
-  unsigned int  Value;
-  // Set up it to be analog input
-  TRISBbits.RB1 = 1;
-  ANSELBbits.ANSB1 = 1;
+  unsigned char Delta;
   ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
   ADCON1 = 0;
-  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
   ADCON0bits.GO = 1;
+  // After starting ADC we have plenty of time to do some math
+  ADC_Threshold = (ADC_Max + ADC_Min) >> 1;
+  ADC_Max  = MAX(ADC_Max, ADC_Last);
+  ADC_Min  = MIN(ADC_Min, ADC_Last);
+  if(ADC_Max > ADC_Min)
+  {
+    Delta = 0; //(ADC_Max - ADC_Min) >> 5;
+    ADC_Max -= Delta; // Apply decay factor
+    ADC_Min += Delta;
+  }
+  
   while(ADCON0bits.GO) {/* wait for the done */};
-  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
+  ADC_Last = (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
   ADCON0 = 0;   // Disable ADC logic
-  ANSELBbits.ANSB1 = 0;
-  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+  return (ADC_Last > ADC_Threshold) ? HIGH : LOW;
+}
+
+char pin_B()
+{
+  char ret;
+  // Set up it to be analog input
+  TRIS_PIN_B = 1;
+  ANSEL_PIN_B = 1;
+  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
+  ret = ReadPin();
+  ANSEL_PIN_B = 0;
+  return ret;
 }
 
 char pin_C()
 {
-  unsigned int  Value;
+  char ret;
   // Set up it to be analog input
-  TRISCbits.RC6 = 1;
-  ANSELCbits.ANSC6 = 1;
-  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
-  ADCON1 = 0;
+  TRIS_PIN_C = 1;
+  ANSEL_PIN_C = 1;
   ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
-  ADCON0bits.GO = 1;
-  while(ADCON0bits.GO) {/* wait for the done */};
-  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
-  ADCON0 = 0;   // Disable ADC logic
-  ANSELCbits.ANSC6 = 0;
-  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+  ret = ReadPin();
+  ANSEL_PIN_C = 0;
+  return ret;
 }
 
 char pin_D()
 {
-  unsigned int  Value;
+  char ret;
   // Set up it to be analog input
-  TRISCbits.RC7 = 1;
-  ANSELCbits.ANSC7 = 1;
-  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
-  ADCON1 = 0;
+  TRIS_PIN_D = 1;
+  ANSEL_PIN_D = 1;
   ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
-  ADCON0bits.GO = 1;
-  while(ADCON0bits.GO) {/* wait for the done */};
-  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
-  ADCON0 = 0;   // Disable ADC logic
-  ANSELCbits.ANSC7 = 0;
-  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+  ret = ReadPin();
+  ANSEL_PIN_D = 0;
+  return ret;
 }
 
 char pin_E()
 {
-  unsigned int  Value;
+  char ret;
   // Set up it to be analog input
-  TRISBbits.RB2 = 1;
-  ANSELBbits.ANSB2 = 1;
-  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
-  ADCON1 = 0;
+  TRIS_PIN_E = 1;
+  ANSEL_PIN_E = 1;
   ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
-  ADCON0bits.GO = 1;
-  while(ADCON0bits.GO) {/* wait for the done */};
-  Value = (((unsigned int) ADRESH) << 8) | ((unsigned int) ADRESL);
-  ADCON0 = 0;   // Disable ADC logic
-  ANSELBbits.ANSB2 = 0;
-  return (Value > HI_LO_THRESHOLD) ? HIGH : LOW;
+  ret = ReadPin();
+  ANSEL_PIN_E = 0;
+  return ret;
+}
+
+char pin_MAX()
+{
+  return ADC_Max;
+}
+
+char pin_MIN()
+{
+  return ADC_Min;
+}
+
+char pin_Threshold()
+{
+  return ADC_Threshold;
 }
