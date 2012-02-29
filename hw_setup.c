@@ -191,21 +191,6 @@ void setup_sleep_io()
 	INTCONbits.GIE = 0;		// Disable interrupts
 	INTCONbits.PEIE = 0;
 
-	// Disable LED
-	LEDP = 0;				// LED off
-
-  // Apply power to PIN_A
-  TRIS_PIN_A_PWR = OUTPUT;
-  PIN_A_PWR = 1;
-
-  // Apply no power to PIN_F
-  TRIS_PIN_F_PWR = OUTPUT;
-  PIN_F_PWR = 0;
-
-
-  // Release I2C bus
-	SWStopI2C();
-
 	// Use all ports as Analog In
 	TRISA = 0xFF;
 	TRISB = 0xFF;
@@ -218,16 +203,35 @@ void setup_sleep_io()
 	ANSELD = 0xFF;
 	ANSELE = 0xFF;
 
+	// Disable LED
+	ANSEL_LEDP = 0;
+	TRIS_LEDP = 0;
+	LEDP = 0;				// LED off
+
+  // Apply power to PIN_A
+  TRIS_PIN_A_PWR = OUTPUT;
+  PIN_A_PWR = 1;
+
+  // Apply no power to PIN_F
+  ANSEL_PIN_F_PWR = 0;
+  TRIS_PIN_F_PWR = OUTPUT;
+  PIN_F_PWR = 0;
+
+
 	INTCON2bits.RBPU = 1;	// Disable Weak Pull Ups
 	WPUB = 0x00;			// Turn off Weak pull-up
 
 	// Turn off SPI
-	TRIS_SPI_CS = OUTPUT;	// Drive the CS pin
+	ANSEL_SPI_CS = 0;	  // Drive the CS pin
+	ANSEL_SPI_SCK = 0;	// Drive the CLOCK pin		
+	ANSEL_SPI_SDO = 0;	// Drive SDOut pin
+	
+	TRIS_SPI_CS = OUTPUT;	  // Drive the CS pin
 	TRIS_SPI_SCK = OUTPUT;	// Drive the CLOCK pin		
 	TRIS_SPI_SDO = OUTPUT;	// Drive SDOut pin
 	SPI_CS = 1;				// Keep CS HIGH
-	SPI_SCK = 0;			// Keep CLOCK LOW
-	SPI_SDO = 0;			// Keep SDOut LOW
+	SPI_SCK = 1;			// Keep CLOCK HIGH
+	SPI_SDO = 1;			// Keep SDOut HIGH
 
 	OSCCONbits.IDLEN = 0; 	// On Sleep() enter Sleep
 }

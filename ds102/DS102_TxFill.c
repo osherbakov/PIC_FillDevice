@@ -121,11 +121,11 @@ static char GetEquipmentMode23Type(void)
   WPUB_PIN_B = 1;
   WPUB_PIN_E = 1;
   
-  PreviousState = LOW;
+  PreviousState = pin_E(); // digitalRead(PIN_E);
   set_timeout(tB);
   while(is_not_timeout())
   {
-    NewState = digitalRead(PIN_E);
+    NewState = pin_E(); //digitalRead(PIN_E);
 	  // Find the state change
     if( PreviousState != NewState  )
     {
@@ -134,7 +134,7 @@ static char GetEquipmentMode23Type(void)
         i++;
         if( i >= 40)
         {
-          return (digitalRead(PIN_B) == LOW) ? MODE2 : MODE3;
+          return (pin_B() /* digitalRead(PIN_B)*/  == LOW) ? MODE2 : MODE3;
         }
       }
       PreviousState = NewState;
@@ -175,7 +175,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   PreviousState = HIGH;
   while( is_not_timeout() )  
   {
-    NewState = digitalRead(PIN_C);
+    NewState = pin_C(); // digitalRead(PIN_C);
     if(PreviousState != NewState)  
     {
       // check if we should return now or wait for the PIN_C to go HIGH
@@ -189,7 +189,9 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     }
 
 	  // Do not check for pin B in MODE1 fill
-    if( (fill_type != MODE1) && (digitalRead(PIN_B) == LOW) ) 
+    if( (fill_type != MODE1) && 
+         (req_type != REQ_FIRST) &&
+          (pin_B() /* digitalRead(PIN_B)*/ == LOW) ) 
     {
       Result = ST_ERR;  // Bad CRC
     }
@@ -317,7 +319,7 @@ char WaitReqSendTODFill()
 	char wait_result = ST_TIMEOUT;
 
   // On timeout return and check the switches
-  if( WaitDS102Req(MODE3, REQ_FIRST)  < 0 ) return -1;   
+  if( WaitDS102Req(MODE3, REQ_FIRST)  != ST_OK ) return ST_TIMEOUT;  
   
   for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
   {
@@ -336,10 +338,10 @@ char WaitReqSendTODFill()
     // If all records were sent - ignore timeout
 	  if(pos == NUM_TYPE3_CELLS)
 		{
-			wait_result = ST_OK;
+			wait_result = ST_DONE;
 			break;
 		}
-    if(wait_result) 
+    if(wait_result != ST_OK) 
 			break;
   }
 
@@ -395,7 +397,7 @@ char SendDS102Fill(byte stored_slot)
 			wait_result = ST_DONE;
 			break;
 		}
-    if(wait_result) 
+    if(wait_result != ST_OK) 
 			break;
 	}	
 
@@ -410,7 +412,7 @@ char WaitReqSendDS102Fill(byte stored_slot, byte fill_type)
 {
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
-	if( WaitDS102Req(fill_type, REQ_FIRST) < 0 ) return -1;
+	if( WaitDS102Req(fill_type, REQ_FIRST) != ST_OK ) return ST_TIMEOUT;
 
 	return SendDS102Fill(stored_slot);
 }

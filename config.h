@@ -58,6 +58,12 @@ typedef enum
 #define	TRIS_PIN_E	TRISBbits.RB2
 #define	TRIS_PIN_F	TRISCbits.RC0
 
+#define	ANSEL_PIN_B	ANSELBbits.ANSB1
+#define	ANSEL_PIN_C	ANSELCbits.ANSC6
+#define	ANSEL_PIN_D	ANSELCbits.ANSC7
+#define	ANSEL_PIN_E	ANSELBbits.ANSB2
+
+
 #define	WPUB_PIN_B	WPUBbits.WPUB1
 #define	WPUB_PIN_E	WPUBbits.WPUB2
 
@@ -89,43 +95,48 @@ typedef enum
 
 
 // LED control
-#define	LEDP        PORTEbits.RE1
-
-
+#define	LEDP      PORTEbits.RE1
 #define	TRIS_LEDP	TRISEbits.RE1
 #define	LAT_LEDP	LATEbits.LATE1
+#define	ANSEL_LEDP	ANSELEbits.ANSE1
 
 
 // Zeroizing switch
 #define	ZBR		PORTEbits.RE2
 #define	TRIS_ZBR	TRISEbits.RE2
+#define	ANSEL_ZBR	ANSELEbits.ANSE2
+
 
 // Button press
 #define	BTN		PORTBbits.RB0
 #define	TRIS_BTN	TRISBbits.RB0
+#define	ANSEL_BTN	ANSELBbits.ANSB0
 #define	WPUB_BTN	WPUBbits.WPUB0
 
 // PIN_A_PWR is used to control the Pin A coonection
 #define	PIN_A_PWR	PORTCbits.RC1
 #define	TRIS_PIN_A_PWR	TRISCbits.RC1
+// #define	ANSEL_PIN_A_PWR	ANSELCbits.ANSC1
 
 // PIN_F_PWR is used to control the Pin F power
 #define	PIN_F_PWR	PORTEbits.RE0
 #define	TRIS_PIN_F_PWR	TRISEbits.RE0
+#define	ANSEL_PIN_F_PWR	ANSELEbits.ANSE0
 
 // Software I2C bit-banging
-#define  DATA_LOW()   TRISBbits.TRISB4 = 0; PORTBbits.RB4 = 0 // define macro for data pin output
-#define  DATA_HI()    TRISBbits.TRISB4 = 1; PORTBbits.RB4 = 1  // define macro for data pin input
-#define  DATA_PIN()   PORTBbits.RB4         // define macro for data pin
+#define  DATA_LOW()   PORTBbits.RB4 = 0; TRISBbits.TRISB4 = 0 // define macro for data pin output
+#define  DATA_HI()    TRISBbits.TRISB4 = 1                    // define macro for data pin input
+#define  DATA_PIN()   PORTBbits.RB4                           // define macro for data pin
 
-#define  CLOCK_LOW()  TRISBbits.TRISB3 = 0; PORTBbits.RB3 = 0  // define macro for clock pin output
-#define  CLOCK_HI()   TRISBbits.TRISB3 = 1; PORTBbits.RB3 = 1  // define macro for clock pin input
-#define  SCLK_PIN()   PORTBbits.RB3         // define macro for clock pin
+#define  CLOCK_LOW()  PORTBbits.RB3 = 0; TRISBbits.TRISB3 = 0  // define macro for clock pin output
+#define  CLOCK_HI()   TRISBbits.TRISB3 = 1                     // define macro for clock pin input
+#define  SCLK_PIN()   PORTBbits.RB3                            // define macro for clock pin
 
 // RTC 1 PULSE_PER_SEC pin
 // Will generate Interrupt On Change (IOC)
 #define  PIN_1PPS	PORTBbits.RB5		
 #define  TRIS_1PPS	TRISBbits.RB5		
+#define  ANSEL_1PPS	ANSELBbits.ANSB5		
 #define  IOC_1PPS	IOCBbits.IOCB5
 
 
@@ -138,19 +149,26 @@ typedef enum
 #define	TRIS_SPI_SCK	TRISCbits.RC3
 #define	TRIS_SPI_SDI	TRISCbits.RC4
 #define	TRIS_SPI_SDO	TRISCbits.RC5
+#define	ANSEL_SPI_CS	ANSELCbits.ANSC2
+#define	ANSEL_SPI_SCK	ANSELCbits.ANSC3
+#define	ANSEL_SPI_SDI	ANSELCbits.ANSC4
+#define	ANSEL_SPI_SDO	ANSELCbits.ANSC5
 
 
 // NMEA Serial GPS Data
 #define	GPS_DATA	PIN_D
 #define	TRIS_GPS_DATA	TRIS_PIN_D
+#define	ANSEL_GPS_DATA	ANSEL_PIN_D
 
 // NMEA 1PPS GPS pulse
 #define	GPS_1PPS	PIN_E
 #define	TRIS_GPS_1PPS	TRIS_PIN_E
+#define	ANSEL_GPS_1PPS	ANSEL_PIN_E
 
 // Have quick pin
 #define	HQ_PIN		PIN_B
 #define	TRIS_HQ_PIN	TRIS_PIN_B
+#define	ANSEL_HQ_PIN	ANSEL_PIN_B
 
 
 
@@ -160,25 +178,31 @@ typedef enum
 //  Here are assignments of the pins for MBITR
 #define	 TxMBITR	(PIN_D)
 #define	 TRIS_TxMBITR (TRIS_PIN_D)
+#define	 ANSEL_TxMBITR (ANSEL_PIN_D)
 
 #define	 RxMBITR	(PIN_C)
 #define	 TRIS_RxMBITR (TRIS_PIN_C)
+#define	 ANSEL_RxMBITR (ANSEL_PIN_C)
 
 // To communicate with PC the following pins are used:
 //  PIN_D - input, PIN_C - output
 #define	 TxPC	(PIN_C)
 #define	 TRIS_TxPC (TRIS_PIN_C)
+#define	 ANSEL_TxPC (ANSEL_PIN_C)
 
 #define	 RxPC	(PIN_D)
 #define	 TRIS_RxPC (TRIS_PIN_D)
+#define	 ANSEL_RxPC (ANSEL_PIN_D)
 
 // To communicate with another DTD the following pins are used:
 //  PIN_C - input, PIN_D - output
 #define	 TxDTD	(PIN_D)
 #define	 TRIS_TxDTD (TRIS_PIN_D)
+#define	 ANSEL_TxDTD (ANSEL_PIN_D)
 
 #define	 RxDTD	(PIN_C)
 #define	 TRIS_RxDTD (TRIS_PIN_C)
+#define	 ANSEL_RxDTD (ANSEL_PIN_C)
 
 
 
@@ -186,10 +210,12 @@ typedef enum
 //  Data+  PIN_B,  Data-  PIN_E
 #define	 Data_P	(PIN_B)
 #define	 TRIS_Data_P (TRIS_PIN_B)
+#define	 ANSEL_Data_P (ANSEL_PIN_B)
 #define	 WPUB_Data_P (WPUB_PIN_B)
 
 #define	 Data_N	(PIN_E)
 #define	 TRIS_Data_N (TRIS_PIN_E)
+#define	 ANSEL_Data_N (ANSEL_PIN_E)
 #define	 WPUB_Data_N (WPUB_PIN_E)
 
 

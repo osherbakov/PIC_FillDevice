@@ -117,6 +117,9 @@ void  FillTODData()
 	TOD_cell[9] = rtc_date.Minutes;
 	TOD_cell[10] = rtc_date.Seconds;
 	TOD_cell[11] = 0;
+	TOD_cell[12] = 0;
+	TOD_cell[13] = 0;
+	TOD_cell[14] = 0;
 
 	ms = rtc_date.MilliSeconds_10;
 	while(ms >= 10)
