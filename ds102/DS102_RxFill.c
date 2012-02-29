@@ -41,11 +41,11 @@ static char GetQueryByte(void)
   
   pinMode(PIN_B, INPUT);		
   pinMode(PIN_E, INPUT);
-  WPUB_PIN_B = 0;
-  WPUB_PIN_E = 0;
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
 
   bit_count = 0;
-  PreviousState = LOW;
+  PreviousState = pin_E();  //digitalRead(PIN_E);
   set_timeout(tZ);
 
   // We exit on timeout or Pin F going high
@@ -85,7 +85,7 @@ static void SendEquipmentType(void)
   delayMicroseconds(tK3);		// Satisfy Setup time tK1
 
   // Output the data
-  for(i = 0; i < 41; i++)
+  for(i = 0; i < 40; i++)
   {
 	// Pulse the clock
     delayMicroseconds(tT);		// Hold Clock in HIGH for tT (setup time)
@@ -109,27 +109,34 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT);		// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
-  WPUB_PIN_E = 0;
+  WPUB_PIN_E = 1;
   
 
   byte_count = 0;
   bit_count = 0;
-  PreviousState = LOW;
+  PreviousState = pin_E();  //digitalRead(PIN_E);
   set_timeout(tE);
 
   while( is_not_timeout() &&  (byte_count < count) )
   {
-    NewState = pin_E();
+		// Check for the last fill for Mode2 and 3
+		if( (fill_type != MODE1) && (digitalRead(PIN_F) == HIGH) )
+		{
+  		byte_count = 0;
+			break;	// Fill device had deasserted PIN F - exit
+		}
+
+    NewState = pin_E(); //digitalRead(PIN_E);
     if( PreviousState != NewState  )
     {
       PreviousState = NewState;
       if( NewState == LOW )
       {
-  	    Data = (Data >> 1) | (pin_D() ? 0x00 : 0x80);  // Add Input data bit
+   		  set_timeout(tF);
+  	    Data = (Data >> 1) | ( pin_D() /* digitalRead(PIN_D)*/  ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
 				if( bit_count >= 8)
 				{
-    		  set_timeout(tF);
 					*p_cell++ = Data;
 					bit_count = 0;
 					byte_count++;
@@ -209,14 +216,14 @@ char CheckFillType23()
   switch(t23_state)
   {
     case DF_INIT:
-      if( pin_D() == HIGH )
+      if((pin_D() /* digitalRead(PIN_D) */  == HIGH) && (digitalRead(PIN_F) == HIGH))
       {
         t23_state = DF_HIGH;
       }
       break;
 
     case DF_HIGH:
-      if( pin_D() == LOW)
+      if(( pin_D() /* digitalRead(PIN_D) */  == LOW) && (digitalRead(PIN_F) == LOW))
       {
         t23_state = DF_LOW;
       }
@@ -229,6 +236,12 @@ char CheckFillType23()
     	set_timeout(tA);
     	while( is_not_timeout() )
     	{
+      	// Pin F went high - return back to normal
+    		if( digitalRead(PIN_F) == HIGH )
+    		{
+          t23_state = DF_INIT;
+          break;
+    		}
     		// Pin D went high before timeout expired - wait for query request from the fill device
     		if( pin_D() == HIGH)
     		{
@@ -346,8 +359,8 @@ void SetType123PinsRx()
   digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
 
-  WPUB_PIN_B = 0;
-  WPUB_PIN_E = 0;
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
   // Set up pins mode and levels
   delay(tB);
   
