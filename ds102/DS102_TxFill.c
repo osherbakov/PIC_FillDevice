@@ -313,6 +313,7 @@ char CheckType123Equipment(byte fill_type)
 // Send only TOD fill info for Type 3 SINCGARS
 char WaitReqSendTODFill()
 {
+  byte num_retries;
   char pos;	// Cell position (1..MAX_TYPE_3_POS)
 	char wait_result = ST_TIMEOUT;
 
@@ -321,18 +322,26 @@ char WaitReqSendTODFill()
   
   for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
   {
-	  if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
+	  
+	  num_retries = 0;
+	  while(1)
 	  {
-		  FillTODData();
-		  cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
-	  }else
-	  {
-		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
-		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
-	  }
-	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
-
+  	  if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
+  	  {
+  		  FillTODData();
+  		  cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+  		  SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
+  	  }else
+  	  {
+  		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
+  		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
+  	  }
+  	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
+  	  if( (wait_result != ST_ERR) || 
+  	        (num_retries >= TYPE23_RETRIES)) break;
+  	  num_retries++;
+    }
+    
     // If all records were sent - ignore timeout
 	  if(pos == NUM_TYPE3_CELLS)
 		{
@@ -349,9 +358,11 @@ char WaitReqSendTODFill()
 
 char SendDS102Fill(byte stored_slot)
 {
+  byte    num_retries;
   byte  	fill_type, records;
-	byte    bytes, byte_cnt;
+	byte    bytes, rec_bytes, byte_cnt;
 	unsigned short long base_address;
+	unsigned short long rec_base_address;
 	
 	char    wait_result = ST_TIMEOUT;
 	
@@ -363,32 +374,43 @@ char SendDS102Fill(byte stored_slot)
 
 	while(records)	
 	{
-		bytes = byte_read(base_address++);
-		while(bytes )
-		{
-			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, &data_cell[0], byte_cnt);
-			// Check if the cell that we are about to send is the 
-			// TOD cell - replace it with the real Time cell
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-			{
-				FillTODData();
-				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-	  		SendDS102Cell(TOD_cell, byte_cnt);
-			}else
-			{
-				SendDS102Cell(&data_cell[0], byte_cnt);
+ 		rec_bytes = byte_read(base_address++);
+ 		rec_base_address = base_address;
+	  num_retries = 0;
+    while(1)
+    {
+      bytes = rec_bytes;
+      base_address = rec_base_address;
+  		while( bytes )
+  		{
+  			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
+  			array_read(base_address, &data_cell[0], byte_cnt);
+	
+  			// Check if the cell that we are about to send is the 
+  			// TOD cell - replace it with the real Time cell
+  			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+  						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+  			{
+  				FillTODData();
+  				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+  	  		SendDS102Cell(TOD_cell, byte_cnt);
+  			}else
+  			{
+  				SendDS102Cell(&data_cell[0], byte_cnt);
+  			}
+  			// Adjust counters and pointers
+  			base_address += byte_cnt;
+  			bytes -= byte_cnt;
 			}
-			// Adjust counters and pointers
-			base_address += byte_cnt;
-			bytes -= byte_cnt;
+  		// After sending a record check for the next request
+  		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
+			if( fill_type == MODE1) break;  // No retries for Type 1 fills
+  	  if( (wait_result != ST_ERR) || 
+  	        (num_retries >= TYPE23_RETRIES)) break;
+  	  num_retries++;
 		}
 		records--;
 		
-		// After sending a record check for the next request
-		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
-
     // If all records were sent - ignore timeout
 	  if(records == 0)
 		{

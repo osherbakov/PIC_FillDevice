@@ -96,9 +96,9 @@ void high_isr (void)
       TMR0L = 0;
       curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
       UpdateClockData();
-/********************** Comment it out for the time being *******************/
       ProcessClockData();
-/****************************************************************************/      
+/********************** Comment it out for the time being *******************
+****************************************************************************/      
 
       // Adjust current time
 			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
