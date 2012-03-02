@@ -13,9 +13,9 @@
 // Delays in ms
 //--------------------------------------------------------------
 #define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  	70     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  	70     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  	70     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
 
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
@@ -41,22 +41,22 @@ static char GetQueryByte(void)
   
   pinMode(PIN_B, INPUT);		
   pinMode(PIN_E, INPUT);
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
 
   bit_count = 0;
-  PreviousState = pin_E();  //digitalRead(PIN_E);
+  PreviousState = LOW;
   set_timeout(tZ);
 
   // We exit on timeout or Pin F going high
   while( is_not_timeout() )
   {
-    NewState = pin_E(); //digitalRead(PIN_E);
+    NewState = pin_E();
     if( PreviousState != NewState  )
     {
       if( NewState == LOW )
       {
-		    Data = (Data >> 1 ) | (( pin_B() /*digitalRead(PIN_B) */ ) ? 0 : 0x80);
+		    Data = (Data >> 1 ) | ( pin_B() ? 0 : 0x80);
         bit_count++; 
     		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
     		{
@@ -109,12 +109,12 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT);		// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
-  WPUB_PIN_E = 1;
+  WPUB_PIN_E = 0;
   
 
   byte_count = 0;
   bit_count = 0;
-  PreviousState = pin_E();  //digitalRead(PIN_E);
+  PreviousState = pin_E();
   set_timeout(tE);
 
   while( is_not_timeout() &&  (byte_count < count) )
@@ -126,20 +126,20 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 			break;	// Fill device had deasserted PIN F - exit
 		}
 
-    NewState = pin_E(); //digitalRead(PIN_E);
+    NewState = pin_E(); 
     if( PreviousState != NewState  )
     {
       PreviousState = NewState;
       if( NewState == LOW )
       {
-   		  set_timeout(tF);
-  	    Data = (Data >> 1) | ( pin_D() /* digitalRead(PIN_D)*/  ? 0x00 : 0x80);  // Add Input data bit
+  	    Data = (Data >> 1) | ( pin_D() ? 0x00 : 0x80);  // Add Input data bit
         bit_count++; 
 				if( bit_count >= 8)
 				{
 					*p_cell++ = Data;
 					bit_count = 0;
 					byte_count++;
+     		  set_timeout(tF);
 				}
       }
     }
@@ -147,7 +147,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   return byte_count;
 }
 
-static char SendFillRequest(byte req_type)
+static char SendFillRequest(void)
 {
   pinMode(PIN_C, OUTPUT);		// make pin an output
   digitalWrite(PIN_C, LOW);
@@ -216,14 +216,14 @@ char CheckFillType23()
   switch(t23_state)
   {
     case DF_INIT:
-      if((pin_D() /* digitalRead(PIN_D) */  == HIGH) && (digitalRead(PIN_F) == HIGH))
+      if((pin_D() == HIGH) && (digitalRead(PIN_F) == HIGH))
       {
         t23_state = DF_HIGH;
       }
       break;
 
     case DF_HIGH:
-      if(( pin_D() /* digitalRead(PIN_D) */  == LOW) && (digitalRead(PIN_F) == LOW))
+      if(( pin_D() == LOW) && (digitalRead(PIN_F) == LOW))
       {
         t23_state = DF_LOW;
       }
@@ -243,7 +243,7 @@ char CheckFillType23()
           break;
     		}
     		// Pin D went high before timeout expired - wait for query request from the fill device
-    		if( pin_D() /* digitalRead(PIN_D) */  == HIGH)
+    		if( pin_D() == HIGH)
     		{
     			type = 	GetQueryByte();
     			if( type > 0 )  
@@ -268,17 +268,38 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 {
 	byte records, byte_cnt, record_size;
 	unsigned short long saved_base_address;
+	byte num_tries;
 
 	records = 0;
 	record_size = 0;
 
 	saved_base_address = base_address++;  // First byte is record size
 
-	SendFillRequest(REQ_FIRST);	// REQ the first packet
   while(1)
 	{
-		byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
-		// We can get byte_cnt
+ 		set_led_on();
+
+    // Do retries for Mode 2 and 3 only
+    num_tries = 0; 
+    while(1)
+    {
+     	SendFillRequest();	// REQ the data
+		  byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
+   		set_led_off();
+
+      if( (byte_cnt == 0) || 
+		        (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
+		  if( (byte_cnt == MODE2_3_CELL_SIZE) && 
+		      cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
+		      
+		  if(num_tries >= TYPE23_RETRIES) return 0;  // Number of tries exceeded - return Error
+
+      // Try to get the data couple more times
+      SendBadFillAck();		        // Tell the sender that there was an error
+		  num_tries++;
+		}
+		
+		// Based on the byte_cnt
 		//  = 0  - no data received --> finish everything
 		//  == FILL_MAX_SIZE --> record and continue collecting
 		//  0 < byte_cnt < FILL_MAX_SIZE --> record and issue new request
@@ -308,7 +329,8 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 			{
 				SetTimeFromCell();
 			}
-			SendFillRequest(REQ_NEXT);	// ACK the previous and REQ the next packet
+   		set_led_off();
+			SendFillRequest();	// ACK the previous and REQ the next packet
 		}
 	}
 	return records;
@@ -359,8 +381,8 @@ void SetType123PinsRx()
   digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
 
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
   // Set up pins mode and levels
   delay(tB);
   

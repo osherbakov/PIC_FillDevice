@@ -56,6 +56,10 @@ void cm_blk P_((p_ubyte_ blk_adr, byte blk_len));
 /* Append the calculated crc as the last byte of the block. */
 void cm_append(p_ubyte_ blk_adr, byte blk_len);
 
+/* Calculate crc and check gainst the last byte of the block. */
+/*  Returns true if matches  */
+char cm_check(p_ubyte_ blk_adr, byte blk_len);
+
 #endif
 
 /******************************************************************************/

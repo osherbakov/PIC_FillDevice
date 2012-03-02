@@ -80,7 +80,7 @@ char ClearFill(byte stored_slot)
 {
 	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
    byte_write(base_address, 0x00);
-   DelayMs(300);    // Debounce the button
+   DelayMs(500);    // Debounce the button
    return ST_OK;
 }
 

@@ -143,8 +143,10 @@ static void SetNextState(char nextState)
 			set_led_state(100, 100);	// "Done - key valid" blink pattern
 			break;
 	
+    case FILL_TX_TIME_PROC:
+		case FILL_TX_DS102:
 		default:
-			set_led_state(100, 10);		// "Key loading" blink pattern
+			set_led_state(150, 5);		// "Key loading" blink pattern
 			break;
 	}
 	current_state = nextState;
@@ -207,7 +209,7 @@ void main()
   {
     byte min, max, threshold, pins_high;
     pins_high = pin_C() + pin_D() + pin_E() + pin_B();
-    
+  	
     max = pin_MAX();
     min = pin_MIN();
     threshold = pin_Threshold();

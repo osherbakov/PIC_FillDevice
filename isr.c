@@ -41,6 +41,18 @@ void set_led_state(char on_time, char off_time)
 	led_counter = led_on_time;
 }
 
+void set_led_on()
+{
+	LEDP = 1;	// Turn on LED
+	led_counter = 0;
+}
+
+void set_led_off()
+{
+	LEDP = 0;	// Turn off LED
+	led_counter = 0;
+}
+
 
 // At this location 0x08 there will be only jump to the ISR
 #pragma code high_vector=0x08
@@ -96,9 +108,9 @@ void high_isr (void)
       TMR0L = 0;
       curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
       UpdateClockData();
-/********************** Comment it out for the time being *******************/
       ProcessClockData();
-/****************************************************************************/      
+/********************** Comment it out for the time being *******************
+****************************************************************************/      
 
       // Adjust current time
 			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms

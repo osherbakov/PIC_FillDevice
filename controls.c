@@ -2,6 +2,7 @@
 #include "controls.h"
 #include "delay.h"
 #include "gps.h"
+#include "Fill.h"
 
 
 byte switch_pos;
@@ -125,7 +126,7 @@ static char ReadPin(void)
   ADC_Min  = MIN(ADC_Min, ADC_Last);
   if(ADC_Max > ADC_Min)
   {
-    Delta = 0; //(ADC_Max - ADC_Min) >> 5;
+    Delta = (ADC_Max - ADC_Min) >> 5;
     ADC_Max -= Delta; // Apply decay factor
     ADC_Min += Delta;
   }
@@ -139,6 +140,7 @@ static char ReadPin(void)
 char pin_B()
 {
   char ret;
+  return digitalRead(PIN_B);
   // Set up it to be analog input
   TRIS_PIN_B = 1;
   ANSEL_PIN_B = 1;
@@ -151,6 +153,7 @@ char pin_B()
 char pin_C()
 {
   char ret;
+  return digitalRead(PIN_C);
   // Set up it to be analog input
   TRIS_PIN_C = 1;
   ANSEL_PIN_C = 1;
@@ -163,6 +166,7 @@ char pin_C()
 char pin_D()
 {
   char ret;
+  return digitalRead(PIN_D);
   // Set up it to be analog input
   TRIS_PIN_D = 1;
   ANSEL_PIN_D = 1;
@@ -175,6 +179,7 @@ char pin_D()
 char pin_E()
 {
   char ret;
+  return digitalRead(PIN_E);
   // Set up it to be analog input
   TRIS_PIN_E = 1;
   ANSEL_PIN_E = 1;

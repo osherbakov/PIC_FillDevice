@@ -84,11 +84,23 @@ void cm_blk (p_ubyte_ blk_adr, byte blk_len)
 
 void cm_append(p_ubyte_ blk_adr, byte blk_len)
 {
-	byte crc;
 	cm_ini();
 	cm_blk(blk_adr, blk_len - 1);
 	blk_adr[blk_len - 1] = 0xFF ^ reflect(cm);
 }
+
+char cm_check(p_ubyte_ blk_adr, byte blk_len)
+{
+  byte calc_crc;
+  byte  rcvd_crc;
+  
+	cm_ini();
+	cm_blk(blk_adr, blk_len - 1);
+	calc_crc = 0xFF ^ reflect(cm);
+  rcvd_crc = blk_adr[blk_len - 1];
+	return (calc_crc == rcvd_crc) || ((calc_crc ^ 0xFF)== rcvd_crc);
+}
+
 /******************************************************************************/
 /*                             End of crcmodel.c                              */
 /******************************************************************************/
