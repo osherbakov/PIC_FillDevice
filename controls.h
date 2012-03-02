@@ -70,5 +70,7 @@ extern void disable_tx_hqii(void);
 //  LED support fucntions
 //------------------------------------------------
 extern void set_led_state(char on_time, char off_time);
+extern void set_led_on(void);
+extern void set_led_off(void);
 
 #endif	// __CONTROLS_H__

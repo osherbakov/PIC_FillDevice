@@ -129,8 +129,6 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
     NewState = pin_E(); 
     if( PreviousState != NewState  )
     {
-INTCONbits.GIE = 0;
-
       PreviousState = NewState;
       if( NewState == LOW )
       {
@@ -144,7 +142,6 @@ INTCONbits.GIE = 0;
      		  set_timeout(tF);
 				}
       }
-INTCONbits.GIE = 1;
     }
   }
   return byte_count;
@@ -280,12 +277,15 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 
   while(1)
 	{
+ 		set_led_on();
+
     // Do retries for Mode 2 and 3 only
     num_tries = 0; 
     while(1)
     {
      	SendFillRequest();	// REQ the data
 		  byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
+   		set_led_off();
 
       if( (byte_cnt == 0) || 
 		        (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
@@ -329,6 +329,7 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 			{
 				SetTimeFromCell();
 			}
+   		set_led_off();
 			SendFillRequest();	// ACK the previous and REQ the next packet
 		}
 	}

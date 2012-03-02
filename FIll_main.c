@@ -143,6 +143,8 @@ static void SetNextState(char nextState)
 			set_led_state(100, 100);	// "Done - key valid" blink pattern
 			break;
 	
+    case FILL_TX_TIME_PROC:
+		case FILL_TX_DS102:
 		default:
 			set_led_state(150, 5);		// "Key loading" blink pattern
 			break;

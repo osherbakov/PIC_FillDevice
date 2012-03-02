@@ -118,8 +118,8 @@ static char GetEquipmentMode23Type(void)
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
   
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
   
   PreviousState = pin_E(); // digitalRead(PIN_E);
   set_timeout(tB);
@@ -160,7 +160,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   if( fill_type != MODE1 )
   {
   	pinMode(PIN_B, INPUT);
-	  WPUB_PIN_B = 1;
+	  WPUB_PIN_B = 0;
   }
   
   pinMode(PIN_C, INPUT); 
@@ -229,8 +229,8 @@ static void AcquireMode23Bus(void)
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_B = 0;
+  WPUB_PIN_E = 0;
 
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_D, HIGH);
@@ -322,7 +322,8 @@ char WaitReqSendTODFill()
   
   for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
   {
-	  
+		set_led_off();
+
 	  num_retries = 0;
 	  while(1)
 	  {
@@ -336,6 +337,7 @@ char WaitReqSendTODFill()
   		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
   		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
   	  }
+  		set_led_on();
   	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
   	  if( (wait_result != ST_ERR) || 
   	        (num_retries >= TYPE23_RETRIES)) break;
@@ -376,6 +378,9 @@ char SendDS102Fill(byte stored_slot)
 	{
  		rec_bytes = byte_read(base_address++);
  		rec_base_address = base_address;
+
+		set_led_off();
+
 	  num_retries = 0;
     while(1)
     {
@@ -402,6 +407,8 @@ char SendDS102Fill(byte stored_slot)
   			base_address += byte_cnt;
   			bytes -= byte_cnt;
 			}
+
+  		set_led_on();
   		// After sending a record check for the next request
   		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
 			if( fill_type == MODE1) break;  // No retries for Type 1 fills

@@ -41,6 +41,18 @@ void set_led_state(char on_time, char off_time)
 	led_counter = led_on_time;
 }
 
+void set_led_on()
+{
+	LEDP = 1;	// Turn on LED
+	led_counter = 0;
+}
+
+void set_led_off()
+{
+	LEDP = 0;	// Turn off LED
+	led_counter = 0;
+}
+
 
 // At this location 0x08 there will be only jump to the ISR
 #pragma code high_vector=0x08
