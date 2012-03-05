@@ -59,6 +59,7 @@ extern char pin_B(void);
 extern char pin_C(void);
 extern char pin_D(void);
 extern char pin_E(void);
+extern char pin_F(void);
 extern char pin_MAX(void);
 extern char pin_MIN(void);
 extern char pin_Threshold(void);

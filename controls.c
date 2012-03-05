@@ -117,77 +117,83 @@ unsigned char ADC_Last;
 static char ReadPin(void)
 {
   unsigned char Delta;
-  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON2 = 0x01;  // Left justified + 0TAD and Fosc/8
   ADCON1 = 0;
   ADCON0bits.GO = 1;
   // After starting ADC we have plenty of time to do some math
-  ADC_Threshold = (ADC_Max + ADC_Min) >> 1;
-  ADC_Max  = MAX(ADC_Max, ADC_Last);
-  ADC_Min  = MIN(ADC_Min, ADC_Last);
-  if(ADC_Max > ADC_Min)
-  {
-    Delta = (ADC_Max - ADC_Min) >> 5;
-    ADC_Max -= Delta; // Apply decay factor
-    ADC_Min += Delta;
-  }
-  
+  ADC_Threshold = 0xA0; //(ADC_Max + ADC_Min) >> 1;
+//  ADC_Max  = MAX(ADC_Max, ADC_Last);
+//  ADC_Min  = MIN(ADC_Min, ADC_Last);
+//  if(ADC_Max > ADC_Min)
+//  {
+//    Delta = (ADC_Max - ADC_Min) >> 5;
+//    ADC_Max -= Delta; // Apply decay factor
+//    ADC_Min += Delta;
+//  }
   while(ADCON0bits.GO) {/* wait for the done */};
-  ADC_Last = (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
+  ADC_Last = ADRESH; //  >> 1;
   ADCON0 = 0;   // Disable ADC logic
   return (ADC_Last > ADC_Threshold) ? HIGH : LOW;
 }
 
 char pin_B()
 {
-  char ret;
+//  char ret;
   return digitalRead(PIN_B);
   // Set up it to be analog input
-  TRIS_PIN_B = 1;
-  ANSEL_PIN_B = 1;
-  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_B = 0;
-  return ret;
+//  TRIS_PIN_B = 1;
+//  ANSEL_PIN_B = 1;
+//  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
+//  ret = ReadPin();
+//  ANSEL_PIN_B = 0;
+//  return ret;
 }
 
 char pin_C()
 {
-  char ret;
+//  char ret;
   return digitalRead(PIN_C);
-  // Set up it to be analog input
-  TRIS_PIN_C = 1;
-  ANSEL_PIN_C = 1;
-  ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_C = 0;
-  return ret;
+//  // Set up it to be analog input
+//  TRIS_PIN_C = 1;
+//  ANSEL_PIN_C = 1;
+//  ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
+//  ret = ReadPin();
+//  ANSEL_PIN_C = 0;
+//  return ret;
 }
 
 char pin_D()
 {
-  char ret;
+//  char ret;
   return digitalRead(PIN_D);
   // Set up it to be analog input
-  TRIS_PIN_D = 1;
-  ANSEL_PIN_D = 1;
-  ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_D = 0;
-  return ret;
+//  TRIS_PIN_D = 1;
+//  ANSEL_PIN_D = 1;
+//  ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
+//  ret = ReadPin();
+//  ANSEL_PIN_D = 0;
+//  return ret;
 }
 
 char pin_E()
 {
-  char ret;
+//  char ret;
   return digitalRead(PIN_E);
   // Set up it to be analog input
-  TRIS_PIN_E = 1;
-  ANSEL_PIN_E = 1;
-  ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_E = 0;
-  return ret;
+//  TRIS_PIN_E = 1;
+//  ANSEL_PIN_E = 1;
+//  ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
+//  ret = ReadPin();
+//  ANSEL_PIN_E = 0;
+//  return ret;
 }
+
+char pin_F()
+{
+//  char ret;
+  return digitalRead(PIN_F);
+}
+
 
 char pin_MAX()
 {
