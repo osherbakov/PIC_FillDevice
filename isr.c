@@ -84,23 +84,34 @@ void high_isr (void)
 	{
     // Interrupt occurs when 1PPS pin from RTC has LOW->HIGH and HIGH->LOW
     // transitions
-		if(!PIN_1PPS && hq_active)  //  On HIGH->LOW transition
+		if(!PIN_1PPS)
 		{
-			HQ_PIN = 1;	
-			TMR4 = 10;					// Preload to compensate for the delay 
-			PR4 = HQII_TIMER;
-			T4CONbits.TMR4ON = 1;		// Turn on the timer
-			PIR5bits.TMR4IF = 0;		// Clear Interrupt
-			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
-			// Calculate next value
-			hq_current_bit = 0;
-			hq_current_byte = (START_FRAME_DATA << 1);
-			hq_byte_counter = 1;    // First byte sent
-			hq_bit_counter = 0;     // Bit 0 was sent
-			hq_active = 0;          // Don't do anything on next H->L until enabled
+  		if(hq_active)  //  On HIGH->LOW transition
+  		{
+  			HQ_PIN = 1;	
+  			TMR4 = 10;					// Preload to compensate for the delay 
+  			PR4 = HQII_TIMER;
+  			T4CONbits.TMR4ON = 1;		// Turn on the timer
+  			PIR5bits.TMR4IF = 0;		// Clear Interrupt
+  			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
+  			// Calculate next value
+  			hq_current_bit = 0;
+  			hq_current_byte = (START_FRAME_DATA << 1);
+  			hq_byte_counter = 1;    // First byte sent
+  			hq_bit_counter = 0;     // Bit 0 was sent
+  			hq_active = 0;          // Don't do anything on next H->L until enabled
+			}
+
+      // Adjust current time
+			rtc_date.MilliSeconds_10 = 0; // At this moment we are exactly at 0 ms
+    	TMR2 = 0;	                    // zero out 10ms counter
+      // Increment big timeout counter
+      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
+
 		}
 		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
 		{
+/********************** Comment it out for the time being *******************
       // Get statistics for the clock adjustment
 	  	TL = TMR0L;	// Read LSB first to latch the data
 	 		TH = TMR0H;
@@ -109,22 +120,13 @@ void high_isr (void)
       curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
       UpdateClockData();
       ProcessClockData();
-/********************** Comment it out for the time being *******************
 ****************************************************************************/      
-
-      // Adjust current time
-			rtc_date.MilliSeconds_10 = 50; // At this moment we are exactly at 500 ms
-    	TMR2 = 0;	          // zero out 10ms counter
-      
-      // Increment big timeout counter
-      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
-
 			// Check for HQ status and prepare everything for the next falling edge
 			if( hq_enabled )
 			{
-				GetRTCData();     // Get current time and data from RTC
-				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
-				CalculateHQDate();// Convert into the HQ date format
+//				GetRTCData();     // Get current time and data from RTC
+//				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
+//				CalculateHQDate();// Convert into the HQ date format
 				TRIS_HQ_PIN = OUTPUT;
 				HQ_PIN = 0;
 				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data
