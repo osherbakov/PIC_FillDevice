@@ -121,7 +121,7 @@ static char GetEquipmentMode23Type(void)
   WPUB_PIN_B = 0;
   WPUB_PIN_E = 0;
   
-  PreviousState = pin_E(); // digitalRead(PIN_E);
+  PreviousState = pin_E();
   set_timeout(tB);
   while(is_not_timeout())
   {

@@ -86,7 +86,7 @@ void high_isr (void)
     // transitions
 		if(!PIN_1PPS)
 		{
-  		if(hq_active)  //  On HIGH->LOW transition
+  		if(hq_active)  //  On HIGH->LOW transition - 0 ms
   		{
   			HQ_PIN = 1;	
   			TMR4 = 10;					// Preload to compensate for the delay 
@@ -107,26 +107,25 @@ void high_isr (void)
     	TMR2 = 0;	                    // zero out 10ms counter
       // Increment big timeout counter
       seconds_counter++;  // Advance the seconds counter (used for big timeouts)
-
-		}
-		if(PIN_1PPS)				// On LOW -> HIGH transition - start collecting data
+		}else
 		{
-/********************** Comment it out for the time being *******************
-      // Get statistics for the clock adjustment
-	  	TL = TMR0L;	// Read LSB first to latch the data
-	 		TH = TMR0H;
-      TMR0H = 0;  // Reset the counter - MSB first
-      TMR0L = 0;
-      curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
-      UpdateClockData();
-      ProcessClockData();
-****************************************************************************/      
+  		// On LOW -> HIGH transition - 500ms - start collecting data
 			// Check for HQ status and prepare everything for the next falling edge
 			if( hq_enabled )
 			{
-//				GetRTCData();     // Get current time and data from RTC
-//				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
-//				CalculateHQDate();// Convert into the HQ date format
+        // Get statistics for the clock adjustment
+      	TL = TMR0L;	// Read LSB first to latch the data
+     		TH = TMR0H;
+        TMR0H = 0;  // Reset the counter - MSB first
+        TMR0L = 0;
+        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
+        UpdateClockData();
+        ProcessClockData();
+/********************** Comment it out for the time being *******************
+****************************************************************************/      
+				GetRTCData();     // Get current time and data from RTC
+				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
+				CalculateHQDate();// Convert into the HQ date format
 				TRIS_HQ_PIN = OUTPUT;
 				HQ_PIN = 0;
 				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data

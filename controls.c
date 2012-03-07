@@ -106,6 +106,7 @@ void disable_tx_hqii()
 
 void enable_tx_hqii()
 {
+	InitClockData();
   hq_enabled = 1;
 }  
 
@@ -117,30 +118,29 @@ unsigned char ADC_Last;
 static char ReadPin(void)
 {
   unsigned char Delta;
-  ADCON2 = 0x95;  // Right justified + 4TAD and Fosc/16
+  ADCON2 = 0x0C;  // Left justified + 2TAD and Fosc/4
   ADCON1 = 0;
   ADCON0bits.GO = 1;
-  // After starting ADC we have plenty of time to do some math
-  ADC_Threshold = (ADC_Max + ADC_Min) >> 1;
-  ADC_Max  = MAX(ADC_Max, ADC_Last);
-  ADC_Min  = MIN(ADC_Min, ADC_Last);
-  if(ADC_Max > ADC_Min)
-  {
-    Delta = (ADC_Max - ADC_Min) >> 5;
-    ADC_Max -= Delta; // Apply decay factor
-    ADC_Min += Delta;
-  }
-  
+// After starting ADC we have plenty of time to do some math
+//  ADC_Threshold = (ADC_Max + ADC_Min) >> 1;
+//  ADC_Max  = MAX(ADC_Max, ADC_Last);
+//  ADC_Min  = MIN(ADC_Min, ADC_Last);
+//  if(ADC_Max > ADC_Min)
+//  {
+//    Delta = (ADC_Max - ADC_Min) >> 6;
+//    ADC_Max -= Delta; // Apply decay factor
+//    ADC_Min += Delta;
+//  }
   while(ADCON0bits.GO) {/* wait for the done */};
-  ADC_Last = (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
+  ADC_Last = ADRESH; // (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
   ADCON0 = 0;   // Disable ADC logic
-  return (ADC_Last > ADC_Threshold) ? HIGH : LOW;
+  return (ADC_Last > 0x90) ? HIGH : LOW;
 }
 
 char pin_B()
 {
   char ret;
-  return digitalRead(PIN_B);
+  if( !digitalRead(PIN_B)) return LOW;
   // Set up it to be analog input
   TRIS_PIN_B = 1;
   ANSEL_PIN_B = 1;
@@ -153,7 +153,7 @@ char pin_B()
 char pin_C()
 {
   char ret;
-  return digitalRead(PIN_C);
+  if( !digitalRead(PIN_C)) return LOW;
   // Set up it to be analog input
   TRIS_PIN_C = 1;
   ANSEL_PIN_C = 1;
@@ -166,7 +166,7 @@ char pin_C()
 char pin_D()
 {
   char ret;
-  return digitalRead(PIN_D);
+  if( !digitalRead(PIN_D)) return LOW;
   // Set up it to be analog input
   TRIS_PIN_D = 1;
   ANSEL_PIN_D = 1;
@@ -179,7 +179,7 @@ char pin_D()
 char pin_E()
 {
   char ret;
-  return digitalRead(PIN_E);
+  if( !digitalRead(PIN_E)) return LOW;
   // Set up it to be analog input
   TRIS_PIN_E = 1;
   ANSEL_PIN_E = 1;
@@ -188,6 +188,12 @@ char pin_E()
   ANSEL_PIN_E = 0;
   return ret;
 }
+
+char pin_F()
+{
+  return digitalRead(PIN_F);
+}
+
 
 char pin_MAX()
 {
