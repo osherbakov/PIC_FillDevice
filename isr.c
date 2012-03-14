@@ -38,7 +38,7 @@ void set_led_state(char on_time, char off_time)
 	led_on_time = on_time;
 	led_off_time = off_time;
 	LEDP = (led_on_time == 0) ? 0 : 1;	// Turn on/off LED
-	led_counter = led_on_time;
+	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
 }
 
 void set_led_on()
@@ -162,8 +162,8 @@ void high_isr (void)
 				}else 
 				{
 					HQ_PIN = 0;
-					T4CONbits.TMR4ON = 0;		// Turn off the timer
-					PIE5bits.TMR4IE = 0;		// Disable interrupts
+					T4CONbits.TMR4ON = 0;		// Turn off the Timer4
+					PIE5bits.TMR4IE = 0;		// Disable Timer4 interrupts
 				}
 				hq_byte_counter++;
 			}

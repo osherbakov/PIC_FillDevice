@@ -3,6 +3,7 @@
 #include "delay.h"
 #include "gps.h"
 #include "Fill.h"
+#include "clock.h"
 
 
 byte switch_pos;
@@ -118,7 +119,7 @@ unsigned char ADC_Last;
 static char ReadPin(void)
 {
   unsigned char Delta;
-  ADCON2 = 0x0C;  // Left justified + 2TAD and Fosc/4
+  ADCON2 = 0x09;  // Left justified + 2TAD and Fosc/4
   ADCON1 = 0;
   ADCON0bits.GO = 1;
 // After starting ADC we have plenty of time to do some math
@@ -134,15 +135,15 @@ static char ReadPin(void)
   while(ADCON0bits.GO) {/* wait for the done */};
   ADC_Last = ADRESH; // (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
   ADCON0 = 0;   // Disable ADC logic
-  return (ADC_Last > 0x90) ? HIGH : LOW;
+  return (ADC_Last > 0xC0) ? HIGH : LOW;
 }
 
 char pin_B()
 {
   char ret;
+  TRIS_PIN_B = 1;
   if( !digitalRead(PIN_B)) return LOW;
   // Set up it to be analog input
-  TRIS_PIN_B = 1;
   ANSEL_PIN_B = 1;
   ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
   ret = ReadPin();
@@ -153,9 +154,9 @@ char pin_B()
 char pin_C()
 {
   char ret;
+  TRIS_PIN_C = 1;
   if( !digitalRead(PIN_C)) return LOW;
   // Set up it to be analog input
-  TRIS_PIN_C = 1;
   ANSEL_PIN_C = 1;
   ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
   ret = ReadPin();
@@ -166,9 +167,9 @@ char pin_C()
 char pin_D()
 {
   char ret;
+  TRIS_PIN_D = 1;
   if( !digitalRead(PIN_D)) return LOW;
   // Set up it to be analog input
-  TRIS_PIN_D = 1;
   ANSEL_PIN_D = 1;
   ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
   ret = ReadPin();
@@ -179,9 +180,9 @@ char pin_D()
 char pin_E()
 {
   char ret;
+  TRIS_PIN_E = 1;
   if( !digitalRead(PIN_E)) return LOW;
   // Set up it to be analog input
-  TRIS_PIN_E = 1;
   ANSEL_PIN_E = 1;
   ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
   ret = ReadPin();
@@ -191,6 +192,7 @@ char pin_E()
 
 char pin_F()
 {
+  TRIS_PIN_F = 1;
   return digitalRead(PIN_F);
 }
 

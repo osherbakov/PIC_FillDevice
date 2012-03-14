@@ -48,7 +48,7 @@ void setup_clocks()
   
 // TIMER 1 - to count OSC_CLOCK in 16-bit mode
 //  It is used for 0.131072s timeout, when clock overflows
-// Used for timeouts in RS-232 and RS-485 soft USART
+// Used for timeouts when we disable interrupts
   TMR1H = 0;
   TMR1L = 0;	// Reset the timer
   T1GCONbits.TMR1GE = 0;	// No gating

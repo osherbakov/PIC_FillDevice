@@ -100,12 +100,10 @@ static void SetNextState(char nextState)
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(5, 150);		// "Connect Serial" blink pattern
-			break;
-			
 		case FILL_TX_RS232:
 			set_led_state(5, 150);		// "Connect Serial" blink pattern
 			break;
+			
 
 		case FILL_TX_DTD232:
 			set_led_state(60, 60);		// "Try RS232" blink pattern
@@ -120,7 +118,10 @@ static void SetNextState(char nextState)
 			break;
 
     case FILL_RX_DS102:
-			set_led_state(100, 10);		// "Key loading" blink pattern
+		case FILL_TX_DS102:
+    case FILL_TX_TIME_PROC:
+    case FILL_RX_TYPE23:
+			set_led_state(150, 0);		// "Key loading" blink pattern
 			break;
     
 		case FILL_RX_RS232:
@@ -143,8 +144,6 @@ static void SetNextState(char nextState)
 			set_led_state(100, 100);	// "Done - key valid" blink pattern
 			break;
 	
-    case FILL_TX_TIME_PROC:
-		case FILL_TX_DS102:
 		default:
 			set_led_state(150, 5);		// "Key loading" blink pattern
 			break;
