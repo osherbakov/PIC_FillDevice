@@ -22,6 +22,7 @@ void InitClockData(void)
 	curr_lsb = 0;
 }
 
+#pragma tmpdata ClockTmpData
 void UpdateClockData()
 {
 	char i;
@@ -102,3 +103,5 @@ void ProcessClockData()
 		OSCTUNEbits.TUN = tune;
 	}
 }
+
+#pragma tmpdata

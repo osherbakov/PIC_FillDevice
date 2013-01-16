@@ -69,7 +69,7 @@ void low_interrupt ()
 }
 
 #pragma code /* return to the default code section */
-#pragma interrupt high_isr
+#pragma interrupt high_isr nosave=section(".tmpdata"),TBLPTRL, TBLPTRH, TBLPTRU,TABLAT,PCLATH,PCLATU
 
 // High priority interrupt handler for:
 //  - 1 Second PPS from the RTC to generate precise start of
@@ -176,8 +176,9 @@ void high_isr (void)
 	}
 }
 
+
 #pragma code
-#pragma interruptlow low_isr
+#pragma interruptlow low_isr nosave=section(".tmpdata")
 void low_isr ()
 {
 	// Is it TIMER2 interrupt? (10 ms)

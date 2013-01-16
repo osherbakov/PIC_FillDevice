@@ -57,7 +57,8 @@ unsigned char HQ_Year;
 
 // HQ data - KKHHMMSSDDDYYM
 byte hq_data[14];
-	
+
+#pragma tmpdata HQIITmpData
 void CalculateHQDate()
 {
 	byte dataout;
@@ -100,6 +101,7 @@ void CalculateHQDate()
 	// FOM	- Figure of Merit
 	hq_data[13] = hamming_table[DEFAULT_FOM];
 }
+#pragma tmpdata
 
 static void ExtractHQDate(void)
 {

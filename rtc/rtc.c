@@ -75,6 +75,7 @@ void CalculateMonthAndDay()
   }
 }
 
+#pragma tmpdata RtcTmpData
 void CalculateJulianDay()
 {
 	unsigned int julianday;
@@ -116,7 +117,9 @@ void CalculateJulianDay()
 	}
 	rtc_date.JulianDayL =   (day10 + (byte) julianday);
 }
+#pragma tmpdata
 
+#pragma tmpdata RtcTmpData
 void CalculateNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
@@ -163,7 +166,9 @@ void CalculateNextSecond()
 	rtc_date.Minutes = min;
 	rtc_date.Seconds = sec;
 }
+#pragma tmpdata
 
+#pragma tmpdata RtcTmpData
 void GetRTCData()
 {
 	unsigned int 	day;
@@ -214,6 +219,7 @@ void GetRTCData()
 
 	CalculateJulianDay();
 }
+#pragma tmpdata
 
 void SetRTCData()
 {
