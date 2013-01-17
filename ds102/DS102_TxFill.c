@@ -118,8 +118,8 @@ static char GetEquipmentMode23Type(void)
   pinMode(PIN_C, INPUT); 
   pinMode(PIN_E, INPUT);
   
-  WPUB_PIN_B = 0;
-  WPUB_PIN_E = 0;
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
   
   PreviousState = pin_E();
   set_timeout(tB);
@@ -156,11 +156,20 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
   char   Result = ST_TIMEOUT;
 
-	// For MODE23 fill we read PIN_B 
+	// For MODE23 fill we:
+	//  1. Keep pin B low until getting pin C pulse
+	//  2. read PIN_B 
   if( fill_type != MODE1 )
   {
-  	pinMode(PIN_B, INPUT);
-	  WPUB_PIN_B = 0;
+    WPUB_PIN_B = 1;
+    if(req_type == REQ_FIRST)
+    {
+    	pinMode(PIN_B, OUTPUT);
+      digitalWrite(PIN_B, LOW);
+    }else
+    {
+    	pinMode(PIN_B, INPUT);
+    }
   }
   
   pinMode(PIN_C, INPUT); 
@@ -229,10 +238,10 @@ static void AcquireMode23Bus(void)
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-  WPUB_PIN_B = 0;
-  WPUB_PIN_E = 0;
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
 
-  digitalWrite(PIN_B, HIGH);
+  digitalWrite(PIN_B, LOW);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
