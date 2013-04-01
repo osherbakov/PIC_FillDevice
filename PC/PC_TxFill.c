@@ -83,7 +83,7 @@ char ReadMemSendPCFill(byte stored_slot)
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 	
-	bytes = 0x1000;
+	bytes = get_eeprom_address(1);  // That's how we calculate the size 
 	while(bytes)	
 	{
 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);

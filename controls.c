@@ -100,114 +100,46 @@ void set_pin_f_as_power()
 
 void disable_tx_hqii()
 {
-  hq_enabled = 0;
   hq_active = 0;
+  hq_enabled = 0;
 }
 
 
 void enable_tx_hqii()
 {
 	InitClockData();
+  hq_active = 0; 
   hq_enabled = 1;
 }  
 
-unsigned char ADC_Max = 0x7F;
-unsigned char ADC_Min = 0x00;
-unsigned char ADC_Threshold;
-unsigned char ADC_Last;
 
-static char ReadPin(void)
-{
-  unsigned char Delta;
-  ADCON2 = 0x09;  // Left justified + 2TAD and Fosc/4
-  ADCON1 = 0;
-  ADCON0bits.GO = 1;
-// After starting ADC we have plenty of time to do some math
-//  ADC_Threshold = (ADC_Max + ADC_Min) >> 1;
-//  ADC_Max  = MAX(ADC_Max, ADC_Last);
-//  ADC_Min  = MIN(ADC_Min, ADC_Last);
-//  if(ADC_Max > ADC_Min)
-//  {
-//    Delta = (ADC_Max - ADC_Min) >> 6;
-//    ADC_Max -= Delta; // Apply decay factor
-//    ADC_Min += Delta;
-//  }
-  while(ADCON0bits.GO) {/* wait for the done */};
-  ADC_Last = ADRESH; // (((unsigned char) ADRESH) << 5) | ((unsigned char) ADRESL >> 3);
-  ADCON0 = 0;   // Disable ADC logic
-  return (ADC_Last > 0xC0) ? HIGH : LOW;
-}
 
 char pin_B()
 {
-  char ret;
   TRIS_PIN_B = 1;
-  if( !digitalRead(PIN_B)) return LOW;
-  // Set up it to be analog input
-  ANSEL_PIN_B = 1;
-  ADCON0 = (10 << 2) | 1;   // Channel 10 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_B = 0;
-  return ret;
+  return digitalRead(PIN_B);
 }
 
 char pin_C()
 {
-  char ret;
   TRIS_PIN_C = 1;
-  if( !digitalRead(PIN_C)) return LOW;
-  // Set up it to be analog input
-  ANSEL_PIN_C = 1;
-  ADCON0 = (18 << 2) | 1;   // Channel 18 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_C = 0;
-  return ret;
+  return digitalRead(PIN_C);
 }
 
 char pin_D()
 {
-  char ret;
   TRIS_PIN_D = 1;
-  if( !digitalRead(PIN_D)) return LOW;
-  // Set up it to be analog input
-  ANSEL_PIN_D = 1;
-  ADCON0 = (19 << 2) | 1;   // Channel 19 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_D = 0;
-  return ret;
+  return digitalRead(PIN_D);
 }
 
 char pin_E()
 {
-  char ret;
   TRIS_PIN_E = 1;
-  if( !digitalRead(PIN_E)) return LOW;
-  // Set up it to be analog input
-  ANSEL_PIN_E = 1;
-  ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_E = 0;
-  return ret;
+  return digitalRead(PIN_E);
 }
 
 char pin_F()
 {
   TRIS_PIN_F = 1;
   return digitalRead(PIN_F);
-}
-
-
-char pin_MAX()
-{
-  return ADC_Max;
-}
-
-char pin_MIN()
-{
-  return ADC_Min;
-}
-
-char pin_Threshold()
-{
-  return ADC_Threshold;
 }
