@@ -41,7 +41,6 @@ void setup_clocks()
 // TIMER 0 - to count OSC_CLOCK in 16-bit mode
   TMR0H = 0;  // Reset the counter
   TMR0L = 0;
-  INTCON2bits.TMR0IP = 0;   // Low priority
   INTCONbits.TMR0IF =  0;   // Clear interrupt
   INTCONbits.TMR0IE =  1;   // Enable interrupt
   T0CON = ((0x1 << 7) | (0x1 << 3)); // Ena TIMER0, 16-bit mode,no prescaler
@@ -52,24 +51,21 @@ void setup_clocks()
   TMR1H = 0;
   TMR1L = 0;	// Reset the timer
   T1GCONbits.TMR1GE = 0;	// No gating
-	IPR1bits.TMR1IP = 0;	// Low priority
 	PIR1bits.TMR1IF = 0;	// Clear Interrupt
 	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
   T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
 
 //  TIMER 2 - 10 ms heartbeat timer
-// Set up the timer 2 to fire every 10 ms at low priority, ON
+// Set up the timer 2 to fire every 10 ms, ON
 	PR2 = CNT_10MS;
 	TMR2 = 0;	
-	IPR1bits.TMR2IP = 0;	// Low priority
 	PIR1bits.TMR2IF = 0;	// Clear Interrupt
 	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
 	T2CON = (9 << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 
-// Set up the timer 4 to fire every 300us at high priority
+// Set up the timer 4 to fire every 300us
 // for Have Quick data stream generation
 	PR4 = HQII_TIMER;
-	IPR5bits.TMR4IP = 1;	// HIGH priority
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
 	PIE5bits.TMR4IE = 0;	// Disable TIMER4 Interrupt
 	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
@@ -77,7 +73,6 @@ void setup_clocks()
 // Set up the timer 6 to roll over the set amount with no interrupts
 // It is used as a general timeout counter, looking at PIR5bits.TMR6IF flag
 	PR6 = 0xFF;
-	IPR5bits.TMR6IP = 0;	// LOW priority
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
 	PIE5bits.TMR6IE = 0;	// Disable TIMER6 Interrupt
 	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
@@ -102,7 +97,7 @@ void setup_spi()
 void setup_start_io()
 {
 	INTCONbits.GIE = 0;		// Disable interrupts
-	RCONbits.IPEN = 1;		// Enable Priorities
+	RCONbits.IPEN = 0;		// Disable Priorities
 
 	// Initially set up all ports as Digital IO
 	PORTA = 0x00;
@@ -158,10 +153,9 @@ void setup_start_io()
 	DATA_HI();
 	CLOCK_HI();
 	
-	// Setup RTC 1PPS pin as input, High priority
+	// Setup RTC 1PPS pin as input
 	TRIS_1PPS = INPUT;		
 	IOC_1PPS = 1;         // Enable IOC
-	INTCON2bits.RBIP = 1;
 	INTCONbits.RBIE	= 1; // Enable 1PPS interrupt
 	
 	setup_clocks();		// 16 MHz
@@ -173,8 +167,6 @@ void setup_start_io()
 	// Configure the EUSART module
 	RCSTA1 = 0x00;	      // Disable RX
 	TXSTA1 = 0x00;			  // Disable TX
-	IPR1bits.TX1IP = 0;		// Low priority TX
-	IPR1bits.RC1IP = 0;		// Low priority RX
 	PIE1bits.RC1IE = 0;	  // Disable RX interrupt
 	PIE1bits.TX1IE = 0;	  // Disable TX Interrupts
 	PIR1bits.RC1IF = 0;   // Clear Interrupt flags

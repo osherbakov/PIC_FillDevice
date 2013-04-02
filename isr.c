@@ -8,7 +8,6 @@
 #include "gps.h"
 
 void high_isr (void);
-void low_isr (void);
 
 volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
@@ -61,13 +60,6 @@ void interrupt_at_high_vector(void)
 	_asm GOTO high_isr _endasm
 }
 
-// At this location 0x18 there will be only jump to the ISR
-#pragma code low_vector=0x18
-void low_interrupt ()
-{
-	_asm GOTO low_isr _endasm
-}
-
 #pragma code /* return to the default code section */
 #pragma interrupt high_isr nosave=section(".tmpdata"),TBLPTRL, TBLPTRH, TBLPTRU,TABLAT,PCLATH,PCLATU
 
@@ -79,6 +71,7 @@ void low_interrupt ()
 void high_isr (void)
 {
 	byte TL, TH;
+	//--------------------------------------------------------------------------
 	// Is it a 1SEC Pulse interrupt from RTC (on both Pos and Neg edges)?
 	if( INTCONbits.RBIF)
 	{
@@ -121,8 +114,6 @@ void high_isr (void)
         curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
         UpdateClockData();
         ProcessClockData();
-/********************** Comment it out for the time being *******************
-****************************************************************************/      
 				GetRTCData();     // Get current time and data from RTC
 				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
 				CalculateHQDate();// Convert into the HQ date format
@@ -134,6 +125,7 @@ void high_isr (void)
 		INTCONbits.RBIF = 0;
 	}
 	
+	//--------------------------------------------------------------------------
 	// Is it TIMER4 interrupt? (300 us)
 	if(PIR5bits.TMR4IF)
 	{
@@ -174,13 +166,8 @@ void high_isr (void)
 		hq_bit_counter &= 0x0F;
 		PIR5bits.TMR4IF = 0;	// Clear the interrupt
 	}
-}
 
-
-#pragma code
-#pragma interruptlow low_isr nosave=section(".tmpdata")
-void low_isr ()
-{
+	//--------------------------------------------------------------------------
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
@@ -206,6 +193,7 @@ void low_isr ()
 		PIR1bits.TMR2IF = 0;	// Clear interrupt
 	}
 
+	//--------------------------------------------------------------------------
 	// Is it a EUSART RX interrupt ?
 	// Maintain a circular buffer pointed by rx_data
 	if(PIR1bits.RC1IF)
@@ -231,6 +219,7 @@ void low_isr ()
 		// No need to clear the Interrupt Flag
 	}
 
+	//--------------------------------------------------------------------------
 	// Is it a EUSART TX interrupt ?
   // If there are bytes to send - get the symbol from the 
   //  buffer pointed by tx_data and decrement the counter
@@ -255,7 +244,6 @@ void low_isr ()
     curr_msb++; 
     INTCONbits.TMR0IF = 0;  // Clear interrupt
   }
-
 }
 
 
