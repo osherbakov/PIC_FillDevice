@@ -36,7 +36,7 @@ void set_led_state(char on_time, char off_time)
 {
 	led_on_time = on_time;
 	led_off_time = off_time;
-	LEDP = (led_on_time == 0) ? 0 : 1;	// Turn on/off LED
+	LEDP = led_on_time ? 1 : 0;	// Turn on/off LED
 	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
 }
 

@@ -31,7 +31,7 @@ static enum
 	FILL_RX_RS485,
 	ZERO_FILL,
 	HQ_TX,
-	HQ_RX,
+	HQ_GPS_RX,
 	FILL_TX_TIME,
 	FILL_TX_TIME_PROC, 
 	PC_CONN,
@@ -83,7 +83,7 @@ static void SetNextState(char nextState)
 
 		case FILL_RX_DS102_WAIT:
 		case FILL_RX_RS232_WAIT:
-		case HQ_RX :
+		case HQ_GPS_RX :
 		case FILL_RX :
 			set_led_state(15, 15);		// "Key empty" blink pattern
 			break;
@@ -332,7 +332,7 @@ void main()
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
-          SetNextState(HQ_RX);
+          SetNextState(HQ_GPS_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
@@ -598,13 +598,13 @@ void main()
 			case HQ_TX:
 				break;
 
-			case HQ_RX:
+			case HQ_GPS_RX:
 				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
-				if( current_state == HQ_RX)
+				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveGPSTime());
 				}
-				if( current_state == HQ_RX)
+				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveHQTime());
 				}
