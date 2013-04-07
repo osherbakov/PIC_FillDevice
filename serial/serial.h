@@ -5,7 +5,8 @@
 #define MBITR_BAUDRATE  (9600)
 #define PLGR_BAUDRATE	(19200)
 
-
+#define DATA_POLARITY_RX (0x20)
+#define DATA_POLARITY_TX (0x10)
 #define DATA_POLARITY  	(0x30)
 
 // Values for the Baud Rate Control registers
@@ -33,7 +34,7 @@ extern volatile byte rx_count_1;  // Last byte index
 
 extern void PCInterface(void);
 
-extern void open_eusart(void);
+extern void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity);
 extern void set_eusart_rx(unsigned char *p_rx_data, byte max_size);
 extern byte rx_eusart(unsigned char *p_data, byte ncount);
 extern byte rx_eusart_cont(unsigned char *p_data, byte ncount);

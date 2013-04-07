@@ -128,7 +128,7 @@ void CalculateNextSecond()
   byte hour;
 
 	// Use current time
-    sec = rtc_date.Seconds;
+  sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
 

@@ -100,12 +100,12 @@ char CheckFillRS232Type5()
   // Coming in first time - enable eusart and setup buffer
 	if( !RCSTA1bits.SPEN )
 	{
-  	TRIS_RxPC = 1;
-  	TRIS_TxPC = 1;
+//  	TRIS_RxPC = 1;
+//  	TRIS_TxPC = 1;
   	if(!RxPC && TxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart();
+  		open_eusart(BRREG_CMD, DATA_POLARITY);
   		set_eusart_rx(SerialBuffer, 4);
   	}	
 	}
@@ -126,12 +126,12 @@ char CheckFillType4()
 {
 	if( !RCSTA1bits.SPEN)
 	{
-  	TRIS_RxPC = 1;
-  	TRIS_TxPC = 1;
+//  	TRIS_RxPC = 1;
+//  	TRIS_TxPC = 1;
   	if(!RxPC && TxPC)
   	{
       // Coming in first time - enable eusart and setup buffer
-  		open_eusart();
+  		open_eusart(BRREG_CMD, DATA_POLARITY);
   		set_eusart_rx(SerialBuffer, 4);
   	}	
 	}
@@ -159,7 +159,7 @@ char CheckFillType4()
 }
 
 
-void open_eusart()
+void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 {
 	TRIS_RxPC = INPUT;
 	TRIS_TxPC = INPUT;
@@ -168,8 +168,8 @@ void open_eusart()
 	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
 	RCSTA1bits.SPEN = 0; // Disable EUSART
 	SPBRGH1 = 0x00;
-	SPBRG1 = BRREG_CMD;
-	BAUDCON1 = DATA_POLARITY;
+	SPBRG1 = baudrate_reg ;
+	BAUDCON1 = rxtx_polarity;
 
 	rx_count = 0;
 	tx_count = 0;
@@ -220,7 +220,7 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart();
+		open_eusart(BRREG_CMD, DATA_POLARITY);
  		set_eusart_rx(p_data, 6);
 	}
 	

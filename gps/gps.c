@@ -5,6 +5,7 @@
 #include "i2c_sw.h"
 #include "fill.h"
 #include "controls.h"
+#include "serial.h"
 
 enum {
 	INIT = 0,
@@ -26,11 +27,11 @@ static byte counter;
 static unsigned short long gps_time;
 static unsigned short long gps_date;
 
-#define DATA_POLARITY  (0x20)
+static unsigned char polarity = DATA_POLARITY ^ DATA_POLARITY_RX;
+
 
 static byte RMS_SNT[] = "GPRMC,";
 static byte  symb_buffer[6];	// Buffer to keep the symbols
-static byte data_polarity = DATA_POLARITY ;
 
 byte is_equal(byte *p1, byte *p2, byte n)
 {
@@ -132,42 +133,41 @@ static void process_gps_symbol(byte new_symbol)
 
 static char GetGPSTime(void)
 {
+	set_timeout(GPS_DETECT_TIMEOUT_MS);  
 	// Configure the EUSART module
-	SPBRGH1 = 0x00;
-	SPBRG1 = BRREG_GPS;
-	BAUDCON1 = data_polarity;
-	TRIS_GPS_DATA = INPUT;
-	TXSTA1 = 0x00;
-	RCSTA1 = 0x90;
+  open_eusart(BRREG_GPS, polarity);	
+  		
 	gps_state = INIT;
 	while(is_not_timeout())
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
+  		set_led_on();
 			// Get and process received symbol
 			process_gps_symbol(RCREG1);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
-				RCSTA1bits.SPEN = 0;
-				RCSTA1bits.SPEN = 1;
+				RCSTA1bits.CREN = 0;
+				RCSTA1bits.CREN = 1;
 			}
 			// All data collected - fill RTC struct
 			if(gps_state == DONE)
 			{
-				RCSTA1bits.SPEN = 0;
+        close_eusart();
 				ExtractGPSDate();
 				return 0;
 			}
 		}
 	}
-	RCSTA1bits.SPEN = 0;
-	data_polarity ^= DATA_POLARITY;
+  close_eusart();
+  polarity ^= DATA_POLARITY_RX;
 	return -1;
 }
 
 static char FindRisingEdge(void)
 {
+	set_timeout(GPS_DETECT_TIMEOUT_MS);  
 	while(is_not_timeout())
 	{	
 		if(!GPS_1PPS) break;
@@ -183,16 +183,21 @@ char ReceiveGPSTime()
 {
 	byte *p_date;
 	byte *p_time;
-	// Config the pin as input
+	// Config the 1PPS pin as input
 	TRIS_GPS_1PPS = INPUT;
 
-	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	//	1. Find the 1PPS rising edge
 	if(FindRisingEdge()) 
 		  return ST_TIMEOUT;
+
+  set_led_off();		// Set LED off
+					  
 	//  2. Start collecting GPS time/date
-	if( GetGPSTime() )	
-		  return ST_TIMEOUT;
+	if( GetGPSTime() )
+	{	
+      return ST_TIMEOUT;
+  } 
+
 	//  3. Calculate the next current time.
 	CalculateNextSecond();
 	
@@ -221,7 +226,6 @@ char ReceiveGPSTime()
 	INTCONbits.GIE = 1;		// Enable interrupts
   
 //  6. Get the GPS time again and compare with the current RTC
-	set_timeout(GPS_DETECT_TIMEOUT_MS);	// try to detect the GPS stream
 	if( GetGPSTime() )	
 	  return ST_ERR;
 	  

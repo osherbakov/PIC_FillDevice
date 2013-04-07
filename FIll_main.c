@@ -247,6 +247,7 @@ void main()
 		{
 	  	setup_sleep_io();
 			while(1) 
+			
 			{
 				INTCONbits.GIE = 0;		// Disable interrupts
 				INTCONbits.PEIE = 0;
