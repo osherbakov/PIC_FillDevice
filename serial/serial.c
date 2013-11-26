@@ -16,6 +16,7 @@
 static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
 static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
 static byte TIME_CMD[]    = "/TIME";	// Fill/Dump Time
+static byte DATE_CMD[]    = "/DATE";	// Fill/Dump Time
 static byte MEM_READ[] 		= "/READ";	// Read the key N
 
 /****************************************************************/
@@ -110,7 +111,7 @@ char CheckFillRS232Type5()
   	}	
 	}
 	
-	if( (rx_count >= 2) && 
+	if( (rx_idx >= 2) && 
 			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
 			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
 			  	  is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
@@ -136,19 +137,19 @@ char CheckFillType4()
   	}	
 	}
 	
-	if(rx_count >= 4)
+	if(rx_idx >= 4)
 	{
     // Four characters are collected - check if it is 
     //  /98 - serial number request, or
     //  /84 - the capabilities request
 		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
-			rx_count = 0; // Data consumed
+			rx_idx = 0; // Data consumed
   		// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
-			rx_count = 0; // Data consumed
+			rx_idx = 0; // Data consumed
 			// Options request - send all options
 			send_options();
 			flush_eusart();
@@ -171,7 +172,7 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
-	rx_count = 0;
+	rx_idx = 0;
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
@@ -185,8 +186,8 @@ void set_eusart_rx(unsigned char *p_rx_data, byte max_size)
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 0; // Disable Rx
 	rx_data = (volatile byte *) p_rx_data;
-	rx_count = 0;
-	rx_count_1 = max_size - 1;
+	rx_idx = 0;
+	rx_idx_max = max_size - 1;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
@@ -200,7 +201,7 @@ void close_eusart()
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA = 0x00; 	      // Disable Tx	
 	RCSTA = 0x00;				  // Disable EUSART
-	rx_count = 0;
+	rx_idx = 0;
 	tx_count = 0;
 }
 
@@ -225,7 +226,7 @@ void PCInterface()
 	}
 	
 	// Wait to receive 6 characters
-	if(rx_count >= 6) 
+	if(rx_idx >= 6) 
 	{
   	// Six or more characters received - check if
   	// this is a /DUMPN request to dump keys to PC
@@ -246,10 +247,10 @@ void PCInterface()
     	// The last char in /READN is the slot number
   		ReadMemSendPCFill(p_data[5] & 0x0F);
 		  set_eusart_rx(p_data, 6);  // Restart collecting data
-  	}else if(is_equal( p_data, TIME_CMD, 5))
+  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
   	{
     	// If there is more data to follow - set the time 
-  		rx_count = 0; // Data consumed
+  		rx_idx = 0; // Data consumed
   	  GetSetCurrentDayTime(p_data);
     	tx_eusart_str(p_data);
 		  set_eusart_rx(p_data, 6);  // Restart collecting data
@@ -318,9 +319,9 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 volatile byte *tx_data; // Pointer to the current output data
 volatile byte tx_count; // currect output counter
 
-volatile byte *rx_data; // Pointer to the current receive data
-volatile byte rx_count; // Number of characters received
-volatile byte rx_count_1; // Max index in the buffer
+volatile byte *rx_data;   // Pointer to the current receive data
+volatile byte rx_idx;     // Number of characters received
+volatile byte rx_idx_max; // Max index in the buffer
 
 
 void tx_eusart(unsigned char *p_data, byte ncount)

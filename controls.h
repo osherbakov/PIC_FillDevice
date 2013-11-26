@@ -54,7 +54,7 @@ extern void set_pin_f_as_io(void);
 extern void set_pin_f_as_power(void);
 
 // Functions to read pins using ADC 
-//  and to assign HIGH or LOW it it crosses the threshold
+//  and to assign HIGH or LOW if it crosses the threshold
 extern char pin_B(void);
 extern char pin_C(void);
 extern char pin_D(void);

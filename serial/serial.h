@@ -29,8 +29,8 @@
 extern volatile byte *tx_data;    // Pointer to the data to be sent out
 extern volatile byte tx_count;    // Running number of bytes sent
 extern volatile byte *rx_data;	  // Pointer to the start of the buffer
-extern volatile byte rx_count;	  // Number of symbols collected
-extern volatile byte rx_count_1;  // Last byte index
+extern volatile byte rx_idx;	    // Number of symbols collected
+extern volatile byte rx_idx_max;  // Last byte index
 
 extern void PCInterface(void);
 

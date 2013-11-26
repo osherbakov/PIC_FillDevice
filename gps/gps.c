@@ -6,6 +6,7 @@
 #include "fill.h"
 #include "controls.h"
 #include "serial.h"
+#include <ctype.h>
 
 enum {
 	INIT = 0,
@@ -36,7 +37,7 @@ static byte  symb_buffer[6];	// Buffer to keep the symbols
 byte is_equal(byte *p1, byte *p2, byte n)
 {
 	while(n-- )
-	if( *p1++ != *p2++) return 0;
+	if( toupper(*p1++) != toupper(*p2++)) return 0;
 	return 1;
 }
 
@@ -233,7 +234,7 @@ char ReceiveGPSTime()
 	p_time = (byte *) &gps_time;
 	p_date = (byte *) &gps_date;
 
-	if(rtc_date.Hours)
+//	if(rtc_date.Hours)
 	return ( 
 		(*p_date++ == rtc_date.Year) &&
   		(*p_date++ == rtc_date.Month) &&

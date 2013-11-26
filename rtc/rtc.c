@@ -148,6 +148,7 @@ void CalculateNextSecond()
 			}else
 			{
 				hour += 1;
+			  // This is a cool way to increment BCD numbers!!!
 				if( (hour & 0x0F) == 0x0A) hour += 0x06;
 			}
 		}else
@@ -179,11 +180,10 @@ void GetRTCData()
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
 	SWWriteI2C(0);	// Register address - 0
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
-	SWStopI2C();
 
 	// Request data from the chip
-	SWStartI2C();
-	SWWriteI2C(RTC_I2C_ADDRESS | I2C_READ);
+  SWRestartI2C();	
+  SWWriteI2C(RTC_I2C_ADDRESS | I2C_READ);
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
 
 	// Address 0 - seconds

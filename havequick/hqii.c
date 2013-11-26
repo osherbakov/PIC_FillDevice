@@ -11,8 +11,6 @@
 #define MIN_DATA_FRAME_SIZE	(112/8)		// 112 bits of actual timing data
 
 
-#define HQ_DETECT_TIMEOUT_MS (2000)  	// 8sec to detect
-
 #define TIMER_300MS_PERIOD ( ((XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16)
 #define TIMER_DELAY_EDGE ( TIMER_300MS_PERIOD + (TIMER_300MS_PERIOD / 2 ) - 4)
 #define TIMER_WAIT_EDGE ( TIMER_300MS_PERIOD - 4 )

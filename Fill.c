@@ -19,7 +19,7 @@ static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 
 static void GetCurrentDayTime(byte *p_buffer)
 {
-  byte  ms, ms_10, month, weekday;
+  byte  ms_100, ms_10, month, weekday;
   
   
   GetRTCData();
@@ -32,14 +32,14 @@ static void GetCurrentDayTime(byte *p_buffer)
   *p_buffer++ = '0' + (rtc_date.Seconds & 0x0F);
   *p_buffer++ = '.';
 
-  ms = 0;
+  ms_100 = 0;
 	ms_10 = rtc_date.MilliSeconds_10;
 	while(ms_10 >= 10)
 	{
-		ms++;
+		ms_100++;
 		ms_10 -= 10; 
 	}
-  *p_buffer++ = '0' + ms;
+  *p_buffer++ = '0' + ms_100;
   
   *p_buffer++ = 'Z';
   *p_buffer++ = ' ';
@@ -149,6 +149,7 @@ char IsValidYear()
 	          (rtc_date.Year	>= 0x12);
 }
 
+// Time is the sequence of 6 digits
 static char  ExtractTime(byte *p_buff, byte n_count)
 {
   // find the block that has 6 digits
@@ -180,6 +181,7 @@ static char  ExtractTime(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
+// Date is the block of 2 digits and 3 letters
 static char  ExtractDate(byte *p_buff, byte n_count)
 {
   byte month;
@@ -220,6 +222,7 @@ static char  ExtractDate(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
+// Year is the 4 sequential digits
 static char  ExtractYear(byte *p_buff, byte n_count)
 {
   // find the block that has 4 digits only

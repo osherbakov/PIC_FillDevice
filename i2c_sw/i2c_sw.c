@@ -23,6 +23,10 @@ Remarks     : None
 ********************************************************************/
 void SWStartI2C( void )
 {
+  DATA_HI();                        // release data pin to float high
+  DelayI2C();                   // user may need to modify based on Fosc
+  CLOCK_HI();                       // release clock pin to float high
+  DelayI2C();                   // user may need to modify based on Fosc  
   DATA_LOW();                       // set pin to output to drive low
   DelayI2C();                   // user may need to modify based on Fosc
 }

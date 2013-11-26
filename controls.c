@@ -13,7 +13,7 @@ byte power_pos;
 byte prev_power_pos;
 //
 // Function to get the reading of the switch
-//   Returns the position numbercurrently selected.
+//   Returns the position number currently selected.
 //  Works by:
 // 	- reading from S1_8 and S9_16 ports
 byte get_switch_state()

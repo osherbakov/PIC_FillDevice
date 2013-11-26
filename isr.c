@@ -70,15 +70,14 @@ void interrupt_at_high_vector(void)
 #pragma interrupt high_isr nosave=section(".tmpdata"),TBLPTRL, TBLPTRH, TBLPTRU,TABLAT,PCLATH,PCLATU
 
 // High priority interrupt handler for:
-//  - 1 Second PPS from the RTC to generate precise start of
-//      Havequick sequence  
+//  - 1 Second PPS from the RTC to generate precise start of Havequick sequence  
 //  - Havequick sequence generation (300us)
 //  - eusart tx interrupt
 void high_isr (void)
 {
 	byte TL, TH;
 	//--------------------------------------------------------------------------
-	// Is it a 1SEC Pulse interrupt from RTC (on both Pos and Neg edges)?
+	// Is it a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
 	if( INTCONbits.RBIF)
 	{
     // Interrupt occurs when 1PPS pin from RTC has LOW->HIGH and HIGH->LOW
@@ -204,17 +203,17 @@ void high_isr (void)
 	// Maintain a circular buffer pointed by rx_data
 	if(PIR1bits.RC1IF)
 	{
-		if(rx_count <= rx_count_1)
+		if(rx_idx <= rx_idx_max)
 		{	
-			rx_data[rx_count++] = RCREG1;
+			rx_data[rx_idx++] = RCREG1;
 		}else
 		{
 			byte i;
-			for( i = 0; i < rx_count_1; i++)
+			for( i = 0; i < rx_idx_max; i++)
 			{
 				rx_data[i] = rx_data[i+1];
 			}
-			rx_data[rx_count_1] = RCREG1;
+			rx_data[rx_idx_max] = RCREG1;
 		}
 		// overruns? clear it
 		if(RCSTA1 & 0x06)
