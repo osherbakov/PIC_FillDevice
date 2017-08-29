@@ -19,8 +19,8 @@
 // Delays for the appropriate timings in usecs
 //--------------------------------------------------------------
 #define tJ  	25		// D HIGH -> First data bit on B
-#define tK1  	200 	// First Data bit on B -> E (CLK) LOW
-#define tK2  	200		// Last E (CLK) LOW -> TRISTATE E
+#define tK1  	425 	// First Data bit on B -> E (CLK) LOW
+#define tK2  	425		// Last E (CLK) LOW -> TRISTATE E
 #define tL  	50		// C (REQ) LOW -> F (MUX) HIGH for the last bit
 
 //--------------------------------------------------------------
@@ -65,11 +65,11 @@ static void SendMode23Query(byte Data)
     delayMicroseconds(tT);     // Hold Clock in LOW for tT
     digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
-  delayMicroseconds(tK2);  // Wait there
-  
-  // Release PIN_B and PIN_E - the Radio will drive it
-  pinMode(PIN_B, INPUT);    // Tristate the pin
-  pinMode(PIN_E, INPUT);    // Tristate the pin
+	// Release pin B
+	pinMode(PIN_B, INPUT);    // Tristate the pin
+  	delayMicroseconds(tK2);  // Wait there
+  	// Release PIN_E - the Radio will drive it
+	pinMode(PIN_E, INPUT);    // Tristate the pin
 }
 
 
@@ -147,8 +147,8 @@ static char GetEquipmentMode23Type(void)
 // Wait for the Fill request on PinC
 // Returns 	
 //      -1 	- Timeout
-//			0 	- Request received
-//			1 	- PinB was asserted - error fill
+//		0 	- Request received
+//		1 	- PinB was asserted - fill error
 static char WaitDS102Req(byte fill_type, byte req_type)
 {
   byte  NewState;	
@@ -157,61 +157,50 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   char   Result = ST_TIMEOUT;
 
 	// For MODE23 fill we:
-	//  1. Keep pin B low until getting pin C pulse
+	//  1. Keep pin B high with pullup
 	//  2. read PIN_B 
-  if( fill_type != MODE1 )
-  {
+    pinMode(PIN_B, INPUT);	
     WPUB_PIN_B = 1;
-    if(req_type == REQ_FIRST)
-    {
-    	pinMode(PIN_B, OUTPUT);
-      digitalWrite(PIN_B, LOW);
-    }else
-    {
-    	pinMode(PIN_B, INPUT);
-    }
-  }
   
-  pinMode(PIN_C, INPUT); 
+  	pinMode(PIN_C, INPUT); 
+    WPUB_PIN_C = 1;
 
-  if( req_type == REQ_FIRST)
-  {
+  	if( req_type == REQ_FIRST){
 	    set_timeout(tD);	// Return every 500 ms to check for switch position
-  }else
-  {
-      set_timeout(tF);	// If not first - wait 3 seconds until timeout
-  }
+  	}else{
+      	set_timeout(tF);	// If not first - wait 3 seconds until timeout
+  	}
 
-  PreviousState = HIGH;
-  while( is_not_timeout() )  
-  {
-    NewState = pin_C();
-    if(PreviousState != NewState)  
-    {
-      // check if we should return now or wait for the PIN_C to go HIGH
-      // If this is the last request - return just as PinC goes LOW	
-      if( (NewState == HIGH) || (req_type == REQ_LAST) ) 
-      {
-        Result = (Result != ST_ERR) ? ST_OK : ST_ERR;
-        break;
- 	    } 
-      PreviousState = NewState;
-    }
+  	PreviousState = HIGH;
+  	while( is_not_timeout() )  
+  	{
+    	NewState = pin_C();
+    	if(PreviousState != NewState)  
+    	{
+      		// check if we should return now or wait for the PIN_C to go HIGH
+      		// If this is the last request - return just as PinC goes LOW	
+      		if( (NewState == HIGH) || (req_type == REQ_LAST) ) 
+      		{
+        		Result = (Result != ST_ERR) ? ST_OK : ST_ERR;
+        		break;
+ 	    	} 
+      		PreviousState = NewState;
+    	}
 
-	  // Do not check for pin B in MODE1 fill
-    if( (req_type != REQ_FIRST) && (fill_type != MODE1) && (pin_B() == LOW) ) 
-    {
-      Result = ST_ERR;  // Bad CRC
-    }
-  }
-  // Timeout occured - must return -1, except some special cases
-  // For Type 1 Fill the first request may be just a long pull of PIN_C
-  // For Type 1 there may be no ACK/REQ byte - treat timeout as OK
-  if( (fill_type == MODE1) && (NewState == LOW) )
-  {
+	  	// Do not check for pin B in MODE1 fill
+    	if( (req_type != REQ_FIRST) && (fill_type != MODE1) && (pin_B() == LOW) ) 
+    	{
+      		Result = ST_ERR;  // Bad CRC
+    	}
+  	}
+  	// Timeout occured - must return -1, except some special cases
+  	// For Type 1 Fill the first request may be just a long pull of PIN_C
+  	// For Type 1 there may be no ACK/REQ byte - treat timeout as OK
+  	if( (fill_type == MODE1) && (NewState == LOW) )
+  	{
 		Result = ST_OK;
-  }
-  return Result;
+  	}
+  	return Result;
 }
 
 
@@ -266,9 +255,11 @@ static void ReleaseMode23Bus(void)
 static void StartMode23Handshake(void)
 {
   pinMode(PIN_D, OUTPUT);    // make pin output
+  pinMode(PIN_E, OUTPUT);  
   pinMode(PIN_F, OUTPUT);    // make pin output
   // Drop PIN_D first
   digitalWrite(PIN_D, LOW);
+  digitalWrite(PIN_E, HIGH);  
   digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
   delay(tA);                  // Pin D pulse width
   digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
@@ -299,58 +290,58 @@ byte nofill_cell[] =
 // For Type 1 - return MODE1 right away
 char CheckType123Equipment(byte fill_type)
 {
-  char Equipment = 0;
-  if((fill_type == MODE1))
-  {
-	  AcquireMode1Bus();
-	  Equipment = MODE1;
-  }else		// MODE 2 or MODE 3
-  {
-	  AcquireMode23Bus();
-	  StartMode23Handshake();
-  	SendMode23Query(MODE3);
-	  Equipment = GetEquipmentMode23Type();
-   	EndMode23Handshake();
-	  if(Equipment < 0)	// Timeout occured
-	  {
-		  ReleaseMode23Bus();
-	  }
-  }
-  return Equipment;
+  	char Equipment = 0;
+  	if((fill_type == MODE1))
+  	{
+	  	AcquireMode1Bus();
+	  	Equipment = MODE1;
+  	}else		// MODE 2 or MODE 3
+  	{
+	  	AcquireMode23Bus();
+		StartMode23Handshake();
+  		SendMode23Query(MODE3);
+	  	Equipment = GetEquipmentMode23Type();
+   		EndMode23Handshake();
+   		if(Equipment < 0)	// Timeout occured
+	  	{
+		  	ReleaseMode23Bus();
+	  	}
+  	}
+  	return Equipment;
 }
 
 // Send only TOD fill info for Type 3 SINCGARS
 char WaitReqSendTODFill()
 {
-  byte num_retries;
-  char pos;	// Cell position (1..MAX_TYPE_3_POS)
+  	byte num_retries;
+  	char pos;	// Cell position (1..MAX_TYPE_3_POS)
 	char wait_result = ST_TIMEOUT;
 
-  // On timeout return and check the switches
-  if( WaitDS102Req(MODE3, REQ_FIRST)  != ST_OK ) return ST_TIMEOUT;  
+  	// On timeout return and check the switches
+  	if( WaitDS102Req(MODE3, REQ_FIRST)  != ST_OK ) return ST_TIMEOUT;  
   
   for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
   {
-		set_led_off();
+	set_led_off();
 
-	  num_retries = 0;
-	  while(1)
-	  {
-  	  if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
-  	  {
-  		  FillTODData();
-  		  cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-  		  SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
-  	  }else
-  	  {
-  		  cm_append(nofill_cell, MODE2_3_CELL_SIZE);
-  		  SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
-  	  }
+	num_retries = 0;
+	while(1)
+	{
+		if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
+		{
+			FillTODData();
+			cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+			SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
+		}else
+		{
+			cm_append(nofill_cell, MODE2_3_CELL_SIZE);
+			SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
+		}
   		set_led_on();
-  	  wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
-  	  if( (wait_result != ST_ERR) || 
-  	        (num_retries >= TYPE23_RETRIES)) break;
-  	  num_retries++;
+		wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
+		if( (wait_result != ST_ERR) || 
+		    (num_retries >= TYPE23_RETRIES)) break;
+  	  	num_retries++;
     }
     
     // If all records were sent - ignore timeout
@@ -377,7 +368,7 @@ char SendDS102Fill(byte stored_slot)
 	
 	char    wait_result = ST_TIMEOUT;
 	
-  base_address = get_eeprom_address(stored_slot & 0x0F);
+  	base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++);
 	if(records == 0xFF) records = 0x00;
 	// Get the fill type from the EEPROM
@@ -391,51 +382,51 @@ char SendDS102Fill(byte stored_slot)
 		set_led_off();
 
 	  num_retries = 0;
-    while(1)
-    {
-      bytes = rec_bytes;
-      base_address = rec_base_address;
-  		while( bytes )
-  		{
-  			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-  			array_read(base_address, &data_cell[0], byte_cnt);
-	
-  			// Check if the cell that we are about to send is the 
-  			// TOD cell - replace it with the real Time cell
-  			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-  						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-  			{
-  				FillTODData();
-  				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-  	  		SendDS102Cell(TOD_cell, byte_cnt);
-  			}else
-  			{
-  				SendDS102Cell(&data_cell[0], byte_cnt);
-  			}
-  			// Adjust counters and pointers
-  			base_address += byte_cnt;
-  			bytes -= byte_cnt;
-			}
+   while(1)
+   {
+     bytes = rec_bytes;
+     base_address = rec_base_address;
+ 		while( bytes )
+ 		{
+ 			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
+ 			array_read(base_address, &data_cell[0], byte_cnt);
 
-  		set_led_on();
-  		// After sending a record check for the next request
-  		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
-			if( fill_type == MODE1) break;  // No retries for Type 1 fills
-  	  if( (wait_result != ST_ERR) || 
-  	        (num_retries >= TYPE23_RETRIES)) break;
-  	  num_retries++;
+ 			// Check if the cell that we are about to send is the 
+ 			// TOD cell - replace it with the real Time cell
+ 			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+ 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+ 			{
+ 				FillTODData();
+ 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+ 	  			SendDS102Cell(TOD_cell, byte_cnt);
+ 			}else
+ 			{
+ 				SendDS102Cell(&data_cell[0], byte_cnt);
+ 			}
+ 			// Adjust counters and pointers
+ 			base_address += byte_cnt;
+ 			bytes -= byte_cnt;
 		}
-		records--;
-		
-    // If all records were sent - ignore timeout
-	  if(records == 0)
-		{
-			wait_result = ST_DONE;
-			break;
-		}
-    if(wait_result != ST_OK) 
-			break;
-	}	
+
+ 		set_led_on();
+ 		// After sending a record check for the next request
+ 		wait_result = WaitDS102Req(fill_type, records ? REQ_NEXT : REQ_LAST );
+		if( fill_type == MODE1) break;  // No retries for Type 1 fills
+		if( (wait_result != ST_ERR) || 
+		      (num_retries >= TYPE23_RETRIES)) break;
+		num_retries++;
+	}
+	records--;
+	
+   // If all records were sent - ignore timeout
+  if(records == 0)
+	{
+		wait_result = ST_DONE;
+		break;
+	}
+   if(wait_result != ST_OK) 
+		break;
+}	
 
   if( fill_type != MODE1 )
   {

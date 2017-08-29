@@ -35,7 +35,7 @@ static byte GetPCFill(unsigned short long base_address)
 	saved_base_address = base_address++;
 
 	SendPCAck(REQ_FIRST);	// REQ the first packet
-  while(1)
+  	while(1)
 	{
 		byte_cnt = rx_eusart(&data_cell[0], FILL_MAX_SIZE);
 		// We can get byte_cnt
@@ -76,21 +76,21 @@ char StorePCFill(byte stored_slot, byte required_fill)
 
 	saved_base_address = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
-											// .. to be filled at the end
+						// .. to be filled at the end
 	// All data are stored in 1K bytes (8K bits) slots
 	// The first byte of the each slot has the number of the records (0 - 255)
 	// The first byte of the record has the number of bytes that should be sent out
-	// so each record has no more than 255 bytes as well
+	// so each record has no more than 255 bytes
 	// Empty slot has first byte as 0x00
 	
 	records = GetPCFill(base_address);
 	if( records > 0)
 	{
-  	// All records were received - put final info into EEPROM
-	  // Mark the slot as valid slot containig data
+  		// All records were received - put final info into EEPROM
+	  	// Mark the slot as valid slot containig data
 		byte_write(saved_base_address, records);
 		byte_write(saved_base_address + 1, required_fill);
 		result = ST_DONE;
 	}
-  return result;
+  	return result;
 }

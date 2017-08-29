@@ -23,14 +23,14 @@ static char WaitPCReq(byte req_type)
 
 char WaitReqSendPCFill(byte stored_slot)
 {
-  byte  	fill_type, records;
+  	byte  	fill_type, records;
 	byte    bytes, byte_cnt;
 	char    wait_result;
 	unsigned short long base_address;
 
 	wait_result = ST_OK;
 	
-  base_address = get_eeprom_address(stored_slot & 0x0F);
+  	base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++);
 	if(records == 0xFF) records = 0x00;
 	// Get the fill type from the EEPROM
@@ -63,14 +63,13 @@ char WaitReqSendPCFill(byte stored_slot)
 		// After sending a record check for the next request
 		wait_result = WaitPCReq( records ? REQ_NEXT : REQ_LAST );
 		
-    // If all records were sent - ignore timeout
-	  if(records == 0)
+	    // If all records were sent - ignore timeout
+		if(records == 0)
 		{
 			wait_result = ST_OK;
 			break;
 		}
-    if(wait_result) 
-			break;
+	    if(wait_result) break;
 	}	
 	return wait_result;	
 }
@@ -79,20 +78,20 @@ char WaitReqSendPCFill(byte stored_slot)
 char ReadMemSendPCFill(byte stored_slot)
 {
 	unsigned int bytes, byte_cnt;
-  unsigned short long base_address;	
+  	unsigned short long base_address;	
 
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 	
 	bytes = get_eeprom_address(1);  // That's how we calculate the size 
 	while(bytes)	
 	{
-			byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-			array_read(base_address, &data_cell[0], byte_cnt);
-			tx_eusart(&data_cell[0], byte_cnt);
+		byte_cnt = MIN(bytes, FILL_MAX_SIZE);
+		array_read(base_address, &data_cell[0], byte_cnt);
+		tx_eusart(&data_cell[0], byte_cnt);
     	flush_eusart();
     	// Adjust counters and pointers
-			base_address += byte_cnt;
-			bytes -= byte_cnt;
+		base_address += byte_cnt;
+		bytes -= byte_cnt;
 	}
 	return ST_OK;
 }

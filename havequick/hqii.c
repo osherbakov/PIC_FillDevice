@@ -105,14 +105,18 @@ static void ExtractHQDate(void)
 {
 	// HQ Hours
 	HQ_Hours = (DecodeByte(hq_data[2]) << 4) | DecodeByte(hq_data[3]);
+	
 	// Minutes
 	HQ_Minutes = (DecodeByte(hq_data[4]) << 4) | DecodeByte(hq_data[5]);
+	
 	// Seconda
 	HQ_Seconds = (DecodeByte(hq_data[6]) << 4) | DecodeByte(hq_data[7]);
-  // 3 digits of Julian day
+  	
+  	// 3 digits of Julian day
 	HQ_JulianDayH = DecodeByte(hq_data[8]);
 	HQ_JulianDayL = (DecodeByte(hq_data[9]) << 4) | DecodeByte(hq_data[10]);
-  // Year
+  	
+  	// Year
 	HQ_Year = (DecodeByte(hq_data[11]) << 4) | DecodeByte(hq_data[12]);
 
 	rtc_date.Hours = HQ_Hours;
@@ -123,8 +127,8 @@ static void ExtractHQDate(void)
 	rtc_date.JulianDayH = HQ_JulianDayH;
 	rtc_date.JulianDayL = HQ_JulianDayL;
 	
-  CalculateMonthAndDay();
-  CalculateWeekDay();
+  	CalculateMonthAndDay();
+  	CalculateWeekDay();
 }
 
 
@@ -276,23 +280,23 @@ char ReceiveHQTime(void )
 	TRIS_HQ_PIN = INPUT;
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
-  //	1. Find the HQ stream rising edge and
+  	//	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-		if( GetHQTime() )	
-		  return ST_TIMEOUT;
+	if( GetHQTime() )	
+	  return ST_TIMEOUT;
 	
-	//  2. Find the next time that we will have HQ stream
-		CalculateNextSecond();
+	//  2. Find the next time when we will have HQ stream
+	CalculateNextSecond();
 
 	INTCONbits.GIE = 0;		// Disable interrupts
 	SetRTCDataPart1();
 	
-  //	3. Find the next HQ stream rising edge
+  	//	3. Find the next HQ stream rising edge
 	while ( WaitTimer(0xF0) >= 0 ) {};	// Wait until IDLE
 	while(HQ_PIN) {};		// look for the rising edge
 	while(!HQ_PIN){};		
 
-  //  4. Finally, set up the RTC clock on the rising edge
+  	//  4. Finally, set up the RTC clock on the rising edge
 	CLOCK_LOW();
 	DATA_HI();	
 	DelayI2C();
@@ -301,24 +305,23 @@ char ReceiveHQTime(void )
 
 	SetRTCDataPart2();
 	
-  // Reset the 10 ms clock
-  rtc_date.MilliSeconds_10 = 0;
- 	TMR2 = 0;
-
+  	// Reset the 10 ms clock
+  	rtc_date.MilliSeconds_10 = 0;
+ 
 	INTCONbits.RBIF = 0;	// Clear bit
 	INTCONbits.GIE = 1;		// Enable interrupts
 	
-//  5. Get the HQ time again and compare with the current RTC
+	//  5. Get the HQ time again and compare with the current RTC
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream again for the final check
 	if( GetHQTime() )	
 	  return ST_ERR;
 	  
 	GetRTCData();
 	return ( 
-  (HQ_Hours == rtc_date.Hours) &&
+  	(HQ_Hours == rtc_date.Hours) &&
 		(HQ_Minutes == rtc_date.Minutes) &&
 		  (HQ_Seconds == rtc_date.Seconds) && 
-  		  (HQ_JulianDayH == rtc_date.JulianDayH) && 
+  		  	(HQ_JulianDayH == rtc_date.JulianDayH) && 
     		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
     		    (HQ_Year == rtc_date.Year) &&
     		      (0x20 == rtc_date.Century)

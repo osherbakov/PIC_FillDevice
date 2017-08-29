@@ -124,11 +124,11 @@ void CalculateNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
 	byte sec;
-  byte min;
-  byte hour;
+  	byte min;
+  	byte hour;
 
 	// Use current time
-  sec = rtc_date.Seconds;
+  	sec = rtc_date.Seconds;
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
 
@@ -138,7 +138,7 @@ void CalculateNextSecond()
 	if(sec >= 0x59)
 	{
 		sec = 0x00;
-    if(min >= 0x59)
+    	if(min >= 0x59)
 		{
 			min = 0x00;
 			if(hour >= 23)
@@ -148,7 +148,7 @@ void CalculateNextSecond()
 			}else
 			{
 				hour += 1;
-			  // This is a cool way to increment BCD numbers!!!
+			  	// This is a cool way to increment BCD numbers!!!
 				if( (hour & 0x0F) == 0x0A) hour += 0x06;
 			}
 		}else
@@ -182,8 +182,8 @@ void GetRTCData()
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
 
 	// Request data from the chip
-  SWRestartI2C();	
-  SWWriteI2C(RTC_I2C_ADDRESS | I2C_READ);
+  	SWRestartI2C();	
+  	SWWriteI2C(RTC_I2C_ADDRESS | I2C_READ);
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
 
 	// Address 0 - seconds
@@ -243,8 +243,7 @@ void SetRTCDataPart1()
 }
 
 void SetRTCDataPart2()
-{
-	
+{	
 	// Address 1 - minutes
 	SWWriteI2C(rtc_date.Minutes);
 	SWAckI2C(READ);

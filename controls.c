@@ -6,6 +6,8 @@
 #include "clock.h"
 
 
+// Variables that keep the current and previous states for 
+// channel/slot switch and power switch positions
 byte switch_pos;
 byte prev_switch_pos;
 
@@ -20,10 +22,12 @@ byte get_switch_state()
 {
 	byte data;
 
-  ANSELA = 0; 
-  ANSELD = 0;
+  	// Force all bits of port A and D into Digital IO mode
+	// Make all of them Inputs (Tristate)
+	ANSELA = 0; 
+  	ANSELD = 0;
 	TRIS_S1_8 = 0xFF;
-  TRIS_S9_16 = 0xFF;
+  	TRIS_S9_16 = 0xFF;
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -100,16 +104,14 @@ void set_pin_f_as_power()
 
 void disable_tx_hqii()
 {
-  hq_active = 0;
-  hq_enabled = 0;
+  	hq_enabled = 0;
 }
 
 
 void enable_tx_hqii()
 {
 	InitClockData();
-  hq_active = 0; 
-  hq_enabled = 1;
+  	hq_enabled = 1;
 }  
 
 

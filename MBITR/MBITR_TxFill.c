@@ -24,21 +24,21 @@ static char WaitMBITRReq(byte req_type)
 		tx_mbitr(&CHECK_MBITR[0], 4);
 	}else if( req_type == REQ_LAST )  // Do not wait for the ACK on the last one
 	{
-  	return ST_OK;
+  		return ST_OK;
 	}else 
 	{
 		char_to_expect = KEY_ACK;		// Wait for 0x06
 	}	
 
 	// wait in the loop until receive the ACK character, or timeout
-  while( rx_mbitr(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  	while( rx_mbitr(&char_received, 1) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT ; 
 }
 
 char WaitReqSendMBITRFill(byte stored_slot)
 {
 	byte    bytes, byte_cnt;
-  byte  	fill_type, records;
+  	byte  	fill_type, records;
 	char    wait_result;
 	unsigned short long base_address;
 
@@ -69,13 +69,13 @@ char WaitReqSendMBITRFill(byte stored_slot)
 		
 		// After sending a record check for the next request
 		wait_result = WaitMBITRReq( records ? REQ_NEXT : REQ_LAST );
-    // If all records were sent - ignore timeout
-	  if(records == 0)
+    	// If all records were sent - ignore timeout
+	  	if(records == 0)
 		{
 			wait_result = ST_DONE;
 			break;
 		}
-    if(wait_result) 
+    	if(wait_result) 
 			break;
 	}	
 	return wait_result;
@@ -103,7 +103,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 		{
 			TMR6 = TIMER_MBITR_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-		  set_timeout(RX_TIMEOUT2_MBITR);
+		  	set_timeout(RX_TIMEOUT2_MBITR);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -114,8 +114,8 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 			while(!PIR5bits.TMR6IF){} ;
 			if(RxMBITR)
 			{
-  			break;
-  		}
+  				break;
+  			}
 			*p_data++ = ~data;
 			nrcvd++;
 		}
@@ -130,7 +130,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-  DelayMs(TX_MBITR_DELAY_MS);
+  	DelayMs(TX_MBITR_DELAY_MS);
 	
 	TRIS_TxMBITR = OUTPUT;
 	PR6 = TIMER_MBITR;
@@ -149,7 +149,7 @@ void tx_mbitr(byte *p_data, byte ncount)
 			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
 			TxMBITR = data & 0x01;	// Set the output
 			data >>= 1;				// We use the fact that 
-									      // "0" bits are STOP bits
+									// "0" bits are STOP bits
 		}
 	}
 }

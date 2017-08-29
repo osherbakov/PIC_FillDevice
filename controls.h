@@ -29,10 +29,10 @@ typedef enum
 	DOWN_POS = 1
 } BUTTON_POS;
 
-#define MAX_NUM_POS (13)
-#define HQ_TIME_POS (14)
-#define SG_TIME_POS (15)
-#define PC_POS 		  (16)
+#define MAX_NUM_POS (13)	// positions 1-13 are regular slots
+#define HQ_TIME_POS (14)	// T1 - Havequick time (RS-232/RS-485)
+#define SG_TIME_POS (15)	// T2 - SINCGARS time (DS-102)
+#define PC_POS 		(16)	// A - PC Connection via RS-232
 
 extern byte switch_pos;
 extern byte prev_switch_pos;
@@ -40,18 +40,25 @@ extern byte prev_switch_pos;
 extern byte power_pos;
 extern byte prev_power_pos;
 
-
-extern byte get_switch_state(void);
+// Functions to get external controls states
+extern byte get_switch_state(void);	// 1-13,T1,T2,A 
 extern byte get_power_state(void);
 extern byte get_button_state(void);
 
 // Control PIN A connection - Ground or +6V
+// If pin A is GND, then all other pins are 0 - +5V
+// If pin A is +6V, then all other pins are -5V - 0V
 extern void set_pin_a_as_gnd(void);
 extern void set_pin_a_as_power(void);
 
 // Control PIN F connection - +6V or IO
 extern void set_pin_f_as_io(void);
 extern void set_pin_f_as_power(void);
+//
+// Possible modes:
+// DS102, when pin_A is +6V, and all other pins are in negative logic
+// RS232 or RS485 mode, when pin_A is GND, pin_F supplies power, and all pin_B-pin_E are positive logic
+//
 
 // Functions to read pins using ADC 
 //  and to assign HIGH or LOW if it crosses the threshold

@@ -17,8 +17,7 @@ volatile char timeout_flag;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
-volatile byte hq_enabled;
-volatile byte hq_active;
+volatile byte hq_enabled;	// HaveQuick data output is enabled
 
 static byte hq_bit_counter;
 static byte hq_byte_counter;
@@ -27,7 +26,7 @@ static byte hq_current_byte;
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
-#define DATA_FRAME_SIZE		(112/8)		// 112 bits of actual timing data
+#define DATA_FRAME_SIZE		(112/8)		// 112 bits (1of actual timing data
 
 //-------------------------------------------------
 //  LED support fucntions
@@ -45,7 +44,7 @@ void set_led_state(char on_time, char off_time)
 void set_led_on()
 {
 	INTCONbits.GIE = 0;		// Disable interrupts   
-	LEDP = 1;	// Turn on LED
+	LEDP = 1;				// Turn on LED
 	led_counter = 0;
 	INTCONbits.GIE = 1;		// Enable interrupts 	
 }
@@ -53,7 +52,7 @@ void set_led_on()
 void set_led_off()
 {
 	INTCONbits.GIE = 0;		// Disable interrupts   
-	LEDP = 0;	// Turn off LED
+	LEDP = 0;				// Turn off LED
 	led_counter = 0;
 	INTCONbits.GIE = 1;		// Enable interrupts 	
 }
@@ -73,59 +72,60 @@ void interrupt_at_high_vector(void)
 //  - 1 Second PPS from the RTC to generate precise start of Havequick sequence  
 //  - Havequick sequence generation (300us)
 //  - eusart tx interrupt
+//
+// TIMER4 is used for Havequick clock
+// TIMER2 generates 10ms ticks
+// TIMER0 for fine tuning of the PIC internal processor clock
 void high_isr (void)
 {
 	byte TL, TH;
 	//--------------------------------------------------------------------------
-	// Is it a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
+	// Is this a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
 	if( INTCONbits.RBIF)
 	{
-    // Interrupt occurs when 1PPS pin from RTC has LOW->HIGH and HIGH->LOW
-    // transitions
-		if(!PIN_1PPS)
-		{
-  		if(hq_active)  //  On HIGH->LOW transition - 0 ms
-  		{
-  			HQ_PIN = 1;	
-  			TMR4 = 10;					// Preload to compensate for the delay 
-  			PR4 = HQII_TIMER;
-  			T4CONbits.TMR4ON = 1;		// Turn on the timer
-  			PIR5bits.TMR4IF = 0;		// Clear Interrupt
-  			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
-  			// Calculate next value
-  			hq_current_bit = 0;
-  			hq_current_byte = (START_FRAME_DATA << 1);
-  			hq_byte_counter = 1;    // First byte sent
-  			hq_bit_counter = 0;     // Bit 0 was sent
-  			hq_active = 0;          // Don't do anything on next H->L until enabled
+    	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
+    	// The HIGH->LOW transition indicates the start of the second
+		if(PIN_1PPS == 0)
+		{	
+			// Interrupt occured on HIGH->LOW transition
+	  		if(hq_enabled)  //  On HIGH->LOW transition - 0 ms
+	  		{
+	  			HQ_PIN = 1;	
+	  			TMR4 = 10;					// Preload to compensate for the delay 
+	  			PR4 = HQII_TIMER;			// Load TIMER4
+	  			T4CONbits.TMR4ON = 1;		// Turn on the TIMER4
+	  			PIR5bits.TMR4IF = 0;		// Clear TIMER4 Interrupt
+	  			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
+	  			// Calculate next value
+	  			hq_current_bit = 0;
+	  			hq_current_byte = (START_FRAME_DATA << 1);
+	  			hq_byte_counter = 1;    	// First byte sent
+	  			hq_bit_counter = 0;     	// Bit 0 was sent
 			}
-
-      // Adjust current time
-			rtc_date.MilliSeconds_10 = 0; // At this moment we are exactly at 0 ms
-    	TMR2 = 0;	                    // zero out 10ms counter
-      // Increment big timeout counter
-      seconds_counter++;  // Advance the seconds counter (used for big timeouts)
+      		// Adjust current time
+			rtc_date.MilliSeconds_10 = 0; 	// At this moment we are exactly at 0 ms
+      		// Increment big timeout counter
+      		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
 		}else
 		{
-  		// On LOW -> HIGH transition - 500ms - start collecting data
+  			// On LOW -> HIGH transition - 500ms - start collecting data
 			// Check for HQ status and prepare everything for the next falling edge
 			if( hq_enabled )
 			{
-        // Get statistics for the clock adjustment
-      	TL = TMR0L;	// Read LSB first to latch the data
-     		TH = TMR0H;
-        TMR0H = 0;  // Reset the counter - MSB first
-        TMR0L = 0;
-        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
-        UpdateClockData();
-        ProcessClockData();
-				GetRTCData();     // Get current time and data from RTC
+				GetRTCData();     		// Get current time and data from RTC
 				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
-				CalculateHQDate();// Convert into the HQ date format
+				CalculateHQDate();		// Convert into the HQ date format
 				TRIS_HQ_PIN = OUTPUT;
 				HQ_PIN = 0;
-				hq_active = 1;	  // Transition HIGH - > LOW - start outputting the data
 			}
+	        // Get statistics for the clock adjustment
+	      	TL = TMR0L;	// Read LSB first to latch the data
+	     	TH = TMR0H;
+	        TMR0H = 0;  // Reset the counter - MSB first
+	        TMR0L = 0;
+	        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
+	        UpdateClockData();
+	        ProcessClockData();			
 		}
 		INTCONbits.RBIF = 0;
 	}
@@ -176,18 +176,19 @@ void high_isr (void)
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
-  	if(timeout_counter > 0)
-  	{
-		  timeout_counter -= 10;
+	  	if(timeout_counter > 0)
+	  	{
+		  	timeout_counter -= 10;
 		}else
 		{
-  		timeout_flag = 1;
-  	}
+  			timeout_flag = 1;
+  		}
+  		// Update RTC time
 		rtc_date.MilliSeconds_10++;
 		if(rtc_date.MilliSeconds_10 >= 100)
 		{
-  		rtc_date.MilliSeconds_10 = 0;
-  	}
+  			rtc_date.MilliSeconds_10 = 0;
+  		}
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{
@@ -226,9 +227,9 @@ void high_isr (void)
 
 	//--------------------------------------------------------------------------
 	// Is it a EUSART TX interrupt ?
-  // If there are bytes to send - get the symbol from the 
-  //  buffer pointed by tx_data and decrement the counter
-  // If that was the last symbol - disable interrupts.
+  	// If there are bytes to send - get the symbol from the 
+  	//  buffer pointed by tx_data and decrement the counter
+  	// If that was the last symbol - disable interrupts.
 	if(PIR1bits.TX1IF)
 	{
 		if( tx_count )	// not the last byte
@@ -243,12 +244,12 @@ void high_isr (void)
 		// No need to clear the Interrupt Flag
 	}
   
-  // Check for the clock correction timer0
-  if(INTCONbits.TMR0IF)
-  {
-    curr_msb++; 
-    INTCONbits.TMR0IF = 0;  // Clear interrupt
-  }
+  	// Check for the clock correction timer0
+  	if(INTCONbits.TMR0IF)
+  	{
+    	curr_msb++; 
+    	INTCONbits.TMR0IF = 0;  // Clear interrupt
+  	}
 }
 
 

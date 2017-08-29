@@ -6,7 +6,7 @@ static unsigned char MSB[NUM_SAMPLES];
 static unsigned int LSB[NUM_SAMPLES];
 static char samples_number;
 volatile unsigned char curr_msb;	// MSB for the current sample (8 bits)
-volatile unsigned int curr_lsb;	// LSB for the current sample (16 bits)
+volatile unsigned int curr_lsb;		// LSB for the current sample (16 bits)
 
 // Initialize all clock correction data
 void InitClockData(void)
@@ -68,7 +68,7 @@ void ProcessClockData()
 	num_below = 0;
 	for(i = 0; i < NUM_SAMPLES ; i++)
 	{
-		// First chack MSBs only
+		// First check MSBs only
 		if(MSB[i] > (ONE_SEC_TICKS >> 16))
 		{
 			num_above++;
@@ -88,7 +88,7 @@ void ProcessClockData()
 		}
 	}
 	
-	// Get the current value of the Tuning register and sign-extend it
+	// Get the current value of the Tuning register (5 bits) and sign-extend it
 	tune = OSCTUNE & 0x3F;	if(tune & 0x20) tune |= 0xE0;
 	// Make sure that the difference is bigger than the margin, and only then adjust
 	if(num_above > (num_below + NUM_MARGIN))

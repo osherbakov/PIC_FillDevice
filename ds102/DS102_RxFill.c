@@ -28,7 +28,7 @@
 //--------------------------------------------------------------
 // Timeouts in ms
 //--------------------------------------------------------------
-#define tA  	200	   // F LOW -> D HIGH	(45us - 55us)
+#define tA  	50	   // F LOW -> D HIGH	(45ms - 55ms)
 #define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 #define tF  	200    // End of fill - > response (4ms - 2sec)

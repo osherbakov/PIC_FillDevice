@@ -41,8 +41,8 @@ byte cm;
 /******************************************************************************/
 
 static byte reflect (byte v)
-/* Returns the value v with the bottom b [0,32] bits reflected. */
-/* Example: reflect(0x3e23L,3) == 0x3e26                        */
+/* Returns the value v with [0,7] bits reflected. */
+/* Example: reflect(0x3e) == 0x7C                        */
 {
  byte t = 0;
  if(v & 0x01) t |= 0x80;
@@ -91,13 +91,13 @@ void cm_append(p_ubyte_ blk_adr, byte blk_len)
 
 char cm_check(p_ubyte_ blk_adr, byte blk_len)
 {
-  byte calc_crc;
-  byte  rcvd_crc;
+  	byte calc_crc;
+  	byte  rcvd_crc;
   
 	cm_ini();
 	cm_blk(blk_adr, blk_len - 1);
 	calc_crc = 0xFF ^ reflect(cm);
-  rcvd_crc = blk_adr[blk_len - 1];
+  	rcvd_crc = blk_adr[blk_len - 1];
 	return (calc_crc == rcvd_crc) || ((calc_crc ^ 0xFF)== rcvd_crc);
 }
 

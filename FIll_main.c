@@ -11,6 +11,7 @@
 static enum 
 {
 	INIT = 0,
+	IDLE,
 	BIST,
 	BIST_ERR,
 	FILL_TX,
@@ -77,6 +78,10 @@ static void SetNextState(char nextState)
 			set_led_state(100, 0);		// Steady Light
 			break;
 
+		case IDLE:
+			set_led_state(0, 100);		// No Light
+			break;
+			
 		case ZERO_FILL:
 			set_led_state(5, 5);		// About to zero-out pattern
 			break;
@@ -117,10 +122,10 @@ static void SetNextState(char nextState)
 			set_led_state(200, 50);		// "Try RS232" blink pattern
 			break;
 
-    case FILL_RX_DS102:
+	    case FILL_RX_DS102:
 		case FILL_TX_DS102:
-    case FILL_TX_TIME_PROC:
-    case FILL_RX_TYPE23:
+	    case FILL_TX_TIME_PROC:
+	    case FILL_RX_TYPE23:
 			set_led_state(150, 0);		// "Key loading" blink pattern
 			break;
     
@@ -166,7 +171,7 @@ static void TestFillResult(char result)
 	}else if(result == ST_ERR)			// ERROR return value
 	{
 		SetNextState(ERROR);
-	}else if(result == ST_DONE )			// DONE return value
+	}else if(result == ST_DONE )		// DONE return value
 	{
 		SetNextState(DONE);
 	}
@@ -178,7 +183,7 @@ static void  PinsToDefault(void)
 {
 	disable_tx_hqii();
 	close_eusart();
-  set_pin_f_as_io();
+	set_pin_f_as_io();
 	set_pin_a_as_power(); // Remove ground from pin A
 	TRIS_PIN_B = 1;
 	TRIS_PIN_C = 1;
@@ -189,19 +194,19 @@ static void  PinsToDefault(void)
 
 static void bump_idle_counter(void)
 {
-  INTCONbits.GIE = 0; 
+  	INTCONbits.GIE = 0; 
 	idle_counter = seconds_counter + IDLE_SECS;
-  INTCONbits.GIE = 1;
+  	INTCONbits.GIE = 1;
 }
 
 void main()
 {
 	char  result;
-  byte  fill_type;
-  char  allow_type45_fill;
+  	byte  fill_type;
+  	char  allow_type45_fill;
   
 	setup_start_io();
-  PinsToDefault();	
+  	PinsToDefault();	
 
 #ifdef  DO_TEST
   while(1)
@@ -236,18 +241,20 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
-  allow_type45_fill = (prev_button_pos == DOWN_POS) ? TRUE : FALSE;
+  	allow_type45_fill = (prev_button_pos == DOWN_POS) ? TRUE : FALSE;
 	
-  bump_idle_counter();
+  	bump_idle_counter();
   
 	while(1)
 	{
-		// If no activity was detected for more than 3 minutes - shut down
+		//
+		// If no activity was detected for more than 6 minutes - shut down
+		//
 		if(idle_counter < seconds_counter)
 		{
-	  	setup_sleep_io();
+			SetNextState(IDLE);
+	  		setup_sleep_io();
 			while(1) 
-			
 			{
 				INTCONbits.GIE = 0;		// Disable interrupts
 				INTCONbits.PEIE = 0;
@@ -255,21 +262,26 @@ void main()
 			};
 		}
 
-	  // Check the switch position - did it change?
+	  	//
+	  	// Check the switch position - did it change?
+	  	//
 		switch_pos = get_switch_state();
 		if(switch_pos && (switch_pos != prev_switch_pos))
 		{
-      // On any change bump the idle counter
-      bump_idle_counter();
+      		// On any change bump the idle counter
+      		bump_idle_counter();
 			prev_switch_pos = switch_pos; // Save new state
 			SetNextState(INIT);
 		}
 
+	  	//
+	  	// Check the power position - did it change?
+	  	//
 		power_pos = get_power_state();
 		if( power_pos != prev_power_pos )
 		{
-      // On any change bump the idle counter
-      bump_idle_counter();
+      		// On any change bump the idle counter
+      		bump_idle_counter();
 			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
@@ -286,10 +298,10 @@ void main()
 			//********************************************
 			//-----------INIT-----------------
 			case INIT:
-        PinsToDefault();
-        bump_idle_counter();
+        		PinsToDefault();
+        		bump_idle_counter();
         
-        // Start all from the beginning.................
+        		// Start all from the beginning.................
 				// Switch is in one of the key fill positions
 				if( (switch_pos > 0) && (switch_pos <= MAX_NUM_POS))
 				{
@@ -316,17 +328,17 @@ void main()
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
+          			set_pin_f_as_power();
 					// Check for the bootloader activity
 					if( is_bootloader_active() )
-				  {
-  				  set_led_state(0, 100);	// Turn off LED
-    				INTCONbits.GIE = 0;		// Disable interrupts
-    				INTCONbits.PEIE = 0;
-   				  BootloadMode();       // Go to bootloader
-				  }else
-				  {
-					  SetNextState(PC_CONN);// Switch to the PC connection mode
+				  	{
+  				  		set_led_state(0, 100);	// Turn off LED
+    					INTCONbits.GIE = 0;		// Disable interrupts
+    					INTCONbits.PEIE = 0;
+   				  		BootloadMode();       // Go to bootloader
+				  	}else
+				  	{
+					  	SetNextState(PC_CONN);// Switch to the PC connection mode
 					}
 				}
 				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
@@ -358,22 +370,22 @@ void main()
 				if(fill_type == MODE5)          // Any DS-101 fill
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
+          			set_pin_f_as_power();
 					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
 				}else if(fill_type == MODE4)    // MBITR keys
 				{
 					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
+          			set_pin_f_as_power();
 					SetNextState(FILL_TX_MBITR);
 				}else 
 				{       // Any type 1,2,3 fill - DS-102
 					set_pin_a_as_power();						//  Set +5V on Pin A for Type 1,2,3
-          set_pin_f_as_io();
+          			set_pin_f_as_io();
 					SetNextState(FILL_TX_DS102_WAIT);
 				}
 				break;
 
-      // DS-102 Fills	- type 1,2, and 3
+      		// DS-102 Fills	- type 1,2, and 3
 			case FILL_TX_DS102_WAIT:
 				if( CheckType123Equipment(fill_type) > 0 )
 				{

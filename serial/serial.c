@@ -15,8 +15,8 @@
 //  /FILL<0x34> means fill key 4 of type 3
 static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
 static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
-static byte TIME_CMD[]    = "/TIME";	// Fill/Dump Time
-static byte DATE_CMD[]    = "/DATE";	// Fill/Dump Time
+static byte TIME_CMD[]    	= "/TIME";	// Fill/Dump Time
+static byte DATE_CMD[]    	= "/DATE";	// Fill/Dump Time
 static byte MEM_READ[] 		= "/READ";	// Read the key N
 
 /****************************************************************/
@@ -49,11 +49,11 @@ static byte OPT_AES[] 		= "Aes ";
 static byte OPT_LDRM[] 		= "LDRM ";
 static byte OPT_OPT_X[] 	= "Option X ";
 static byte OPT_MELP[] 		= "Andvt MELP ";
-static byte OPT_DIGITAL[] = "Clear Digital ";
+static byte OPT_DIGITAL[] 	= "Clear Digital ";
 static byte OPT_GPS[] 		= "Enhanced GPS ";
 static byte OPT_END[] 		= {0x0D, 0x00};
 
-static byte OPT_ENABLED[] = "Radio Option Enabled";
+static byte OPT_ENABLED[] 	= "Radio Option Enabled";
 static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
 
 // The list of all options enabled in the radio
@@ -84,31 +84,31 @@ char CheckFillDTD232Type5()
 {
 	if( !RCSTA1bits.SPEN )
 	{
-  	TRIS_RxDTD = 1;
-  	TRIS_TxDTD = 1;
-  	if(!RxDTD && TxDTD)
-  	{
-  		 close_eusart();
-  		 return MODE5;
-  	}	
-  } 	
+	  	TRIS_RxDTD = 1;
+	  	TRIS_TxDTD = 1;
+	  	if(!RxDTD && TxDTD)
+	  	{
+	  		 close_eusart();
+	  		 return MODE5;
+	  	}	
+  	} 	
 	return -1;
 }	
 
 
 char CheckFillRS232Type5()
 {
-  // Coming in first time - enable eusart and setup buffer
+  	// Coming in first time - enable eusart and setup buffer
 	if( !RCSTA1bits.SPEN )
 	{
 //  	TRIS_RxPC = 1;
 //  	TRIS_TxPC = 1;
-  	if(!RxPC && TxPC)
-  	{
-      // Coming in first time - enable eusart and setup buffer
-  		open_eusart(BRREG_CMD, DATA_POLARITY);
-  		set_eusart_rx(SerialBuffer, 4);
-  	}	
+	  	if(!RxPC && TxPC)
+	  	{
+	      // Coming in first time - enable eusart and setup buffer
+	  		open_eusart(BRREG_CMD, DATA_POLARITY);
+	  		set_eusart_rx(SerialBuffer, 4);
+	  	}	
 	}
 	
 	if( (rx_idx >= 2) && 
@@ -129,12 +129,12 @@ char CheckFillType4()
 	{
 //  	TRIS_RxPC = 1;
 //  	TRIS_TxPC = 1;
-  	if(!RxPC && TxPC)
-  	{
-      // Coming in first time - enable eusart and setup buffer
-  		open_eusart(BRREG_CMD, DATA_POLARITY);
-  		set_eusart_rx(SerialBuffer, 4);
-  	}	
+	  	if(!RxPC && TxPC)
+	  	{
+	      // Coming in first time - enable eusart and setup buffer
+	  		open_eusart(BRREG_CMD, DATA_POLARITY);
+	  		set_eusart_rx(SerialBuffer, 4);
+	  	}	
 	}
 	
 	if(rx_idx >= 4)
@@ -145,7 +145,7 @@ char CheckFillType4()
 		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
 			rx_idx = 0; // Data consumed
-  		// SN request - send a fake SN = 123456
+  			// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
@@ -207,8 +207,8 @@ void close_eusart()
 
 void flush_eusart()
 {
-  if(	PIE1bits.TX1IE )
-  {
+  	if(	PIE1bits.TX1IE )
+  	{
 		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 	}
 }
@@ -236,24 +236,24 @@ void PCInterface()
     	// The last char in /FILLN specifies Type(high nibble) 
     	//    and Slot Number (low nibble)
   		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
-		  set_eusart_rx(p_data, 6);  // Restart collecting data
+		set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, KEY_DUMP, 5))
   	{
     	// The last char in /DUMPN is the slot number
   		WaitReqSendPCFill(p_data[5] & 0x0F);
-		  set_eusart_rx(p_data, 6);  // Restart collecting data
+		set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, MEM_READ, 5))
   	{
     	// The last char in /READN is the slot number
   		ReadMemSendPCFill(p_data[5] & 0x0F);
-		  set_eusart_rx(p_data, 6);  // Restart collecting data
+		set_eusart_rx(p_data, 6);  // Restart collecting data
   	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
   	{
     	// If there is more data to follow - set the time 
   		rx_idx = 0; // Data consumed
-  	  GetSetCurrentDayTime(p_data);
+  	  	GetSetCurrentDayTime(p_data);
     	tx_eusart_str(p_data);
-		  set_eusart_rx(p_data, 6);  // Restart collecting data
+		set_eusart_rx(p_data, 6);  // Restart collecting data
     } 	
   }  
 }
@@ -264,10 +264,10 @@ void PCInterface()
 // RX_TIMEOUT2_PC - timeout for all consequtive chars
 byte rx_eusart(unsigned char *p_data, byte ncount)
 {
-  byte  nrcvd = 0;
+  	byte  nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-  set_timeout(RX_TIMEOUT1_PC);
+  	set_timeout(RX_TIMEOUT1_PC);
 	while( (nrcvd < ncount ) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
@@ -275,7 +275,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 			// Get data byte and save it
 			*p_data++ = RCREG1;
 			nrcvd++;
-		  set_timeout(RX_TIMEOUT2_PC);
+		  	set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -284,7 +284,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 			}
 		}
 	}
-  return nrcvd;
+  	return nrcvd;
 }
 
 // Continue to receive the specified number of characters with timeout
@@ -292,10 +292,10 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
 byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 {
   
-  byte  nrcvd = 0;
+  	byte  nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-  set_timeout(RX_TIMEOUT2_PC);
+  	set_timeout(RX_TIMEOUT2_PC);
 	while( (nrcvd < ncount ) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
@@ -303,7 +303,7 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 			// Get data byte and save it
 			*p_data++ = RCREG1;
 			nrcvd++;
-		  set_timeout(RX_TIMEOUT2_PC);
+		  	set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
@@ -312,7 +312,7 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 			}
 		}
 	}
-  return nrcvd;
+  	return nrcvd;
 }
 
 
@@ -326,7 +326,7 @@ volatile byte rx_idx_max; // Max index in the buffer
 
 void tx_eusart(unsigned char *p_data, byte ncount)
 {
-  flush_eusart();
+  	flush_eusart();
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated

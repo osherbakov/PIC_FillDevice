@@ -111,32 +111,30 @@ signed char SWWriteI2C( unsigned char data_out )
   
   I2C_BUFFER = data_out;
   BIT_COUNTER = 8;                // initialize bit counter
-                           
+  
+  CLOCK_HI();						// Release the SCL line                         
   do
   {
     if ( !SCLK_PIN() )              // test if clock is low
-    {                          // if it is then ..
-	    DelayI2C();				      // user may need to adjust timeout period
-	    if ( !SCLK_PIN() )            // if clock is still low after wait 
+    {                          		// if it is then ..
+	    DelayI2C();				    // user may need to adjust timeout period
+	    if ( !SCLK_PIN() )          // if clock is still low after wait 
 	      return ( STAT_CLK_ERR );  // return with clock error
-    }
-    else 
-    {
-      CLOCK_LOW();                 // set clock pin output to drive low
-      if ( I2C_BUFFER & 0x80 )   // if MSB set, transmit out logic 1
-      {
-       DATA_HI();                   // release data line to float high 
-      }
-      else                        // transmit out logic 0
-      {
-        DATA_LOW();                 // set data pin output to drive low 
-      }
-     DelayI2C();              // user may need to modify based on Fosc
-     CLOCK_HI();                  // release clock line to float high 
-     DelayI2C();              // user may need to modify based on Fosc
+    }else {
+      	CLOCK_LOW();                // set clock pin output to drive low
+      	if ( I2C_BUFFER & 0x80 )   	// if MSB set, transmit out logic 1
+      	{
+       		DATA_HI();              // release data line to float high 
+      	}else                      	// transmit out logic 0
+      	{
+        	DATA_LOW();             // set data pin output to drive low 
+      	}
+     	DelayI2C();              	// user may need to modify based on Fosc
+     	CLOCK_HI();                 // release clock line to float high 
+     	DelayI2C();              	// user may need to modify based on Fosc
 
-     I2C_BUFFER <<= 1;
-     BIT_COUNTER --;              // reduce bit counter by 1
+     	I2C_BUFFER <<= 1;
+     	BIT_COUNTER --;              // reduce bit counter by 1
     }
   }while ( BIT_COUNTER );        // stay in transmit loop until byte sent 
 
@@ -187,9 +185,9 @@ unsigned int SWReadI2C()
   {
     CLOCK_LOW();                    // set clock pin output to drive low
     DATA_HI();                      // release data line to float high
-    DelayI2C();                 // user may need to modify based on Fosc
+    DelayI2C();                 	// user may need to modify based on Fosc
     CLOCK_HI();                     // release clock line to float high
-    Delay1TCY();                  // user may need to modify based on Fosc
+    Delay1TCY();                  	// user may need to modify based on Fosc
     Delay1TCY();
 
     if ( !SCLK_PIN() )              // test for clock low
@@ -201,7 +199,7 @@ unsigned int SWReadI2C()
 
     I2C_BUFFER <<= 1;             // shift composed byte by 1
     if ( DATA_PIN() )               // is data line high
-     I2C_BUFFER |= 0x01;          // set bit 0 to logic 1
+     	I2C_BUFFER |= 0x01;          // set bit 0 to logic 1
   } while ( --BIT_COUNTER );      // stay until 8 bits have been acquired
 
   return ( (unsigned int) I2C_BUFFER ); // return with data

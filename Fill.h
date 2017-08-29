@@ -16,17 +16,17 @@ typedef enum
 
 typedef enum
 {
-	REQ_FIRST,
-	REQ_NEXT,
-	REQ_LAST
+	REQ_FIRST,		// Requesting First Cell
+	REQ_NEXT,		// Requesting Next Cell
+	REQ_LAST		// Requesting Last Cell
 } REQ_TYPE;
 
 typedef enum
 {
-	ST_TIMEOUT = -1,
-	ST_OK = 0,
-	ST_ERR = 1,
-	ST_DONE = 2
+	ST_TIMEOUT = -1,// Timed out
+	ST_OK = 0,		// Success
+	ST_ERR = 1,		// Error
+	ST_DONE = 2		// Operation completed
 } ST_STATUS;	
 
 //--------------------------------------------------------------
@@ -44,8 +44,8 @@ typedef enum
 
 #define TYPE23_RETRIES (4)
 
-#define	 TOD_CELL_NUMBER	(14)
-#define	 NUM_TYPE3_CELLS	(22)
+#define	 TOD_CELL_NUMBER	(14)	// Time-of-Day Cell number (if present)
+#define	 NUM_TYPE3_CELLS	(22)	// Total maximum number of Type 3 fill cells
 
 #define TOD_TAG_0 (0x00)
 #define TOD_TAG_1 (0x02)
@@ -54,12 +54,12 @@ typedef enum
 #define KEY_NAK  (0x15)	// Key nack
 #define KEY_EOL  (0x0D)	// Key End of Line
 
-#define  RX_TIMEOUT1_PC	 	(5000)    // 5 seconds - timeout until 1st symbol
-#define  RX_TIMEOUT2_PC	 	(100)     // 100ms - timeout after that
+#define  RX_TIMEOUT1_PC	 	(5000)  // 5 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT2_PC	 	(100)   // 100ms - timeout after that
 #define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds - timeout until 1st symbol
 #define  RX_TIMEOUT2_MBITR 	(100)   // 100ms - timeout after that
-#define  RX_TIMEOUT1_RS	  (2000)    // 2 seconds - timeout until 1st symbol
-#define  RX_TIMEOUT1_DTD	(2000)    // 2 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT1_RS	  	(2000)  // 2 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT1_DTD	(2000)  // 2 seconds - timeout until 1st symbol
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing
@@ -68,6 +68,8 @@ typedef enum
 
 extern byte	 data_cell[];
 extern byte	 TOD_cell[];
+
+// Functions to deal with TOD (Time-of-Day) data
 extern void  FillTODData(void);
 extern void  ExtractTODData(void);
 extern char  IsValidYear(void);
@@ -82,6 +84,7 @@ extern char CheckFillType(byte stored_slot);
 
 // To receive fill - set up pins properly
 extern void SetType123PinsRx(void);
+
 // To receive fill - check for different fill types
 extern char CheckFillType23(void);
 extern char CheckFillType4(void);

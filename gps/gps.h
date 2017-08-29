@@ -21,6 +21,5 @@ extern void CalculateHQDate(void);
 extern byte hq_data[];
 
 extern volatile byte hq_enabled; 
-extern volatile byte hq_active; 
 
 #endif		// __GPS_H_
