@@ -13,11 +13,12 @@
 // The command from the PC to fill the key or to dump it
 // The byte after the command specifies the key number and type
 //  /FILL<0x34> means fill key 4 of type 3
-static byte KEY_FILL[] 		= "/FILL";	// Fill the key N
-static byte KEY_DUMP[] 		= "/DUMP";	// Dump the key N
-static byte TIME_CMD[]    	= "/TIME";	// Fill/Dump Time
-static byte DATE_CMD[]    	= "/DATE";	// Fill/Dump Time
-static byte MEM_READ[] 		= "/READ";	// Read the key N
+static byte KEY_FILL[] 		= "/FILL<n>";	// Fill the key N
+static byte KEY_DUMP[] 		= "/DUMP<n>";	// Dump the key N
+static byte TIME_CMD[] 		= "/TIME=";		// Fill/Dump Time
+static byte DATE_CMD[] 		= "/DATE=";		// Fill/Dump Time
+static byte MEM_READ[] 		= "/READ<n>";	// Read the key N
+static byte KEY_CMD[] 		= "/KEY<n>";	// Read/Write the key N
 
 /****************************************************************/
 // Those are commands and responses that MBITR receives and sends
@@ -199,15 +200,15 @@ void close_eusart()
 {
 	PIE1bits.RC1IE = 0;	 	// Disable RX Interrupt
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
-	TXSTA = 0x00; 	      // Disable Tx	
-	RCSTA = 0x00;				  // Disable EUSART
+	TXSTA = 0x00; 	      	// Disable Tx	
+	RCSTA = 0x00;			// Disable EUSART
 	rx_idx = 0;
 	tx_count = 0;
 }
 
 void flush_eusart()
 {
-  	if(	PIE1bits.TX1IE )
+  	if(	PIE1bits.TX1IE )	// If Tx is enabled - wait until all chars are sent out
   	{
 		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 	}
@@ -228,34 +229,44 @@ void PCInterface()
 	// Wait to receive 6 characters
 	if(rx_idx >= 6) 
 	{
-  	// Six or more characters received - check if
-  	// this is a /DUMPN request to dump keys to PC
-  	//  or it is a /FILLN request to load key from PC
-  	if( is_equal(p_data, KEY_FILL, 5))
-  	{
-    	// The last char in /FILLN specifies Type(high nibble) 
-    	//    and Slot Number (low nibble)
-  		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
-		set_eusart_rx(p_data, 6);  // Restart collecting data
-  	}else if(is_equal( p_data, KEY_DUMP, 5))
-  	{
-    	// The last char in /DUMPN is the slot number
-  		WaitReqSendPCFill(p_data[5] & 0x0F);
-		set_eusart_rx(p_data, 6);  // Restart collecting data
-  	}else if(is_equal( p_data, MEM_READ, 5))
-  	{
-    	// The last char in /READN is the slot number
-  		ReadMemSendPCFill(p_data[5] & 0x0F);
-		set_eusart_rx(p_data, 6);  // Restart collecting data
-  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
-  	{
-    	// If there is more data to follow - set the time 
-  		rx_idx = 0; // Data consumed
-  	  	GetSetCurrentDayTime(p_data);
-    	tx_eusart_str(p_data);
-		set_eusart_rx(p_data, 6);  // Restart collecting data
-    } 	
-  }  
+	  	// Six or more characters received - check if
+	  	// this is a /DUMPN request to dump keys to PC
+	  	//  or it is a /FILLN request to load key from PC
+	  	if( is_equal(p_data, KEY_FILL, 5))
+	  	{
+	    	// The last char in /FILLN specifies Type(high nibble) 
+	    	//    and Slot Number (low nibble)
+	  		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
+	  	}else if(is_equal( p_data, KEY_DUMP, 5))
+	  	{
+	    	// The last char in /DUMPN is the slot number
+	  		WaitReqSendPCFill(p_data[5] & 0x0F);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
+	  	}else if(is_equal( p_data, MEM_READ, 5))
+	  	{
+	    	// The last char in /READN is the slot number
+	  		ReadMemSendPCFill(p_data[5] & 0x0F);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
+	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
+	  	{
+			set_eusart_rx(p_data, 6);  // Restart collecting data
+			if(p_data[5] == '=') {
+				SetCurrentDayTime(p_data);
+			}	
+	  	  	GetCurrentDayTime(p_data);
+	    	tx_eusart_str(p_data);
+	    }else if(is_equal( p_data, KEY_CMD, 4))
+	  	{
+	    	// The next char in /KEY is the slot number
+		  	byte  slot = p_data[4] & 0x0F;
+			set_eusart_rx(p_data, 6);  // Restart collecting data
+			if(p_data[5] == '=')
+				SetPCKey(slot);
+			else
+				GetPCKey(slot);
+		}
+  	}  
 }
 
 
@@ -304,6 +315,32 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
 			*p_data++ = RCREG1;
 			nrcvd++;
 		  	set_timeout(RX_TIMEOUT2_PC);
+			// overruns? clear it
+			if(RCSTA1 & 0x06)
+			{
+				RCSTA1bits.CREN = 0;
+				RCSTA1bits.CREN = 1;
+			}
+		}
+	}
+  	return nrcvd;
+}
+
+byte rx_eusart_line(unsigned char *p_data, byte ncount)
+{
+  	byte	symbol;
+  	byte  	nrcvd = 0;
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+
+	while( nrcvd < ncount )
+	{
+		if(PIR1bits.RC1IF)	// Data is avaiable
+		{
+			// Get data byte and save it
+			symbol = RCREG1;
+			*p_data++ = symbol;
+			nrcvd++;
+			if(symbol == '\n' || symbol == '\r') break;
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{

@@ -17,7 +17,7 @@ static byte month_names[] = "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 
 
-static void GetCurrentDayTime(byte *p_buffer)
+void GetCurrentDayTime(byte *p_buffer)
 {
   byte  ms_100, ms_10, month, weekday;
   
@@ -32,7 +32,7 @@ static void GetCurrentDayTime(byte *p_buffer)
   *p_buffer++ = '0' + (rtc_date.Seconds & 0x0F);
   *p_buffer++ = '.';
 
-  ms_100 = 0;
+  	ms_100 = 0;
 	ms_10 = rtc_date.MilliSeconds_10;
 	while(ms_10 >= 10)
 	{
@@ -88,16 +88,16 @@ char ClearFill(byte stored_slot)
 // Type 1, 2,3 - will be sent thru DS102 interface
 char CheckFillType(byte stored_slot)
 {
-  byte  	fill_type, records;
-  unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
+  	byte  	fill_type, records;
+  	unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++); 
 
 	// Get the fill type from the EEPROM
 	fill_type = byte_read(base_address++);
 	if( (records == 0xFF) || (records == 0) || (fill_type == 0xFF))
 	{
-  	fill_type = 0;
-  }
+  		fill_type = 0;
+  	}
 	return fill_type;
 }
 
@@ -146,7 +146,7 @@ void  ExtractTODData()
 char IsValidYear()
 {
 	return (rtc_date.Century	>= 0x20) &&
-	          (rtc_date.Year	>= 0x12);
+	          (rtc_date.Year	>= 0x10);
 }
 
 // Time is the sequence of 6 digits
@@ -255,20 +255,26 @@ static char  ExtractYear(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
-void GetSetCurrentDayTime(byte *p_buffer)
+void SetCurrentDayTime(byte *p_buffer)
 {
 	byte byte_cnt;
-	byte_cnt = rx_eusart_cont(p_buffer, FILL_MAX_SIZE);
+	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE);
   
-  if( (byte_cnt >= 17) &&
-        ExtractYear(p_buffer, byte_cnt) &&
+  	if( ExtractYear(p_buffer, byte_cnt) &&
           ExtractTime(p_buffer, byte_cnt) &&
             ExtractDate(p_buffer, byte_cnt) )
-  {
-    CalculateJulianDay();
-    CalculateWeekDay();
+	{
+    	CalculateJulianDay();
+    	CalculateWeekDay();
 		SetRTCData();		
 	}
-	GetCurrentDayTime(p_buffer);
 }
+
+void GetPCKey(byte slot)
+{
+}	
+
+void SetPCKey(byte slot)
+{
+}	
 

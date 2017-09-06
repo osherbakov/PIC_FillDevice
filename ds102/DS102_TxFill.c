@@ -163,7 +163,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     WPUB_PIN_B = 1;
   
   	pinMode(PIN_C, INPUT); 
-    WPUB_PIN_C = 1;
+    // WPUB_PIN_C = 1;
 
   	if( req_type == REQ_FIRST){
 	    set_timeout(tD);	// Return every 500 ms to check for switch position

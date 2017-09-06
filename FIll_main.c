@@ -340,12 +340,11 @@ void main()
 				  	{
 					  	SetNextState(PC_CONN);// Switch to the PC connection mode
 					}
-				}
-				else if(power_pos == ZERO_POS)		// GPS/HQ time receive
+				}else if(power_pos == ZERO_POS)		// GPS/HQ time receive
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
-          SetNextState(HQ_GPS_RX);
+          			SetNextState(HQ_GPS_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
@@ -354,9 +353,9 @@ void main()
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS) // SINCGARS Time only fill
 				{
-          // SINCGARS TIME only fill - will use negative logic 
-          set_pin_a_as_power();
-				  set_pin_f_as_io();
+          			// SINCGARS TIME only fill - will use negative logic 
+          			set_pin_a_as_power();
+				  	set_pin_f_as_io();
 					fill_type = MODE3;
 					SetNextState(FILL_TX_TIME);
 				}
@@ -404,7 +403,7 @@ void main()
 				}
 				break;
 
-      // DS-101 Fills				
+      		// DS-101 Fills				
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -445,7 +444,7 @@ void main()
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
 				break;
 
-      // SINCGARS time fill
+      		// SINCGARS time fill
 			case FILL_TX_TIME:
 				if( CheckType123Equipment(fill_type) > 0 )
 				{
@@ -462,26 +461,26 @@ void main()
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
-        PinsToDefault();
-			  if( !allow_type45_fill )
-			  { // Only Type 1, 2 and 3 fills are allowed in DS-102 mode
-          set_pin_a_as_power();         // Set +5V on Pin A
-          set_pin_f_as_io();
-  			  SetType123PinsRx();
+        		PinsToDefault();
+			  	if( !allow_type45_fill ){ 
+				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
+          			set_pin_a_as_power();         // Set +5V on Pin A
+          			set_pin_f_as_io();
+  			  		SetType123PinsRx();
  					SetNextState(FILL_RX_DS102_WAIT);
-        }else
-        { // Only RS-232 and RS-485 fills are allowed 
+        		}else{ 
+        			// Only RS-232 and RS-485 fills are allowed 
 					set_pin_a_as_gnd();						//  Set GND on Pin A
-          set_pin_f_as_power();
-  				SetNextState(FILL_RX_RS232_WAIT);
+          			set_pin_f_as_power();
+  					SetNextState(FILL_RX_RS232_WAIT);
 				}
 				break;
       
-      // Wait for Type 2,3 DS-102 Fills
+      		// Wait for Type 2,3 DS-102 Fills
 			case FILL_RX_DS102_WAIT:
-			  result = CheckFillType23();
-			  if(result > 0)
-			  {
+			  	result = CheckFillType23();
+			  	if(result > 0)
+			  	{
 					// Process Type 2, and 3 fills
 					fill_type = result;
 					SetNextState(FILL_RX_TYPE23);
@@ -496,7 +495,7 @@ void main()
 				break;
 
 			case FILL_RX_TYPE23:
-			  CheckFillType23();
+			  	CheckFillType23();
 				if( TestButtonPress() )
 				{
 					SetNextState(FILL_RX_DS102);
@@ -507,30 +506,27 @@ void main()
 				TestFillResult(StoreDS102Fill(switch_pos, fill_type));
 				break;
 
-      // Wait for serial RS-232 or DS-101 fills				
-      case FILL_RX_RS232_WAIT:
-        // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+      		// Wait for serial RS-232 or DS-101 fills				
+      		case FILL_RX_RS232_WAIT:
+        		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
  				result = CheckFillType4();
-				if(result > 0)
-				{
+				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_PC);
 				  break;
 				}
 
-        // If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+        		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
  				result = CheckFillRS232Type5();
-				if(result > 0)
-				{
+				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_RS232);
 				  break;
 				}
 
-        // If Pin_C is -5V - that is DTD-232 Type 5
+        		// If Pin_C is -5V - that is DTD-232 Type 5
 				result = CheckFillDTD232Type5();
-				if(result > 0)
-				{
+				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_DTD232);
 			    break;
@@ -545,7 +541,7 @@ void main()
 			    break;
 				}
 *********************************************************/				
-        break;
+        		break;
      
 			case FILL_RX_PC:  
 				TestFillResult(StorePCFill( switch_pos, MODE4));
@@ -629,8 +625,8 @@ void main()
 			//-----------DONE and ERROR--------------	
 			case ERROR:
 			case DONE:
-		    PinsToDefault();
-        current_state = WAIT_BTN_PRESS;
+		    	PinsToDefault();
+        		current_state = WAIT_BTN_PRESS;
 				break;
 
 			case WAIT_BTN_PRESS:

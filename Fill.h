@@ -74,7 +74,11 @@ extern void  FillTODData(void);
 extern void  ExtractTODData(void);
 extern char  IsValidYear(void);
 
-extern void GetSetCurrentDayTime(byte *p_buffer);
+extern void GetPCKey(byte slot);
+extern void SetPCKey(byte slot);
+
+extern void GetCurrentDayTime(byte *p_buffer);
+extern void SetCurrentDayTime(byte *p_buffer);
 
 // Clear a selected slot
 extern char ClearFill(byte stored_slot);
