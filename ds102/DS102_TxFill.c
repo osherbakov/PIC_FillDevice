@@ -360,8 +360,8 @@ char WaitReqSendTODFill()
 
 char SendDS102Fill(byte stored_slot)
 {
-  byte    num_retries;
-  byte  	fill_type, records;
+  	byte    num_retries;
+  	byte  	fill_type, records;
 	byte    bytes, rec_bytes, byte_cnt;
 	unsigned short long base_address;
 	unsigned short long rec_base_address;
@@ -378,10 +378,8 @@ char SendDS102Fill(byte stored_slot)
 	{
  		rec_bytes = byte_read(base_address++);
  		rec_base_address = base_address;
-
 		set_led_off();
-
-	  num_retries = 0;
+	  	num_retries = 0;
    while(1)
    {
      bytes = rec_bytes;

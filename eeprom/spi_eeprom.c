@@ -48,7 +48,7 @@ void prepare_read(unsigned short long  address)
 	  {
 		  bit_shift = (EEPROM_ADDRESS_BYTES - 1 - cnt) * 8;
 		  putcSPI(address >> bit_shift);  	// send starting from 
-		  																// the high byte of address 
+											// the high byte of address 
 	  }
 } 
 
@@ -104,7 +104,7 @@ unsigned char status_read ()
 { 
   unsigned char var;
   SPI_CS = 0;               //assert chip select 
-  putcSPI(SPI_RDSR); 				//send read status command 
+  putcSPI(SPI_RDSR); 		//send read status command 
   var = getcSPI();         	//read data byte 
   SPI_CS = 1;               //negate chip select 
   return (var); 
@@ -116,8 +116,8 @@ void status_write (unsigned char data)
   putcSPI(SPI_WREN);       	//send write enable command 
   SPI_CS = 1;               //negate chip select 
   SPI_CS = 0; 
-  putcSPI(SPI_WRSR); 				//write status command 
-  putcSPI(data);         		//status byte to write 
+  putcSPI(SPI_WRSR); 		//write status command 
+  putcSPI(data);         	//status byte to write 
   SPI_CS = 1;               //negate chip select 
 } 
 
@@ -128,13 +128,13 @@ void busy_polling (void)
 
 unsigned char get_eeprom_id()
 {
-		unsigned char chip_id;
-	  SPI_CS = 0;               //assert chip select 
-	  putcSPI(0xAB /*SPI_RDID*/ );       	//send Release from PD and get ID command 
-	  putcSPI(0x00);       			//send dummy address 
-		putcSPI(0x00);
-		putcSPI(0x00);
-		chip_id = getcSPI();		
-	  SPI_CS = 1;
-		return chip_id;
+	unsigned char chip_id;
+  	SPI_CS = 0;               //assert chip select 
+  	putcSPI(0xAB /*SPI_RDID*/ );       	//send Release from PD and get ID command 
+  	putcSPI(0x00);       			//send dummy address 
+  	putcSPI(0x00);
+	putcSPI(0x00);
+	chip_id = getcSPI();		
+   	SPI_CS = 1;
+	return chip_id;
 }

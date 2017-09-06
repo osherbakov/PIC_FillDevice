@@ -1,6 +1,7 @@
 #ifndef __SERIAL_H__
 #define __SERIAL_H__
 
+#include "string.h"
 
 #define MBITR_BAUDRATE  (9600)
 #define PLGR_BAUDRATE	(19200)
@@ -46,5 +47,8 @@ extern void close_eusart(void);
 extern byte rx_mbitr(unsigned char *p_data, byte ncount);
 extern void tx_mbitr(unsigned char *p_data, byte ncount);
 extern void close_mbitr(void);
+
+#define tx_eusart_str(a) 	tx_eusart((a), strlen((char *)a))
+#define tx_eusart_buff(a) 	tx_eusart((a), NUM_ELEMS(a))
 
 #endif	// __SERIAL_H__

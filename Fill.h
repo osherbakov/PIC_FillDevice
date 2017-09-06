@@ -77,8 +77,8 @@ extern char  IsValidYear(void);
 extern void GetPCKey(byte slot);
 extern void SetPCKey(byte slot);
 
-extern void GetCurrentDayTime(byte *p_buffer);
-extern void SetCurrentDayTime(byte *p_buffer);
+extern void GetCurrentDayTime(void);
+extern void SetCurrentDayTime(void);
 
 // Clear a selected slot
 extern char ClearFill(byte stored_slot);

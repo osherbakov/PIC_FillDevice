@@ -206,7 +206,8 @@ void high_isr (void)
 	{
 		if(rx_idx <= rx_idx_max)
 		{	
-			rx_data[rx_idx++] = RCREG1;
+			rx_data[rx_idx] = RCREG1;
+			rx_idx++;
 		}else
 		{
 			byte i;

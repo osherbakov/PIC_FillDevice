@@ -13,14 +13,16 @@ byte	  data_cell[FILL_MAX_SIZE];
 // Time cell
 byte    TOD_cell[MODE2_3_CELL_SIZE];
 
-static byte month_names[] = "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
+static byte month_names[] 	= "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
+static byte HexToASCII[] 	= "0123456789ABCDEF";
+static byte ErrorMsg[] 		= "Error In Time/Date format\n\0";
+static byte OKMsg[] 		= "Time/Date is set: \0";
 
-
-void GetCurrentDayTime(byte *p_buffer)
+void GetCurrentDayTime()
 {
   byte  ms_100, ms_10, month, weekday;
-  
+  byte	*p_buffer = &data_cell[0]; 
   
   GetRTCData();
   
@@ -71,17 +73,19 @@ void GetCurrentDayTime(byte *p_buffer)
   *p_buffer++ = '0' + (rtc_date.JulianDayH & 0x0F);
   *p_buffer++ = '0' + (rtc_date.JulianDayL >> 4);
   *p_buffer++ = '0' + (rtc_date.JulianDayL & 0x0F);
-  *p_buffer++ = 0x0D;
+  *p_buffer++ = '\n';
   *p_buffer++ = 0x00;
+   tx_eusart_str(&data_cell[0]);
+   flush_eusart();
 }  
 
 
 char ClearFill(byte stored_slot)
 {
-	 unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
-   byte_write(base_address, 0x00);
-   DelayMs(500);    // Debounce the button
-   return ST_OK;
+	unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
+   	byte_write(base_address, 0x00);
+   	DelayMs(500);    // Debounce the button
+   	return ST_OK;
 }
 
 // Detect the fill type and set up global variables
@@ -202,17 +206,17 @@ static char  ExtractDate(byte *p_buff, byte n_count)
   	    {
     	    if(is_equal(&p_buff[2], &month_names[month * 3], 3))
     	    {
-        	  if(month >= 10) month += 0x06;
-      	    rtc_date.Day		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
-            rtc_date.Month	= month;
-            return TRUE;
-      	  }  
+        	  	if(month >= 10) month += 0x06;
+      	    	rtc_date.Day		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+            	rtc_date.Month	= month;
+            	return TRUE;
+      	  	}  
     	  }
     	  return FALSE;
       } 
       while ( isdigit(*p_buff) && (n_count > 5))
       {
-        p_buff++; n_count--;
+	      p_buff++; n_count--;
       }
     }else
     {
@@ -255,23 +259,71 @@ static char  ExtractYear(byte *p_buff, byte n_count)
   return FALSE; 
 }
 
-void SetCurrentDayTime(byte *p_buffer)
+void SetCurrentDayTime()
 {
 	byte byte_cnt;
-	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, -1);
-  
+	byte	*p_buffer = &data_cell[0];
+	
+	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 10000);
   	if( ExtractYear(p_buffer, byte_cnt) &&
           ExtractTime(p_buffer, byte_cnt) &&
             ExtractDate(p_buffer, byte_cnt) )
 	{
     	CalculateJulianDay();
     	CalculateWeekDay();
-		SetRTCData();		
-	}
+		SetRTCData();
+		tx_eusart_str(OKMsg);
+	}else
+	{
+		tx_eusart_str(ErrorMsg);
+	}	
+	flush_eusart();
 }
 
 void GetPCKey(byte slot)
 {
+	// The first byte is the Number of records: 0 or FF - empty
+	// Then goes the byte that specifies the Type of the fill
+	// After that go all N records
+	// Each record starts with the number of bytes in that record
+	unsigned short long base_address;
+	byte	numRecords;
+	byte	numBytes;
+	byte	fillType;
+	byte	Data;
+	byte 	*tmp = &data_cell[0];
+
+  	base_address = get_eeprom_address(slot & 0x0F);
+	numRecords = byte_read(base_address++); if(numRecords == 0xFF) numRecords = 0;
+	if(numRecords > 0) {
+		fillType = byte_read(base_address++);
+		tmp[0] = HexToASCII[(fillType>>4) & 0x0F];
+		tmp[1] = HexToASCII[fillType & 0x0F];
+		tmp[2] = '\n';
+		tx_eusart(&tmp[0], 3);
+   		flush_eusart();
+	}
+
+	while(numRecords > 0)
+	{
+		numBytes = byte_read(base_address++);
+		while(numBytes > 0) {
+			Data = byte_read(base_address++);
+			tmp[0] = ' ';
+			tmp[1] = HexToASCII[(Data>>4) & 0x0F];
+			tmp[2] = HexToASCII[Data & 0x0F];
+			tx_eusart(&tmp[0], 3);
+    		flush_eusart();
+			numBytes--;
+		}	
+		tmp[0] = '\n';
+		tx_eusart(&tmp[0], 1);
+    	flush_eusart();
+		numRecords --;
+	}	
+	tmp[0] = '\n';
+	tx_eusart(&tmp[0], 1);
+   	flush_eusart();
 }	
 
 void SetPCKey(byte slot)

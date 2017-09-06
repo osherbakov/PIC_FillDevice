@@ -5,10 +5,6 @@
 #include "serial.h"
 #include "gps.h"
 #include "rtc.h"
-#include "string.h"
-
-#define tx_eusart_str(a) tx_eusart((a), strlen((char *)a))
-#define tx_eusart_buff(a) tx_eusart((a), NUM_ELEMS(a))
 
 // The command from the PC to fill the key or to dump it
 // The byte after the command specifies the key number and type
@@ -173,7 +169,10 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
+	rx_data = (volatile byte *) &data_cell[0];
 	rx_idx = 0;
+	rx_idx_max = FILL_MAX_SIZE - 1;
+	tx_data = (volatile byte *) &data_cell[0];
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
@@ -229,43 +228,46 @@ void PCInterface()
 	// Wait to receive 6 characters
 	if(rx_idx >= 6) 
 	{
+	  	byte  slot;
+		byte type;
 	  	// Six or more characters received - check if
 	  	// this is a /DUMPN request to dump keys to PC
 	  	//  or it is a /FILLN request to load key from PC
+//    	tx_eusart(p_data, 6);
+//		flush_eusart();
 	  	if( is_equal(p_data, KEY_FILL, 5))
 	  	{
 	    	// The last char in /FILLN specifies Type(high nibble) 
 	    	//    and Slot Number (low nibble)
-	  		StorePCFill(p_data[5] & 0x0F, (p_data[5] >> 4) & 0x0F);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+	    	slot = p_data[5] & 0x0F;
+	    	type = (p_data[5] >> 4) & 0x0F;
+	  		StorePCFill(slot, type);
 	  	}else if(is_equal( p_data, KEY_DUMP, 5))
 	  	{
 	    	// The last char in /DUMPN is the slot number
-	  		WaitReqSendPCFill(p_data[5] & 0x0F);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+	    	slot = p_data[5] & 0x0F;
+	  		WaitReqSendPCFill(slot);
 	  	}else if(is_equal( p_data, MEM_READ, 5))
 	  	{
 	    	// The last char in /READN is the slot number
-	  		ReadMemSendPCFill(p_data[5] & 0x0F);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+	    	slot = p_data[5] & 0x0F;
+	  		ReadMemSendPCFill(slot);
 	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
 	  	{
-			set_eusart_rx(p_data, 6);  // Restart collecting data
 			if(p_data[5] == '=') {
-				SetCurrentDayTime(p_data);
-			}	
-	  	  	GetCurrentDayTime(p_data);
-	    	tx_eusart_str(p_data);
+				SetCurrentDayTime();
+			}
+	  	  	GetCurrentDayTime();
 	    }else if(is_equal( p_data, KEY_CMD, 4))
 	  	{
-	    	// The next char in /KEY is the slot number
-		  	byte  slot = p_data[4] & 0x0F;
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+	    	// The next char in /KEY<n> is the slot number
+		  	slot = p_data[4] & 0x0F;
 			if(p_data[5] == '=')
 				SetPCKey(slot);
 			else
 				GetPCKey(slot);
 		}
+		set_eusart_rx(p_data, 6);  // Restart collecting data
   	}  
 }
 
@@ -332,8 +334,8 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
   	byte  	nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-  	set_timeout(timeout);
-	while( (nrcvd < ncount) &&  is_not_timeout())
+//  	set_timeout(timeout);
+	while( (nrcvd < ncount) /* &&  is_not_timeout()*/)
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
@@ -341,7 +343,10 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 			symbol = RCREG1;
 			*p_data++ = symbol;
 			nrcvd++;
-			if(symbol == '\n' || symbol == '\r') break;
+			if(symbol == '\n' || symbol == '\r')  {
+				return nrcvd;
+			}	
+//  			set_timeout(timeout);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{
