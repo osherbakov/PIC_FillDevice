@@ -12,7 +12,7 @@ void high_isr (void);
 volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
-volatile signed int timeout_counter;
+volatile unsigned int timeout_counter;
 volatile char timeout_flag;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
@@ -176,12 +176,12 @@ void high_isr (void)
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
-	  	if(timeout_counter > 0)
+	  	if(timeout_counter >= 10)
 	  	{
 		  	timeout_counter -= 10;
 		}else
 		{
-  			timeout_flag = 1;
+  			timeout_counter = 0;
   		}
   		// Update RTC time
 		rtc_date.MilliSeconds_10++;

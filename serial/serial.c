@@ -326,13 +326,14 @@ byte rx_eusart_cont(unsigned char *p_data, byte ncount)
   	return nrcvd;
 }
 
-byte rx_eusart_line(unsigned char *p_data, byte ncount)
+byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
   	byte	symbol;
   	byte  	nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-	while( nrcvd < ncount )
+  	set_timeout(timeout);
+	while( (nrcvd < ncount) &&  is_not_timeout())
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
