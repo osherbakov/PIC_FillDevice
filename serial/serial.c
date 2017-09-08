@@ -216,6 +216,7 @@ void flush_eusart()
   
 void PCInterface()
 {
+	byte	i;
  	byte *p_data = &data_cell[0];
 	// If entering the first time - enable eusart
 	// and initialize the buffer to get chars
@@ -228,46 +229,46 @@ void PCInterface()
 	// Wait to receive 6 characters
 	if(rx_idx >= 6) 
 	{
-	  	byte  slot;
-		byte type;
-	  	// Six or more characters received - check if
-	  	// this is a /DUMPN request to dump keys to PC
-	  	//  or it is a /FILLN request to load key from PC
-//    	tx_eusart(p_data, 6);
-//		flush_eusart();
-	  	if( is_equal(p_data, KEY_FILL, 5))
+	  	byte  	slot;
+		byte 	type;
+
+		if( is_equal(p_data, KEY_FILL, 5))
 	  	{
 	    	// The last char in /FILLN specifies Type(high nibble) 
 	    	//    and Slot Number (low nibble)
 	    	slot = p_data[5] & 0x0F;
 	    	type = (p_data[5] >> 4) & 0x0F;
 	  		StorePCFill(slot, type);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, KEY_DUMP, 5))
 	  	{
 	    	// The last char in /DUMPN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		WaitReqSendPCFill(slot);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, MEM_READ, 5))
 	  	{
 	    	// The last char in /READN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		ReadMemSendPCFill(slot);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
 	  	{
 			if(p_data[5] == '=') {
 				SetCurrentDayTime();
 			}
 	  	  	GetCurrentDayTime();
+			set_eusart_rx(p_data, 6);  // Restart collecting data
 	    }else if(is_equal( p_data, KEY_CMD, 4))
 	  	{
 	    	// The next char in /KEY<n> is the slot number
 		  	slot = p_data[4] & 0x0F;
-			if(p_data[5] == '=')
+			if(p_data[5] == '=') {
 				SetPCKey(slot);
-			else
-				GetPCKey(slot);
+			}
+			GetPCKey(slot);
+			set_eusart_rx(p_data, 6);  // Restart collecting data
 		}
-		set_eusart_rx(p_data, 6);  // Restart collecting data
   	}  
 }
 
@@ -334,19 +335,19 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
   	byte  	nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-//  	set_timeout(timeout);
-	while( (nrcvd < ncount) /* &&  is_not_timeout()*/)
+  	set_timeout(timeout);
+	while( (nrcvd < ncount) && is_not_timeout())
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
 			// Get data byte and save it
 			symbol = RCREG1;
 			*p_data++ = symbol;
-			nrcvd++;
 			if(symbol == '\n' || symbol == '\r')  {
 				return nrcvd;
 			}	
-//  			set_timeout(timeout);
+			nrcvd++;
+  			set_timeout(timeout);
 			// overruns? clear it
 			if(RCSTA1 & 0x06)
 			{

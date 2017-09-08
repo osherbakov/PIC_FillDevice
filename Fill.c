@@ -16,14 +16,22 @@ byte    TOD_cell[MODE2_3_CELL_SIZE];
 static byte month_names[] 	= "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 static byte HexToASCII[] 	= "0123456789ABCDEF";
-static byte ErrorMsg[] 		= "Error In Time/Date format\n\0";
-static byte OKMsg[] 		= "Time/Date is set: \0";
+static byte TimeErrorMsg[] 	= "Error In Time/Date format\n\0";
+static byte TimeOKMsg[] 	= "Time/Date is set\n\0";
+static byte TimeGetMsg[] 	= "/Time=\0";
+static byte KeyErrorMsg[] 	= "Error In Key Data format\n\0";
+static byte KeyOKMsg[] 		= "Key is set\n\0";
+static byte KeyErasedMsg[] 	= "Key is Erased\n\0";
+static byte KeyGetMsg[] 	= "/Key\0";
 
 void GetCurrentDayTime()
 {
   byte  ms_100, ms_10, month, weekday;
   byte	*p_buffer = &data_cell[0]; 
   
+	tx_eusart_str(TimeGetMsg);
+	flush_eusart();
+
   GetRTCData();
   
   *p_buffer++ = '0' + (rtc_date.Hours >> 4);
@@ -264,18 +272,19 @@ void SetCurrentDayTime()
 	byte byte_cnt;
 	byte	*p_buffer = &data_cell[0];
 	
-	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 10000);
-  	if( ExtractYear(p_buffer, byte_cnt) &&
-          ExtractTime(p_buffer, byte_cnt) &&
+	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
+  	if( (byte_cnt > 0) && 
+			ExtractYear(p_buffer, byte_cnt) &&
+          	ExtractTime(p_buffer, byte_cnt) &&
             ExtractDate(p_buffer, byte_cnt) )
 	{
     	CalculateJulianDay();
     	CalculateWeekDay();
 		SetRTCData();
-		tx_eusart_str(OKMsg);
+		tx_eusart_str(TimeOKMsg);
 	}else
 	{
-		tx_eusart_str(ErrorMsg);
+		tx_eusart_str(TimeErrorMsg);
 	}	
 	flush_eusart();
 }
@@ -292,6 +301,13 @@ void GetPCKey(byte slot)
 	byte	fillType;
 	byte	Data;
 	byte 	*tmp = &data_cell[0];
+
+	tx_eusart_str(KeyGetMsg);
+	tmp[0] = '0' + (slot & 0x0F);
+	tmp[1] = '=';
+	tmp[2] = '\n';
+	tx_eusart(&tmp[0], 3);
+	flush_eusart();
 
   	base_address = get_eeprom_address(slot & 0x0F);
 	numRecords = byte_read(base_address++); if(numRecords == 0xFF) numRecords = 0;
@@ -326,7 +342,96 @@ void GetPCKey(byte slot)
    	flush_eusart();
 }	
 
+byte  ASCIIToHex(byte Symbol)
+{
+	byte	Data = 0;
+	if( (Symbol >= '0') && (Symbol <= '9' )) Data = Symbol - '0';
+	else if((Symbol >= 'A') && (Symbol <= 'F' )) Data = Symbol - 'A' + 0x0A;
+	else if((Symbol >= 'a') && (Symbol <= 'f' )) Data = Symbol - 'a' + 0x0A;
+	return Data; 
+}
+
 void SetPCKey(byte slot)
 {
+	byte 					byte_cnt;
+	byte					*p_buffer = &data_cell[0];
+	byte					idx;
+	unsigned short long 	base_address;
+	unsigned short long 	current_address;
+	byte					numRecords;
+	byte					numBytes;
+	byte					fillType;
+	byte					Ch, Data, DataRdy;;
+
+  	base_address = get_eeprom_address(slot & 0x0F);	
+	current_address = base_address + 2;		// Keys will go there - 1st byte is Number of Records
+											//  2nd Byte is Type, 
+	numRecords = 0;
+	numBytes = 0;
+	fillType = 0;
+
+	// Get the Fill type
+	do {
+		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
+		if(byte_cnt < 0 ) goto KeyErr;
+	} while(byte_cnt == 0);
+
+	// Parse the string and extract Fill Type
+	for(idx = 0; idx < byte_cnt; idx++) 
+	{
+		fillType = (fillType << 4) + ASCIIToHex(p_buffer[idx]);
+	}
+	if(fillType == 0) goto KeyErased;
+
+	// Now gow thru every line and save the appropriate key
+	while(1) {
+		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
+		if(byte_cnt < 0) goto KeyErr;
+		if(byte_cnt == 0) goto KeyOK;
+
+		numBytes = 0;
+		DataRdy = 0;
+		Data = 0;
+		for(idx = 0; idx < byte_cnt; idx++) {
+			Ch = p_buffer[idx];
+			if(isxdigit(Ch)) { 
+				Data = (Data << 4) + ASCIIToHex(Ch);
+				DataRdy = 1;
+			}else if ((ispunct(Ch) || isspace(Ch)) && DataRdy) {
+				p_buffer[numBytes++] = Data;
+				Data = 0;
+				DataRdy = 0;	
+			}
+		}
+
+		if(DataRdy) p_buffer[numBytes++] = Data;	// Save the last accumulated
+		byte_write(current_address, numBytes);
+		current_address++;
+		array_write(current_address, p_buffer, numBytes);
+		current_address += numBytes;
+		numRecords++;
+	}
+	
+	KeyErr:
+	{
+		tx_eusart_str(KeyErrorMsg);
+   		flush_eusart();
+		return;
+	}
+	KeyErased:
+	{
+		byte_write(base_address, 0);
+		tx_eusart_str(KeyErasedMsg);
+   		flush_eusart();
+		return;
+	}
+	KeyOK:
+	{
+		byte_write(base_address++, numRecords);
+		byte_write(base_address++, fillType);
+		tx_eusart_str(KeyOKMsg);
+   		flush_eusart();
+		return;
+	}
 }	
 
