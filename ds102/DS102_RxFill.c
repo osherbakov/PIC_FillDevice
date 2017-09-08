@@ -12,7 +12,7 @@
 //--------------------------------------------------------------
 // Delays in ms
 //--------------------------------------------------------------
-#define tB  	3      // Query -> Response from Radio (0.8ms - 5ms)
+#define tB  	2      // Query -> Response from Radio (0.8ms - 5ms)
 #define tD  	50     // PIN_C Pulse Width (0.25ms - 75ms)
 #define tG  	50     // PIN_B Pulse Wodth (0.25ms - 80ms)
 #define tH  	50     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
@@ -57,7 +57,7 @@ static char GetQueryByte(void)
       if( NewState == LOW )
       {
 		    Data = (Data >> 1 ) | ( pin_B() ? 0 : 0x80);
-        bit_count++; 
+        	bit_count++; 
     		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
     		{
     			return MODE3;
@@ -97,6 +97,7 @@ static void SendEquipmentType(void)
   
   // Release PIN_E - the Fill device will drive it
   pinMode(PIN_E, INPUT);		// Tristate the pin
+  WPUB_PIN_E = 1;
 }
 
 static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
@@ -122,27 +123,27 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 		// Check for the last fill for Mode2 and 3
 		if( (fill_type != MODE1) && (pin_F() == HIGH) )
 		{
-  		byte_count = 0;
+  			byte_count = 0;
 			break;	// Fill device had deasserted PIN F - exit
 		}
 
-    NewState = pin_E(); 
-    if( PreviousState != NewState  )
-    {
-      PreviousState = NewState;
-      if( NewState == LOW )
-      {
-  	    Data = (Data >> 1) | ( pin_D() ? 0x00 : 0x80);  // Add Input data bit
-        bit_count++; 
-				if( bit_count >= 8)
-				{
-					*p_cell++ = Data;
-					bit_count = 0;
-					byte_count++;
-     		  set_timeout(tF);
-				}
-      }
-    }
+    	NewState = pin_E(); 
+	    if( PreviousState != NewState  )
+	    {
+	      PreviousState = NewState;
+	      if( NewState == LOW )
+	      {
+	  	    Data = (Data >> 1) | ( pin_D() ? 0x00 : 0x80);  // Add Input data bit
+	        bit_count++; 
+			if( bit_count >= 8)
+			{
+				*p_cell++ = Data;
+				bit_count = 0;
+				byte_count++;
+    		  	set_timeout(tF);
+			}
+	      }
+	    }
   }
   return byte_count;
 }
@@ -275,28 +276,26 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 
 	saved_base_address = base_address++;  // First byte is record size
 
-  while(1)
+  	while(1)
 	{
  		set_led_on();
 
-    // Do retries for Mode 2 and 3 only
-    num_tries = 0; 
-    while(1)
-    {
-     	SendFillRequest();	// REQ the data
-		  byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
-   		set_led_off();
+    	// Do retries for Mode 2 and 3 only
+    	num_tries = 0; 
+    	while(1)
+    	{
+     		SendFillRequest();	// REQ the data
+		  	byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
+   			set_led_off();
 
-      if( (byte_cnt == 0) || 
-		        (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
-		  if( (byte_cnt == MODE2_3_CELL_SIZE) && 
+      		if( (byte_cnt == 0) || (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
+		  	if( (byte_cnt == MODE2_3_CELL_SIZE) && 
 		      cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
-		      
-		  if(num_tries >= TYPE23_RETRIES) return 0;  // Number of tries exceeded - return Error
+		  	if(num_tries >= TYPE23_RETRIES) return 0;  // Number of tries exceeded - return Error
 
-      // Try to get the data couple more times
-      SendBadFillAck();		        // Tell the sender that there was an error
-		  num_tries++;
+      		// Try to get the data couple more times
+      		SendBadFillAck();		        // Tell the sender that there was an error
+		  	num_tries++;
 		}
 		
 		// Based on the byte_cnt
@@ -322,14 +321,14 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 			// Prepare for the next record
 			record_size = 0;
 			saved_base_address = base_address++;
-      // Check if the cell that we received is the 
-      // TOD cell - set up time
+      		// Check if the cell that we received is the 
+      		// TOD cell - set up time
 			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
 						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
 			{
 				SetTimeFromCell();
 			}
-   		set_led_off();
+   			set_led_off();
 			SendFillRequest();	// ACK the previous and REQ the next packet
 		}
 	}

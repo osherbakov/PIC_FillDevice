@@ -262,7 +262,7 @@ void PCInterface()
 	    }else if(is_equal( p_data, KEY_CMD, 4))
 	  	{
 	    	// The next char in /KEY<n> is the slot number
-		  	slot = p_data[4] & 0x0F;
+		  	slot = p_data[4];
 			if(p_data[5] == '=') {
 				SetPCKey(slot);
 			}

@@ -16,12 +16,12 @@ byte    TOD_cell[MODE2_3_CELL_SIZE];
 static byte month_names[] 	= "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
 static byte HexToASCII[] 	= "0123456789ABCDEF";
-static byte TimeErrorMsg[] 	= "Error In Time/Date format\n\0";
+static byte TimeErrorMsg[] 	= "Error in Time/Date format\n\0";
 static byte TimeOKMsg[] 	= "Time/Date is set\n\0";
 static byte TimeGetMsg[] 	= "/Time=\0";
-static byte KeyErrorMsg[] 	= "Error In Key Data format\n\0";
+static byte KeyErrorMsg[] 	= "Error in Key Data format\n\0";
 static byte KeyOKMsg[] 		= "Key is set\n\0";
-static byte KeyErasedMsg[] 	= "Key is Erased\n\0";
+static byte KeyErasedMsg[] 	= "Key is erased\n\0";
 static byte KeyGetMsg[] 	= "/Key\0";
 
 void GetCurrentDayTime()
@@ -87,10 +87,9 @@ void GetCurrentDayTime()
    flush_eusart();
 }  
 
-
 char ClearFill(byte stored_slot)
 {
-	unsigned short long base_address = get_eeprom_address(stored_slot & 0x0F);
+	unsigned short long base_address = get_eeprom_address(stored_slot);
    	byte_write(base_address, 0x00);
    	DelayMs(500);    // Debounce the button
    	return ST_OK;
@@ -289,6 +288,16 @@ void SetCurrentDayTime()
 	flush_eusart();
 }
 
+byte  ASCIIToHex(byte Symbol)
+{
+	byte	Data;
+	if( (Symbol >= '0') && (Symbol <= '9' )) Data = Symbol - '0';
+	else if((Symbol >= 'A') && (Symbol <= 'F' )) Data = Symbol - 'A' + 0x0A;
+	else if((Symbol >= 'a') && (Symbol <= 'f' )) Data = Symbol - 'a' + 0x0A;
+	else Data = Symbol & 0x0F;
+	return Data; 
+}
+
 void GetPCKey(byte slot)
 {
 	// The first byte is the Number of records: 0 or FF - empty
@@ -302,14 +311,16 @@ void GetPCKey(byte slot)
 	byte	Data;
 	byte 	*tmp = &data_cell[0];
 
+	slot = ASCIIToHex(slot);
+
 	tx_eusart_str(KeyGetMsg);
-	tmp[0] = '0' + (slot & 0x0F);
+	tmp[0] = HexToASCII[slot];
 	tmp[1] = '=';
 	tmp[2] = '\n';
 	tx_eusart(&tmp[0], 3);
 	flush_eusart();
 
-  	base_address = get_eeprom_address(slot & 0x0F);
+  	base_address = get_eeprom_address(slot);
 	numRecords = byte_read(base_address++); if(numRecords == 0xFF) numRecords = 0;
 	if(numRecords > 0) {
 		fillType = byte_read(base_address++);
@@ -342,15 +353,6 @@ void GetPCKey(byte slot)
    	flush_eusart();
 }	
 
-byte  ASCIIToHex(byte Symbol)
-{
-	byte	Data = 0;
-	if( (Symbol >= '0') && (Symbol <= '9' )) Data = Symbol - '0';
-	else if((Symbol >= 'A') && (Symbol <= 'F' )) Data = Symbol - 'A' + 0x0A;
-	else if((Symbol >= 'a') && (Symbol <= 'f' )) Data = Symbol - 'a' + 0x0A;
-	return Data; 
-}
-
 void SetPCKey(byte slot)
 {
 	byte 					byte_cnt;
@@ -363,7 +365,9 @@ void SetPCKey(byte slot)
 	byte					fillType;
 	byte					Ch, Data, DataRdy;;
 
-  	base_address = get_eeprom_address(slot & 0x0F);	
+	slot = ASCIIToHex(slot);
+
+  	base_address = get_eeprom_address(slot);	
 	current_address = base_address + 2;		// Keys will go there - 1st byte is Number of Records
 											//  2nd Byte is Type, 
 	numRecords = 0;
@@ -381,7 +385,7 @@ void SetPCKey(byte slot)
 	{
 		fillType = (fillType << 4) + ASCIIToHex(p_buffer[idx]);
 	}
-	if(fillType == 0) goto KeyErased;
+	if(fillType == 0) goto KeyErase;
 
 	// Now gow thru every line and save the appropriate key
 	while(1) {
@@ -418,7 +422,7 @@ void SetPCKey(byte slot)
    		flush_eusart();
 		return;
 	}
-	KeyErased:
+	KeyErase:
 	{
 		byte_write(base_address, 0);
 		tx_eusart_str(KeyErasedMsg);
