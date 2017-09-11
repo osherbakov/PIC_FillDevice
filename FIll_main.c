@@ -208,31 +208,6 @@ void main()
 	setup_start_io();
   	PinsToDefault();	
 
-#ifdef  DO_TEST
-  while(1)
-  {
-    byte min, max, threshold, pins_high;
-    pins_high = pin_C() + pin_D() + pin_E() + pin_B();
-  	
-    max = pin_MAX();
-    min = pin_MIN();
-    threshold = pin_Threshold();
-    
-    result = max - min;
-  }
-
-  byte  test_str[] = "  123455 15JUN 2012 ";
-  
-  // Perform BIST (self-test)
-  ExtractTime(test_str, 20);
-  ExtractDate(test_str, 20);
-  ExtractYear(test_str, 20);
-  
-  SetupCurrentTime();
-  TestAllPins();
-  TestRTCFunctions();  
-#endif
-
 	SetNextState(INIT);
 	DelayMs(200);
 	

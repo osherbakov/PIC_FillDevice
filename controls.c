@@ -116,28 +116,80 @@ void enable_tx_hqii()
 
 
 
+
+unsigned char Threshold = 0xA0;
+
+
+static char ReadPin(void)
+{
+	unsigned char ADC_Value;
+  	ADCON2 = 0x25;  // Left justified + 4TAD and Fosc/16
+  	ADCON1 = 0;
+//  	DelayUs(2);
+  	ADCON0bits.GO = 1;
+
+  	while(ADCON0bits.GO) {/* wait for the done flag */};
+  	ADC_Value = ADRESH;
+  			
+  	ADCON0 = 0;   // Disable ADC logic
+
+  	return (ADC_Value >= Threshold) ? HIGH : LOW;
+}
+
 char pin_B()
 {
+  char ret;
   TRIS_PIN_B = 1;
-  return digitalRead(PIN_B);
+  ret = digitalRead(PIN_B);
+  if(ret == LOW) return ret;
+  // Set up it to be analog input
+  ANSEL_PIN_B = 1;
+  ADCON0 = (10 << 2) | 1;   // RB1 : Channel 10 and Enable bits
+  ret = ReadPin();
+  ANSEL_PIN_B = 0;
+  return ret;
 }
 
 char pin_C()
 {
+  char ret;
   TRIS_PIN_C = 1;
-  return digitalRead(PIN_C);
+  ret = digitalRead(PIN_C);
+  if(ret == LOW) return ret;
+  // Set up it to be analog input
+  ANSEL_PIN_C = 1;
+  ADCON0 = (18 << 2) | 1;   // RC6 : Channel 18 and Enable bits
+  ret = ReadPin();
+  ANSEL_PIN_C = 0;
+  return ret;
 }
 
 char pin_D()
 {
+  char ret;
   TRIS_PIN_D = 1;
-  return digitalRead(PIN_D);
+  ret = digitalRead(PIN_D);
+  if(ret == LOW) return ret;
+  // Set up it to be analog input
+  ANSEL_PIN_D = 1;
+  ADCON0 = (19 << 2) | 1;   // RC7 : Channel 19 and Enable bits
+  ret = ReadPin();
+  ANSEL_PIN_D = 0;
+  return ret;
 }
 
 char pin_E()
 {
+  char ret;
   TRIS_PIN_E = 1;
-  return digitalRead(PIN_E);
+  ret = digitalRead(PIN_E);
+  if(ret == LOW) return ret;
+  // Set up it to be analog input
+  ANSEL_PIN_E = 1;
+  ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
+  ret = ReadPin();
+  ANSEL_PIN_E = 0;
+  return ret;
 }
 
 char pin_F()
@@ -145,3 +197,5 @@ char pin_F()
   TRIS_PIN_F = 1;
   return digitalRead(PIN_F);
 }
+
+
