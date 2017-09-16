@@ -194,8 +194,10 @@ char pin_E()
 
 char pin_F()
 {
-  TRIS_PIN_F = 1;
-  return digitalRead(PIN_F);
-}
+  char ret;
 
+  TRIS_PIN_F = 1;
+  ret = digitalRead(PIN_F);
+  return ret;
+}
 

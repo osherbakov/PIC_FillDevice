@@ -28,7 +28,7 @@
 //--------------------------------------------------------------
 // Timeouts in ms
 //--------------------------------------------------------------
-#define tA  	50	   // F LOW -> D HIGH	(45ms - 55ms)
+#define tA  	100	   // F LOW -> D HIGH	(45ms - 55ms)
 #define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 #define tF  	200    // End of fill - > response (4ms - 2sec)
@@ -39,10 +39,12 @@ static char GetQueryByte(void)
   byte  bit_count;
   byte  Data;
   
-  pinMode(PIN_B, INPUT);		
-  pinMode(PIN_E, INPUT);
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  	pinMode(PIN_B, INPUT);		
+  	pinMode(PIN_E, INPUT);
+	digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
+  	digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+	WPUB_PIN_B = 1;
+  	WPUB_PIN_E = 1;
 
   bit_count = 0;
   PreviousState = LOW;
@@ -81,7 +83,7 @@ static void SendEquipmentType(void)
   delayMicroseconds(tJ);		// Setup time for clock high
 
   // Output the data bit of the equipment code
-  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" always
+  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" (remember -6.5V logic) always
   delayMicroseconds(tK3);		// Satisfy Setup time tK1
 
   // Output the data
@@ -97,6 +99,10 @@ static void SendEquipmentType(void)
   
   // Release PIN_E - the Fill device will drive it
   pinMode(PIN_E, INPUT);		// Tristate the pin
+  pinMode(PIN_B, INPUT);
+  digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
+  digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+  WPUB_PIN_B = 1;
   WPUB_PIN_E = 1;
 }
 
@@ -110,6 +116,9 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT);		// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
+  digitalWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
+  digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+  digitalWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
   WPUB_PIN_E = 1;
   
 
@@ -131,7 +140,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 	    if( PreviousState != NewState  )
 	    {
 	      PreviousState = NewState;
-	      if( NewState == LOW )
+	      if( NewState == LOW )	// Transition from HIGH to LOW
 	      {
 	  	    Data = (Data >> 1) | ( pin_D() ? 0x00 : 0x80);  // Add Input data bit
 	        bit_count++; 
@@ -213,6 +222,8 @@ char CheckFillType23()
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin D input
 	pinMode(PIN_F, INPUT);		// make pin F input
+  	digitalWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
+  	digitalWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
 
   switch(t23_state)
   {
@@ -240,8 +251,8 @@ char CheckFillType23()
       	// Pin F went high - return back to normal
     		if( pin_F() == HIGH )
     		{
-          t23_state = DF_INIT;
-          break;
+          		t23_state = DF_INIT;
+          		break;
     		}
     		// Pin D went high before timeout expired - wait for query request from the fill device
     		if( pin_D() == HIGH)
@@ -252,20 +263,20 @@ char CheckFillType23()
     				SendEquipmentType();
     				ret_val =  type;
     			}
-          t23_state = DF_INIT;
-          break;
+          		t23_state = DF_INIT;
+          		break;
     		}
     	}
-      break;
+      	break;
      
     default:
-      t23_state = DF_INIT;
-      break;
+      	t23_state = DF_INIT;
+      	break;
   }
 	return ret_val;
 }
 
-static byte GetFill(unsigned short long base_address, byte fill_type)
+static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 {
 	byte records, byte_cnt, record_size;
 	unsigned short long saved_base_address;
@@ -323,11 +334,11 @@ static byte GetFill(unsigned short long base_address, byte fill_type)
 			saved_base_address = base_address++;
       		// Check if the cell that we received is the 
       		// TOD cell - set up time
-			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-			{
-				SetTimeFromCell();
-			}
+//			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
+//						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
+//			{
+//				SetTimeFromCell();
+//			}
    			set_led_off();
 			SendFillRequest();	// ACK the previous and REQ the next packet
 		}
@@ -348,13 +359,13 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	base_address = get_eeprom_address(stored_slot & 0x0F);
 	saved_base_address = base_address;	
 	base_address += 2;	// Skip the fill_type and records field
-											// .. to be filled at the end
+						// .. to be filled at the end
 	// The first byte of the each slot has the number of the records (0 - 255)
 	// The second byte - fill type
 	// The first byte of the record has the number of bytes that should be sent out
 	// so each record has no more than 255 bytes as well
 	// Empty slot has first byte as 0x00
-	records = GetFill(base_address, required_fill);
+	records = GetDS102Fill(base_address, required_fill);
  	// All records were received - put final info into EEPROM
 	// Mark the slot as valid slot containig data
 	if( records > 0)
@@ -377,7 +388,7 @@ void SetType123PinsRx()
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
 
   WPUB_PIN_B = 1;
