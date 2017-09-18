@@ -42,14 +42,32 @@ unsigned char HQ_Year;
 #define SYNC_PATTERN		(0x11e9)
 #define DEFAULT_FOM			(0x3)
 
-#define DecodeByte(a) 		((a) & 0x0F)
+const unsigned char oneBits[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+unsigned char CountOnes(unsigned char x)
+{
+    unsigned char result;
+    result = oneBits[x&0x0f];
+    result += oneBits[x>>4];
+    return result;
+}
+
 // Decode the received byte with Hamming error correction bits.
-// Current implementation just removes top Hamming bits.
-// Needs to be expanded
-// char	DecodeByte(byte data)
-// {
-// 	return data &0x0F;
-// }
+char	DecodeByte(byte data)
+{
+	char result, value, i, num_ones;
+	result = 0;
+	value = 8;
+	for(i = 0; i < 10; i++)
+	{
+		num_ones = CountOnes(hamming_table[i] ^ data);
+		if(value > num_ones) { 
+			value = num_ones; 
+			result = i;
+			if(value == 0) break;
+		}
+	}
+	return result;
+}
 
 
 
@@ -210,6 +228,8 @@ static char GetHQTime(void)
 	RHQD_State = INIT;
 	current_pin = HQ_PIN;
 
+	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
+
 	while(is_not_timeout() )
 	{
 		switch(RHQD_State)
@@ -280,7 +300,6 @@ char ReceiveHQTime(void )
 	// Config pin as input
 	TRIS_HQ_PIN = INPUT;
 
-	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream
   	//	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
 	if( GetHQTime() )	
@@ -314,19 +333,18 @@ char ReceiveHQTime(void )
 	INTCONbits.GIE = prev;		// Enable interrupts
 	
 	//  5. Get the HQ time again and compare with the current RTC
-	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream again for the final check
 	if( GetHQTime() )	
 	  return ST_ERR;
 	  
 	GetRTCData();
 	return ( 
-  	(HQ_Hours == rtc_date.Hours) &&
-		(HQ_Minutes == rtc_date.Minutes) &&
-		  (HQ_Seconds == rtc_date.Seconds) && 
-  		  	(HQ_JulianDayH == rtc_date.JulianDayH) && 
-    		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
-    		    (HQ_Year == rtc_date.Year) &&
-    		      (0x20 == rtc_date.Century)
-		          ) ? ST_DONE : ST_ERR;
+	  	(HQ_Hours == rtc_date.Hours) &&
+			(HQ_Minutes == rtc_date.Minutes) &&
+			  (HQ_Seconds == rtc_date.Seconds) && 
+	  		  	(HQ_JulianDayH == rtc_date.JulianDayH) && 
+	    		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
+	    		    (HQ_Year == rtc_date.Year) &&
+	    		      (0x20 == rtc_date.Century)
+			          	) ? ST_DONE : ST_ERR;
 }
 

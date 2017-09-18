@@ -55,7 +55,7 @@ static char GetQueryByte(void)
 	prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;
 
-	ret = -1;
+	ret = ST_TIMEOUT;
   	// We exit on timeout or Pin F going high
 	while( is_not_timeout() && (pin_F() == LOW) )
   	{
@@ -233,7 +233,7 @@ static CT23_STATES t23_state = DF_INIT;
 char CheckFillType23()
 {
 	char type;
-	char ret_val = -1;
+	char ret_val = ST_TIMEOUT;
 
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin D input
@@ -288,7 +288,7 @@ char CheckFillType23()
     default:
       	t23_state = DF_INIT;
       	break;
-  }
+  	}
 	return ret_val;
 }
 

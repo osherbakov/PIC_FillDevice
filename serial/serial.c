@@ -89,7 +89,7 @@ char CheckFillDTD232Type5()
 	  		 return MODE5;
 	  	}	
   	} 	
-	return -1;
+	return ST_TIMEOUT;
 }	
 
 
@@ -153,7 +153,7 @@ char CheckFillType4()
 			return MODE4;
 		}
 	}
-	return -1;
+	return ST_TIMEOUT;
 }
 
 

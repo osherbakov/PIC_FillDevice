@@ -249,8 +249,8 @@ static char  ExtractYear(byte *p_buff, byte n_count)
           isdigit(p_buff[2]) && isdigit(p_buff[3]) && 
             ((n_count == 4) || !isdigit(p_buff[4])) )
       {
-  	    rtc_date.Century		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
-        rtc_date.Year	=   ((p_buff[2] & 0x0F) << 4) + (p_buff[3] & 0x0F);
+  	    rtc_date.Century	= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+        rtc_date.Year		= ((p_buff[2] & 0x0F) << 4) + (p_buff[3] & 0x0F);
         return TRUE;
       }
       // Skip digits 

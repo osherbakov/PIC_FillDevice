@@ -69,6 +69,8 @@ typedef enum
 extern byte	 data_cell[];
 extern byte	 TOD_cell[];
 
+extern byte  ASCIIToHex(byte Symbol);
+
 // Functions to deal with TOD (Time-of-Day) data
 extern void  FillTODData(void);
 extern void  ExtractTODData(void);

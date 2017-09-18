@@ -7,14 +7,6 @@
 //	SCLK_LAT = 0;
 // if not - set it up somewhere globally
 
-/**************************************************************************
-Macro       : SWNotAckI2C
-Description : macro is identical to SWAckI2C,#define to SWAckI2C in sw_i2c.h
-Arguments   : None
-Remarks     : None 
-***************************************************************************/
-#define  SWNotAckI2C  SWAckI2C
-
 /********************************************************************
 *     Function Name:    void SWStartI2C(void)                       *
 *     Return Value:     void                                        *
@@ -74,26 +66,20 @@ void SWRestartI2C( void )
 ********************************************************************/
 signed char SWAckI2C(char ack)
 {
-  CLOCK_LOW();                      // set clock pin to output to drive low
-  if ( ack )                	 // initiate  ACK
-  {
-    DATA_HI();                    // release data line to float high 
+  CLOCK_LOW();                  // set clock pin to output to drive low
+  if ( ack ) {                	// initiate  ACK
+    DATA_HI();                  // release data line to float high 
+  }else {                       // else initiate ACK condition
+    DATA_LOW();                 // make data pin output to drive low
   }
-  else                          // else initiate ACK condition
-  {
-    DATA_LOW();                   // make data pin output to drive low
-  }
-  DelayI2C();                     // user may need to modify based on Fosc
-  CLOCK_HI();                  // release clock line to float high 
+  DelayI2C();                   // user may need to modify based on Fosc
+  CLOCK_HI();                  	// release clock line to float high 
+  DelayI2C();                   // user may need to modify based on Fosc
   ack = DATA_PIN();	  
-  DelayI2C();                     // user may need to modify based on Fosc
-  if ( ack )                 // error if ack = 1, slave did not ack
-  {
-    return ( STAT_NO_ACK  );  // return with acknowledge error
-  }
-  else
-  {
-    return ( STAT_OK );          // return with no error
+  if ( ack ) {                 	// error if ack = 1, slave did not ack
+    return ( STAT_NO_ACK  );  	// return with acknowledge error
+  }else {
+    return ( STAT_OK );         // return with no error
   }
 }
 
@@ -153,16 +139,12 @@ signed char SWPutsI2C( unsigned char *wrptr, unsigned char length )
 {
   while ( length-- )
   {               
-    if ( SWWriteI2C( *wrptr++) )   // write out data string to I2C receiver
-    {
-      return( STAT_CLK_ERR );      // return if there was an error in Putc()
-    }
-    else
-    {
-      if ( SWAckI2C(NOACK) )          // go read bus ack status
-      {
-        return( STAT_NO_ACK );       // return with possible error condition 
-      }
+    if ( SWWriteI2C( *wrptr++) ) {   // write out data string to I2C receiver
+      	return( STAT_CLK_ERR );      // return if there was an error in Putc()
+    }else{
+      	if ( SWAckI2C(NOACK) ) {          // go read bus ack status
+        	return( STAT_NO_ACK );       // return with possible error condition 
+      	}
     }
   }                              
   return ( STAT_OK );                  // return with no error
@@ -190,11 +172,10 @@ unsigned int SWReadI2C()
     Delay1TCY();                  	// user may need to modify based on Fosc
     Delay1TCY();
 
-    if ( !SCLK_PIN() )              // test for clock low
-    {
-	  DelayI2C();					// user may need to adjust timeout period
-	  if ( !SCLK_PIN() )              // if clock is still low after wait 
-	    return ( STAT_CLK_ERR);     // return with clock error
+    if ( !SCLK_PIN() ) {            // test for clock low
+	  	DelayI2C();					// user may need to adjust timeout period
+	  	if ( !SCLK_PIN() )              // if clock is still low after wait 
+	    	return ( STAT_CLK_ERR);     // return with clock error
     }
 
     I2C_BUFFER <<= 1;             // shift composed byte by 1
@@ -217,32 +198,26 @@ unsigned int SWReadI2C()
 
 signed char SWGetsI2C( unsigned char *rdptr,  unsigned char length )
 {
-  unsigned int thold;             // define auto variable
+  unsigned int data;             // define auto variable
 
   while ( length --)              // stay in loop until byte count is zero
   {
-    thold = SWReadI2C();          // read and save 1 byte
-    if ( thold & 0xFF00 )
-    {
+    data = SWReadI2C();          // read and save 1 byte
+    if ( data & 0xFF00 ){
       return ( STAT_CLK_ERR );    // return with error condition
-    }
-    else
-    {
-      *rdptr++ = thold;           // save off byte read
+    }else {
+      *rdptr++ = data;           // save off byte read
     }
 
     CLOCK_LOW();                  // make clock pin output to drive low
-    if ( !length )                // initiate NOT ACK
-    {
-      DATA_HI();                    // release data line to float high 
+    if ( !length ) {              // initiate NOT ACK
+      	DATA_HI();                // release data line to float high 
+    }else {                       // else initiate ACK condition
+      	DATA_LOW();               // make data pin output to drive low
     }
-    else                          // else initiate ACK condition
-    {
-      DATA_LOW();                   // make data pin output to drive low
-    }
-    DelayI2C();                 // user may need to modify based on Fosc
-    CLOCK_HI();                   // release clock line to float high 
-    DelayI2C();                 // user may need to modify based on Fosc
+    DelayI2C();                 	// user may need to modify based on Fosc
+    CLOCK_HI();                   	// release clock line to float high 
+    DelayI2C();                 	// user may need to modify based on Fosc
   }   
   return( STAT_OK);             // return with no error
 }

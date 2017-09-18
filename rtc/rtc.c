@@ -12,7 +12,7 @@ static unsigned char week_day[] =  {0,  3,  3,  6,  1,  4,  6,  2,  5,  0,  3,  
 void CalculateWeekDay()
 {
 	unsigned int julianday;
-  unsigned char month, year;
+  	unsigned char month, year;
 	unsigned char weekday, day10;
 	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
 	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
@@ -35,8 +35,8 @@ void CalculateWeekDay()
 		}
 	}
 
-  // Caclulate weekday as number from 1 to 7
-  while( weekday > 7 )
+  	// Caclulate weekday as number from 1 to 7
+  	while( weekday > 7 )
 	{
 		weekday -= 7;
 	}
@@ -46,12 +46,12 @@ void CalculateWeekDay()
 void CalculateMonthAndDay()
 {
 	unsigned int julianday, curr_days, prev_days;
-  unsigned char month, day, year;
+  	unsigned char month, day, year;
   
-  julianday = rtc_date.JulianDayH * 100 + 
+  	julianday = rtc_date.JulianDayH * 100 + 
           (rtc_date.JulianDayL >> 4) * 10 + 
             (rtc_date.JulianDayL & 0x0F);
-  day = 0;
+  	day = 0;
 	prev_days = 0;
 	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
   
@@ -79,7 +79,7 @@ void CalculateMonthAndDay()
 void CalculateJulianDay()
 {
 	unsigned int julianday;
-  unsigned char month, year;
+  	unsigned char month, year;
 	unsigned char weekday, day10;
 	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
 	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
@@ -108,7 +108,7 @@ void CalculateJulianDay()
 		julianday -= 100;
 		rtc_date.JulianDayH++;
 	}
-  // Present the Julian day in BCD format
+  	// Present the Julian day in BCD format
 	day10 = 0;
 	while (julianday >= 10)
 	{
@@ -132,7 +132,7 @@ void CalculateNextSecond()
 	min = rtc_date.Minutes;
 	hour = rtc_date.Hours;
 
-  // Mark the time as valid
+  	// Mark the time as valid
 	rtc_date.Valid = 1;
 
 	if(sec >= 0x59)

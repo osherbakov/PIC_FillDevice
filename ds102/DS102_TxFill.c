@@ -10,10 +10,10 @@
 //--------------------------------------------------------------
 // Delays for the appropriate timings in millisecs
 //--------------------------------------------------------------
-#define tM 		50	  // D LOW -> F LOW 	(-5us - 100ms)
-#define tA  	50	  // F LOW -> D HIGH	(45us - 55us)
-#define tE  	100   // REQ -> Fill		(0 - 2.3 sec)
-#define tZ  	500   // End -> New Fill	
+#define tM 		50	  	// D LOW -> F LOW 	(-5us - 100ms)
+#define tA  	50	  	// F LOW -> D HIGH	(45us - 55us)
+#define tE  	10   	// REQ -> Fill		(0 - 2.3 sec)
+#define tZ  	500   	// End -> New Fill	
 //--------------------------------------------------------------
 // Delays for the appropriate timings in usecs
 //--------------------------------------------------------------
@@ -111,14 +111,21 @@ static char GetEquipmentMode23Type(void)
   byte i;
   byte  NewState;	
   byte  PreviousState;
+  char 	prev;
+  char	result;
 
   i = 0;
+  result = ST_TIMEOUT;
   digitalWrite(PIN_E, HIGH);      // Turn_on the pullup register
   pinMode(PIN_E, INPUT);
   WPUB_PIN_E = 1;
   
   PreviousState = LOW;
+
   set_timeout(tB);
+  prev = INTCONbits.GIE;
+  INTCONbits.GIE = 0;
+
   while(is_not_timeout())
   {
     NewState = pin_E();
@@ -130,13 +137,15 @@ static char GetEquipmentMode23Type(void)
         i++;
         if( i >= 40)
         {
-          return (pin_B() == LOW) ? MODE2 : MODE3;
+          	result = (pin_B() == LOW) ? MODE2 : MODE3;
+			break;
         }
       }
       PreviousState = NewState;
     }
   }
-  return -1;
+  INTCONbits.GIE = prev;
+  return result;
 }
 
 
@@ -395,7 +404,6 @@ char WaitReqSendTODFill()
 	 }
 
   	EndFill();
-  	delay(tZ);
   	ReleaseBus();
   	return wait_result;
 }
@@ -464,7 +472,6 @@ char SendDS102Fill(byte stored_slot)
 	   	if(wait_result != ST_OK) break;
 	}	
   	EndFill();
-  	delay(tZ);
    	ReleaseBus();
 	return wait_result;	
 }

@@ -15,6 +15,8 @@ enum {
 	VALID,
 	DELIMITERS,
 	DATE,
+	CHECKSUM,
+	VALIDITY,
 	DONE
 } GPS_PARSER_STATE;
 
@@ -27,6 +29,7 @@ static byte gps_state;
 static byte counter;
 static unsigned short long gps_time;
 static unsigned short long gps_date;
+static char running_checksum, saved_checksum, sent_checksum;
 
 static unsigned char polarity = DATA_POLARITY ^ DATA_POLARITY_RX;
 
@@ -53,7 +56,7 @@ static void  ExtractGPSDate(void)
 	p = (byte *) &gps_date;
 	rtc_date.Century	= 0x20;
 	rtc_date.Year		= *p++;
-	rtc_date.Month	= *p++;
+	rtc_date.Month		= *p++;
 	rtc_date.Day		= *p++;
   CalculateJulianDay();
   CalculateWeekDay();
@@ -70,114 +73,117 @@ static void process_gps_symbol(byte new_symbol)
 			gps_date = 0;	
 			gps_time = 0;
 			counter = 0;
+			running_checksum = '$';
 		}
 		break;
 	case SENTENCE:
 		symb_buffer[counter++] = new_symbol;
 		if(counter >= 6)
 		{
-			if(is_equal(symb_buffer, RMS_SNT, 6))
-			{
+			if(is_equal(symb_buffer, RMS_SNT, 6)){
 				gps_state = TIME_SEC;
-			}else
-			{
+			}else{
 				gps_state = INIT;
 			}
 		}
 		break;
 	case TIME_SEC:
-		if(new_symbol == '.')
-		{
+		if(new_symbol == '.'){
 			// do nothing - skip
-		}else if(new_symbol == ',')
-		{
+		}else if(new_symbol == ','){
 			gps_state = VALID;
-		}else
-		{
-			gps_time =  (gps_time << 4) | (new_symbol - '0');
+		}else{
+			gps_time =  (gps_time << 4) | ASCIIToHex(new_symbol);
 		}
 		break;
 
 	case VALID:
-		if(new_symbol == 'A')
-		{
+		if(new_symbol == 'A'){
 			counter = 0;
 			gps_state = DELIMITERS;
-		}else
-		{
+		}else{
 			gps_state = INIT;
 		}
 		break;
 		
 	case DELIMITERS:
-		if(new_symbol == ',')
-		{
+		if(new_symbol == ','){
 			counter++;
-			if(counter  >= 7)
-			{
+			if(counter  >= 7){
 				gps_state = DATE;
 			}
 		}
 		break;
 
 	case DATE:
-		if(new_symbol != ',')
-		{
-			gps_date =  (gps_date << 4) + (new_symbol - '0');
-		}else
-		{
+		if(new_symbol == ','){
 			gps_state = DONE;
+		}else{
+			gps_date =  (gps_date << 4) + ASCIIToHex(new_symbol);
+		}
+		break;
+
+	case CHECKSUM:
+		if(new_symbol = '*'){
+			saved_checksum = running_checksum;
+			sent_checksum = 0;
+			gps_state = VALIDITY;
+		}
+		break;
+
+	case VALIDITY:
+		if( (new_symbol == '\n') || (new_symbol == '\r')){
+			gps_state = (sent_checksum == saved_checksum) ? DONE : INIT;
+		}else {
+			sent_checksum = sent_checksum<< 4 + ASCIIToHex(new_symbol);
 		}
 		break;
 	}
+	running_checksum ^= new_symbol;
 }
 
 static char GetGPSTime(void)
 {
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
 	// Configure the EUSART module
-  open_eusart(BRREG_GPS, polarity);	
+  	open_eusart(BRREG_GPS, polarity);	
   		
 	gps_state = INIT;
 	while(is_not_timeout())
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
-  		set_led_on();
+  			set_led_on();
 			// Get and process received symbol
 			process_gps_symbol(RCREG1);
 			// overruns? clear it
-			if(RCSTA1 & 0x06)
-			{
+			if(RCSTA1 & 0x06){
 				RCSTA1bits.CREN = 0;
 				RCSTA1bits.CREN = 1;
 			}
 			// All data collected - fill RTC struct
-			if(gps_state == DONE)
-			{
-        close_eusart();
+			if(gps_state == DONE){
+        		close_eusart();
 				ExtractGPSDate();
-				return 0;
+				return ST_OK;
 			}
 		}
 	}
-  close_eusart();
-  polarity ^= DATA_POLARITY_RX;
-	return -1;
+  	close_eusart();
+ 	polarity ^= DATA_POLARITY_RX;
+	return ST_TIMEOUT;
 }
 
 static char FindRisingEdge(void)
 {
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
-	while(is_not_timeout())
-	{	
+	while(is_not_timeout()){	
 		if(!GPS_1PPS) break;
 	}
-	while(is_not_timeout())
-	{	
+	while(is_not_timeout()){	
 		if(GPS_1PPS) return 0;
 	}
-	return -1;
+	return ST_TIMEOUT;
 }
 
 char ReceiveGPSTime()
@@ -189,16 +195,12 @@ char ReceiveGPSTime()
 	TRIS_GPS_1PPS = INPUT;
 
 	//	1. Find the 1PPS rising edge
-	if(FindRisingEdge()) 
-		  return ST_TIMEOUT;
+	if(FindRisingEdge()) return ST_TIMEOUT;
 
-  set_led_off();		// Set LED off
+  	set_led_off();		// Set LED off
 					  
 	//  2. Start collecting GPS time/date
-	if( GetGPSTime() )
-	{	
-      return ST_TIMEOUT;
-  } 
+	if( GetGPSTime() ) return ST_TIMEOUT;
 
 	//  3. Calculate the next current time.
 	CalculateNextSecond();
@@ -229,8 +231,7 @@ char ReceiveGPSTime()
 	INTCONbits.GIE = prev;		// Enable interrupts
   
 //  6. Get the GPS time again and compare with the current RTC
-	if( GetGPSTime() )	
-	  return ST_ERR;
+	if( GetGPSTime() )	return ST_ERR;
 	  
 	GetRTCData();
 	p_time = (byte *) &gps_time;

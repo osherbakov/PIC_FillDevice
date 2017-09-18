@@ -48,8 +48,8 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(RX_TIMEOUT1_RS);
-  while( is_not_timeout() )
+  	set_timeout(RX_TIMEOUT1_RS);
+  	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxPC )
@@ -64,13 +64,11 @@ int RxRS232Char()
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
  			while(!PIR5bits.TMR6IF){} ;	// Wait for stop bit
- 			if(RxPC)
- 			{
-     		return -1;  // No stop bit
-   		}else
-   		{
-   			return ((int)data) & 0x00FF;
-     	}
+ 			if(RxPC){
+     			return -1;  // No stop bit
+   			}else{
+   				return ((int)data) & 0x00FF;
+     		}
 		}
 	}
 	return -1;

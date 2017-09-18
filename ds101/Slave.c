@@ -284,9 +284,8 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  TxUFrame(UA);
 	  // After the disconnect  - change the address
 	  CurrentAddress = NewAddress;
-	  // Did we get any data? Yes - Signal as ST_DONE
-		if(block_counter > 0) 
-		{
+		// Did we get any data? Yes - Signal as ST_DONE
+		if(block_counter > 0) {
 			status = ST_DONE;
 		}
 	}else if(Cmd == UI)      // UI
