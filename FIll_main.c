@@ -194,9 +194,10 @@ static void  PinsToDefault(void)
 
 static void bump_idle_counter(void)
 {
+	char prev = INTCONbits.GIE;
   	INTCONbits.GIE = 0; 
 	idle_counter = seconds_counter + IDLE_SECS;
-  	INTCONbits.GIE = 1;
+  	INTCONbits.GIE = prev;
 }
 
 void main()

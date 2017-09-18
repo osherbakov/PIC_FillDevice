@@ -12,8 +12,6 @@ void high_isr (void);
 volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
-volatile signed int timeout_counter;
-volatile char timeout_flag;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
@@ -33,28 +31,30 @@ static byte hq_current_byte;
 //------------------------------------------------
 void set_led_state(char on_time, char off_time)
 {
+	char  prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts  
 	led_on_time = on_time;
 	led_off_time = off_time;
 	LEDP = led_on_time ? 1 : 0;	// Turn on/off LED
 	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
-	INTCONbits.GIE = 1;		// Enable interrupts	
+	INTCONbits.GIE = prev;		// Enable interrupts	
 }
 
 void set_led_on()
 {
+	char  prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts   
 	LEDP = 1;				// Turn on LED
 	led_counter = 0;
-	INTCONbits.GIE = 1;		// Enable interrupts 	
+	INTCONbits.GIE = prev;		// Enable interrupts	
 }
 
 void set_led_off()
 {
-	INTCONbits.GIE = 0;		// Disable interrupts   
+	char  prev = INTCONbits.GIE;
 	LEDP = 0;				// Turn off LED
 	led_counter = 0;
-	INTCONbits.GIE = 1;		// Enable interrupts 	
+	INTCONbits.GIE = prev;		// Enable interrupts	
 }
 
 
@@ -176,13 +176,11 @@ void high_isr (void)
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
-	  	if(timeout_counter > 0)
-	  	{
-		  	timeout_counter -= 10;
-		}else
-		{
-  			timeout_flag = 1;
-  		}
+		if(!timeout_flag) {
+			timeout_counter -= 10;
+			if(timeout_counter <= 0) timeout_flag = 1;
+		}
+
   		// Update RTC time
 		rtc_date.MilliSeconds_10++;
 		if(rtc_date.MilliSeconds_10 >= 100)
@@ -196,7 +194,7 @@ void high_isr (void)
 			led_counter = LAT_LEDP ? led_off_time : led_on_time;
 			LAT_LEDP = ~LAT_LEDP;
 		}
-		PIR1bits.TMR2IF = 0;	// Clear interrupt
+		PIR1bits.TMR2IF = 0;	// Clear overflow flag and interrupt
 	}
 
 	//--------------------------------------------------------------------------

@@ -19,12 +19,36 @@ Delay1K(unsigned int cnt)
 		Delay1KTCYx(cnt);
 }
 
-void set_timeout(int timeout_in_ms)
+volatile signed int timeout_counter;
+volatile char timeout_flag;
+
+void set_timeout(int timeout_ms)
 {
-  INTCONbits.GIE = 0;
-  timeout_counter = timeout_in_ms;
-  timeout_flag = 0;
-  INTCONbits.GIE = 1;
+	char  prev = INTCONbits.GIE;
+	INTCONbits.GIE = 0;
+	timeout_counter = timeout_ms;
+	timeout_flag = 0;
+	INTCONbits.GIE = prev;
+}
+
+char is_timeout(void)
+{
+	if(PIR1bits.TMR2IF) {
+		timeout_counter -= 10;
+		if(timeout_counter <= 0) timeout_flag = 1;
+		PIR1bits.TMR2IF = 0;	// Clear overflow flag
+	}
+	return timeout_flag;
+}
+
+char is_not_timeout(void)
+{
+	if(PIR1bits.TMR2IF) {
+		timeout_counter -= 10;
+		if(timeout_counter <= 0) timeout_flag = 1;
+		PIR1bits.TMR2IF = 0;	// Clear overflow flag
+	}
+	return !timeout_flag;
 }
      
 

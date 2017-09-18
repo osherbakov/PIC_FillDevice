@@ -81,4 +81,9 @@ extern void set_led_state(char on_time, char off_time);
 extern void set_led_on(void);
 extern void set_led_off(void);
 
+//-------------------------------------------------
+//	Interrups Enable/Disable
+//-------------------------------------------------
+#define __irq_enable() do{INTCONbits.GIE=1;}while(0)
+#define __irq_disable() do{INTCONbits.GIE=0;}while(0)
 #endif	// __CONTROLS_H__

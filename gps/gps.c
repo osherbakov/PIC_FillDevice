@@ -182,8 +182,9 @@ static char FindRisingEdge(void)
 
 char ReceiveGPSTime()
 {
-	byte *p_date;
-	byte *p_time;
+	char	prev;
+	byte 	*p_date;
+	byte 	*p_time;
 	// Config the 1PPS pin as input
 	TRIS_GPS_1PPS = INPUT;
 
@@ -202,6 +203,7 @@ char ReceiveGPSTime()
 	//  3. Calculate the next current time.
 	CalculateNextSecond();
 	
+	prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts
 	SetRTCDataPart1();
 
@@ -223,8 +225,8 @@ char ReceiveGPSTime()
   	rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
 
-	INTCONbits.RBIF = 0;	// Clear bit
-	INTCONbits.GIE = 1;		// Enable interrupts
+	INTCONbits.RBIF = 0;		// Clear bit
+	INTCONbits.GIE = prev;		// Enable interrupts
   
 //  6. Get the GPS time again and compare with the current RTC
 	if( GetGPSTime() )	

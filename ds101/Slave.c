@@ -28,19 +28,21 @@ static unsigned int Timeout;
 static char	retry_flag;
 static void ResetTimeout(void)
 {
-  INTCONbits.GIE = 0; 
+	char	prev = INTCONbits.GIE;
+  	INTCONbits.GIE = 0; 
 	Timeout = seconds_counter + RX_WAIT;
-  INTCONbits.GIE = 1;
+  	INTCONbits.GIE = prev;
 	retry_flag = 0;
 }
 
 static char IsTimeoutExpired(void)
 {
-  char  ret;
-  INTCONbits.GIE = 0; 
+  	char  ret;
+	char	prev = INTCONbits.GIE;
+	INTCONbits.GIE = 0; 
 	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
-  INTCONbits.GIE = 1;
-  return ret;
+  	INTCONbits.GIE = prev;
+  	return ret;
 }
 
 

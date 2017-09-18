@@ -125,12 +125,10 @@ static char ReadPin(void)
 	unsigned char ADC_Value;
   	ADCON2 = 0x25;  // Left justified + 4TAD and Fosc/16
   	ADCON1 = 0;
-//  	DelayUs(2);
   	ADCON0bits.GO = 1;
 
   	while(ADCON0bits.GO) {/* wait for the done flag */};
   	ADC_Value = ADRESH;
-  			
   	ADCON0 = 0;   // Disable ADC logic
 
   	return (ADC_Value >= Threshold) ? HIGH : LOW;
@@ -139,8 +137,14 @@ static char ReadPin(void)
 char pin_B()
 {
   char ret;
+  char r1, r2, r3;
+
   TRIS_PIN_B = 1;
-  ret = digitalRead(PIN_B);
+//  ret = digitalRead(PIN_B);
+  r1 = digitalRead(PIN_B);
+  r2 = digitalRead(PIN_B);
+  r3 = digitalRead(PIN_B);
+  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_B = 1;
@@ -153,8 +157,14 @@ char pin_B()
 char pin_C()
 {
   char ret;
+  char r1, r2, r3;
+
   TRIS_PIN_C = 1;
-  ret = digitalRead(PIN_C);
+//  ret = digitalRead(PIN_C);
+  r1 = digitalRead(PIN_C);
+  r2 = digitalRead(PIN_C);
+  r3 = digitalRead(PIN_C);
+  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_C = 1;
@@ -167,8 +177,14 @@ char pin_C()
 char pin_D()
 {
   char ret;
+  char r1, r2, r3;
+
   TRIS_PIN_D = 1;
-  ret = digitalRead(PIN_D);
+//  ret = digitalRead(PIN_D);
+  r1 = digitalRead(PIN_D);
+  r2 = digitalRead(PIN_D);
+  r3 = digitalRead(PIN_D);
+  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_D = 1;
@@ -181,8 +197,14 @@ char pin_D()
 char pin_E()
 {
   char ret;
+  char r1, r2, r3;
+
   TRIS_PIN_E = 1;
-  ret = digitalRead(PIN_E);
+//  ret = digitalRead(PIN_E);
+  r1 = digitalRead(PIN_E);
+  r2 = digitalRead(PIN_E);
+  r3 = digitalRead(PIN_E);
+  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_E = 1;
@@ -195,9 +217,14 @@ char pin_E()
 char pin_F()
 {
   char ret;
+  char r1, r2, r3;
 
   TRIS_PIN_F = 1;
-  ret = digitalRead(PIN_F);
+//  ret = digitalRead(PIN_F);
+  r1 = digitalRead(PIN_F);
+  r2 = digitalRead(PIN_F);
+  r3 = digitalRead(PIN_F);
+  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   return ret;
 }
 

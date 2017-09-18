@@ -276,6 +276,7 @@ static char GetHQTime(void)
 
 char ReceiveHQTime(void )
 {
+	char prev;
 	// Config pin as input
 	TRIS_HQ_PIN = INPUT;
 
@@ -288,6 +289,7 @@ char ReceiveHQTime(void )
 	//  2. Find the next time when we will have HQ stream
 	CalculateNextSecond();
 
+	prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts
 	SetRTCDataPart1();
 	
@@ -309,7 +311,7 @@ char ReceiveHQTime(void )
   	rtc_date.MilliSeconds_10 = 0;
  
 	INTCONbits.RBIF = 0;	// Clear bit
-	INTCONbits.GIE = 1;		// Enable interrupts
+	INTCONbits.GIE = prev;		// Enable interrupts
 	
 	//  5. Get the HQ time again and compare with the current RTC
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream again for the final check

@@ -29,15 +29,17 @@
 // Timeouts in ms
 //--------------------------------------------------------------
 #define tA  	100	   // F LOW -> D HIGH	(45ms - 55ms)
-#define tE  	5000   // REQ -> Fill		(0 - 2.3 sec)
+#define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
 #define tZ  	1000   // Query cell duration
 #define tF  	200    // End of fill - > response (4ms - 2sec)
 
 static char GetQueryByte(void)
 {
-  byte  PreviousState, NewState;	
-  byte  bit_count;
-  byte  Data;
+	byte  PreviousState, NewState;	
+	byte  bit_count;
+	byte  Data;
+	byte  prev; 
+	char  ret;
   
   	pinMode(PIN_B, INPUT);		
   	pinMode(PIN_E, INPUT);
@@ -46,29 +48,36 @@ static char GetQueryByte(void)
 	WPUB_PIN_B = 1;
   	WPUB_PIN_E = 1;
 
-  bit_count = 0;
-  PreviousState = LOW;
-  set_timeout(tZ);
+	bit_count = 0;
+	PreviousState = LOW;
+	set_timeout(tZ);
 
-  // We exit on timeout or Pin F going high
-  while( is_not_timeout() )
-  {
-    NewState = pin_E();
-    if( PreviousState != NewState  )
-    {
-      if( NewState == LOW )
-      {
-		    Data = (Data >> 1 ) | ( pin_B() ? 0 : 0x80);
-        	bit_count++; 
-    		if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
-    		{
-    			return MODE3;
-    		}
-      }
-      PreviousState = NewState;
-    }
-  }
-  return -1;
+	prev = INTCONbits.GIE;
+	INTCONbits.GIE = 0;
+
+	ret = -1;
+  	// We exit on timeout or Pin F going high
+	while( is_not_timeout() && (pin_F() == LOW) )
+  	{
+    	NewState = pin_E();
+    	if( PreviousState != NewState  )
+    	{
+      		if( NewState == LOW )
+      		{
+		    	Data = (Data >> 1 ) | ( pin_B() ? 0 : 0x80);
+        		bit_count++; 
+    			if((bit_count >= 8) && ((Data & 0xFE) == 0x02) )
+    			{
+					ret = MODE3;
+					break;
+    			}
+      		}
+      		PreviousState = NewState;
+    	}
+  	}
+
+	INTCONbits.GIE = prev;
+  	return ret;
 }
 
 static void SendEquipmentType(void)
@@ -83,7 +92,7 @@ static void SendEquipmentType(void)
   delayMicroseconds(tJ);		// Setup time for clock high
 
   // Output the data bit of the equipment code
-  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" (remember -6.5V logic) always
+  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" (remember -6.5V logic)
   delayMicroseconds(tK3);		// Satisfy Setup time tK1
 
   // Output the data
@@ -112,6 +121,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   byte  byte_count;
   byte  PreviousState, NewState;	
   byte  Data;
+  byte  prev;
 
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT);		// make pin input CLOCK
@@ -125,7 +135,11 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   byte_count = 0;
   bit_count = 0;
   PreviousState = pin_E();
+
   set_timeout(tE);
+
+  prev = INTCONbits.GIE;
+  INTCONbits.GIE = 0;
 
   while( is_not_timeout() &&  (byte_count < count) )
   {
@@ -154,6 +168,8 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 	      }
 	    }
   }
+
+  INTCONbits.GIE = prev;
   return byte_count;
 }
 
