@@ -25,12 +25,12 @@
 //--------------------------------------------------------------
 // Timeouts in ms
 //--------------------------------------------------------------
-#define tB  500    // Query -> Response from Radio (0.8ms - 5ms)
-#define tD  1000     // PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  1000     // PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  1000     // BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  4000    // End of fill - > response (4ms - 2sec)
-#define tC  (30000)  // .5 minute - > until REQ (300us - 5min )
+#define tB  500    		// Query -> Response from Radio (0.8ms - 5ms)
+#define tD  1000     	// PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  1000     	// PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  1000     	// BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tF  4000    	// End of fill - > response (4ms - 2sec)
+#define tC  (30000)  	// .5 minute - > until REQ (300us - 5min )
 
 // Sends byte data on PIN_B with clocking on PIN_E
 static void SendMode23Query(byte Data)
@@ -74,6 +74,50 @@ static void SendMode23Query(byte Data)
   	WPUB_PIN_E = 1;
 }
 
+// Receive the equipment data that is sent on PIN_B with clocking on PIN_E
+//   The total number of clocks is 40 (41), but only the last bit matters
+static char GetEquipmentMode23Type(void)
+{
+  byte i;
+  byte  NewState;	
+  byte  PreviousState;
+  char 	prev;
+  char	result;
+
+  digitalWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
+  digitalWrite(PIN_E, HIGH);      	// Turn_on the pullup register
+  pinMode(PIN_B, INPUT);    		// Tristate the pin
+  pinMode(PIN_E, INPUT);			// Tristate the pin
+  WPUB_PIN_B = 1;
+  WPUB_PIN_E = 1;
+  
+  set_timeout(tB);
+  prev = INTCONbits.GIE;
+  INTCONbits.GIE = 0;
+
+  i = 0;
+  result = ST_TIMEOUT;
+  PreviousState = LOW;
+  while(is_not_timeout())
+  {
+    NewState = pin_E();
+	// Find the state change
+    if( PreviousState != NewState  )
+    {
+      if( NewState == LOW )
+      {
+        if( ++i >= 40)
+        {
+          	result = (pin_B() == LOW) ? MODE2 : MODE3;
+			break;
+        }
+      }
+      PreviousState = NewState;
+    }
+  }
+  INTCONbits.GIE = prev;
+  return result;
+}
 
 // Sends byte data on PIN_D with clocking on PIN_E
 static void SendDS102Byte(byte Data)
@@ -102,50 +146,6 @@ static void SendDS102Cell(byte *p_cell, byte count)
   {
     SendDS102Byte(*p_cell++);
   }
-}
-
-// Receive the equipment data that is sent on PIN_B with clocking on PIN_E
-//   The total number of clocks is 40 (41), but only the last bit matters
-static char GetEquipmentMode23Type(void)
-{
-  byte i;
-  byte  NewState;	
-  byte  PreviousState;
-  char 	prev;
-  char	result;
-
-  i = 0;
-  result = ST_TIMEOUT;
-  digitalWrite(PIN_E, HIGH);      // Turn_on the pullup register
-  pinMode(PIN_E, INPUT);
-  WPUB_PIN_E = 1;
-  
-  PreviousState = LOW;
-
-  set_timeout(tB);
-  prev = INTCONbits.GIE;
-  INTCONbits.GIE = 0;
-
-  while(is_not_timeout())
-  {
-    NewState = pin_E();
-	  // Find the state change
-    if( PreviousState != NewState  )
-    {
-      if( NewState == LOW )
-      {
-        i++;
-        if( i >= 40)
-        {
-          	result = (pin_B() == LOW) ? MODE2 : MODE3;
-			break;
-        }
-      }
-      PreviousState = NewState;
-    }
-  }
-  INTCONbits.GIE = prev;
-  return result;
 }
 
 

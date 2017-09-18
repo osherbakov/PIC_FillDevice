@@ -12,6 +12,7 @@ enum {
 	INIT = 0,
 	SENTENCE,
 	TIME_SEC,
+	TIME_MSEC,
 	VALID,
 	DELIMITERS,
 	DATE,
@@ -58,8 +59,8 @@ static void  ExtractGPSDate(void)
 	rtc_date.Year		= *p++;
 	rtc_date.Month		= *p++;
 	rtc_date.Day		= *p++;
-  CalculateJulianDay();
-  CalculateWeekDay();
+  	CalculateJulianDay();
+  	CalculateWeekDay();
 }
 
 static void process_gps_symbol(byte new_symbol)
@@ -73,7 +74,7 @@ static void process_gps_symbol(byte new_symbol)
 			gps_date = 0;	
 			gps_time = 0;
 			counter = 0;
-			running_checksum = '$';
+			running_checksum = 0;
 		}
 		break;
 	case SENTENCE:
@@ -89,11 +90,17 @@ static void process_gps_symbol(byte new_symbol)
 		break;
 	case TIME_SEC:
 		if(new_symbol == '.'){
-			// do nothing - skip
+			gps_state = TIME_MSEC;
 		}else if(new_symbol == ','){
 			gps_state = VALID;
 		}else{
 			gps_time =  (gps_time << 4) | ASCIIToHex(new_symbol);
+		}
+		break;
+
+	case TIME_MSEC:
+		if(new_symbol == ','){
+			gps_state = VALID;
 		}
 		break;
 
@@ -117,14 +124,14 @@ static void process_gps_symbol(byte new_symbol)
 
 	case DATE:
 		if(new_symbol == ','){
-			gps_state = DONE;
+			gps_state = CHECKSUM;
 		}else{
 			gps_date =  (gps_date << 4) + ASCIIToHex(new_symbol);
 		}
 		break;
 
 	case CHECKSUM:
-		if(new_symbol = '*'){
+		if(new_symbol == '*'){
 			saved_checksum = running_checksum;
 			sent_checksum = 0;
 			gps_state = VALIDITY;
@@ -135,11 +142,13 @@ static void process_gps_symbol(byte new_symbol)
 		if( (new_symbol == '\n') || (new_symbol == '\r')){
 			gps_state = (sent_checksum == saved_checksum) ? DONE : INIT;
 		}else {
-			sent_checksum = sent_checksum<< 4 + ASCIIToHex(new_symbol);
+			sent_checksum = (sent_checksum << 4) + ASCIIToHex(new_symbol);
 		}
 		break;
 	}
-	running_checksum ^= new_symbol;
+	if((new_symbol != '$') && (new_symbol != '*')) {
+		running_checksum ^= new_symbol;
+	}
 }
 
 static char GetGPSTime(void)
@@ -237,7 +246,6 @@ char ReceiveGPSTime()
 	p_time = (byte *) &gps_time;
 	p_date = (byte *) &gps_date;
 
-//	if(rtc_date.Hours)
 	return ( 
 		(*p_date++ == rtc_date.Year) &&
   		(*p_date++ == rtc_date.Month) &&
