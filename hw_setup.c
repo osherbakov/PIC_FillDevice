@@ -40,11 +40,11 @@ void setup_clocks()
 
 	// TIMER 0 - to count OSC_CLOCK in 16-bit mode
 	// Used to adjust/sync the internal clock with RTC 1PPS clock
-  	TMR0H = 0;  // Reset the counter
-  	TMR0L = 0;
-  	INTCONbits.TMR0IF =  0;   // Clear interrupt
-  	INTCONbits.TMR0IE =  1;   // Enable interrupt
-  	T0CON = ((0x1 << 7) | (0x1 << 3)); // Ena TIMER0, 16-bit mode,no prescaler
+//  	TMR0H = 0;  // Reset the counter
+//  	TMR0L = 0;
+//  	INTCONbits.TMR0IF =  0;   // Clear interrupt
+//  	INTCONbits.TMR0IE =  1;   // Enable interrupt
+//  	T0CON = ((0x1 << 7) | (0x1 << 3)); // Ena TIMER0, 16-bit mode,no prescaler
   
 	// TIMER 1 - to count OSC_CLOCK in 16-bit mode
 	//  It is used for 0.131072s timeout, when clock overflows

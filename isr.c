@@ -119,13 +119,14 @@ void high_isr (void)
 				HQ_PIN = 0;
 			}
 	        // Get statistics for the clock adjustment
-	      	TL = TMR0L;	// Read LSB first to latch the data
-	     	TH = TMR0H;
-	        TMR0H = 0;  // Reset the counter - MSB first
-	        TMR0L = 0;
-	        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
-	        UpdateClockData();
-	        ProcessClockData();			
+       // Turn it off for a while
+//	      	TL = TMR0L;	// Read LSB first to latch the data
+//	     	TH = TMR0H;
+//	        TMR0H = 0;  // Reset the counter - MSB first
+//	        TMR0L = 0;
+//	        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
+//	        UpdateClockData();
+//	        ProcessClockData();			
 		}
 		INTCONbits.RBIF = 0;
 	}
@@ -243,11 +244,12 @@ void high_isr (void)
 	}
   
   	// Check for the clock correction timer0
-  	if(INTCONbits.TMR0IF)
-  	{
-    	curr_msb++; 
-    	INTCONbits.TMR0IF = 0;  // Clear interrupt
-  	}
+//  	if(INTCONbits.TMR0IF)
+//  	{
+//    	curr_msb++; 
+//    	INTCONbits.TMR0IF = 0;  // Clear interrupt
+//  	}
+
 }
 
 
