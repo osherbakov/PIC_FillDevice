@@ -170,7 +170,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     pinMode(PIN_B, INPUT);	
   	pinMode(PIN_C, INPUT); 
     WPUB_PIN_B = 1;
-    // WPUB_PIN_C = 1;
+
 	delayMicroseconds(tK1);    // Satisfy Setup time tK1
 
   	if( req_type == REQ_FIRST){
@@ -233,7 +233,6 @@ static void StartMode23Handshake(void)
   // Drop PIN_D first
   digitalWrite(PIN_D, LOW);
   //delay(tM);
-  // Drop PIN_F after delay
   digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
   delay(tA);                  // Pin D pulse width
   digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
@@ -244,27 +243,12 @@ static void EndMode23Handshake(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_E, LOW);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   WPUB_PIN_B = 1;
-  // WPUB_PIN_C = 1;
-}
-
-void StartFill()
-{
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  pinMode(PIN_B, INPUT);
-  pinMode(PIN_C, INPUT);
-  pinMode(PIN_D, OUTPUT);
-  pinMode(PIN_E, OUTPUT);
-  WPUB_PIN_B = 1;
-  // WPUB_PIN_C = 1;
 }
 
 static void  EndFill(void)
@@ -288,7 +272,6 @@ static void AcquireMode23Bus(void)
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
   WPUB_PIN_B = 1;
-  // WPUB_PIN_C = 1;
   delayMicroseconds(tJ);
 }
 
@@ -304,7 +287,6 @@ static void AcquireMode1Bus(void)
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-  // WPUB_PIN_C = 1;
   delayMicroseconds(tJ);
 }
 
