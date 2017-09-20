@@ -67,11 +67,11 @@ static void SendMode23Query(byte Data)
   	delayMicroseconds(tK2 - tT);  // Wait there
   	// Release PIN_B and PIN_E - the Radio will drive it
   	digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
-  	digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+  	digitalWrite(PIN_E, LOW);  // Turn on 20 K Pullup
 	pinMode(PIN_B, INPUT);    // Tristate the pin
 	pinMode(PIN_E, INPUT);    // Tristate the pin
   	WPUB_PIN_B = 1;
-  	WPUB_PIN_E = 1;
+  	WPUB_PIN_E = 0;
 }
 
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
@@ -85,11 +85,11 @@ static char GetEquipmentMode23Type(void)
   char	result;
 
   digitalWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
-  digitalWrite(PIN_E, HIGH);      	// Turn_on the pullup register
+  digitalWrite(PIN_E, LOW);      	// Turn_on the pullup register
   pinMode(PIN_B, INPUT);    		// Tristate the pin
   pinMode(PIN_E, INPUT);			// Tristate the pin
   WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+  WPUB_PIN_E = 0;
   
   set_timeout(tB);
   prev = INTCONbits.GIE;
@@ -225,7 +225,7 @@ static void StartMode23Handshake(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
   WPUB_PIN_B = 1;
   delay(200);
@@ -280,7 +280,7 @@ static void AcquireMode23Bus(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
@@ -297,7 +297,7 @@ static void AcquireMode1Bus(void)
   digitalWrite(PIN_B, LOW);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_E, LOW);
   digitalWrite(PIN_F, HIGH);
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
@@ -322,7 +322,6 @@ static void ReleaseBus(void)
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
-  
 }
 
 
