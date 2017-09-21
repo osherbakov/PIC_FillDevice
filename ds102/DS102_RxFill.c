@@ -208,7 +208,7 @@ static void SetTimeFromCell(void)
 	if(ms_100 < 0)
 	{
 		ms_100 += 10;  // Add next second
-  	CalculateNextSecond();
+  		CalculateNextSecond();
 	}
 	if( !rtc_date.Valid )
 	{

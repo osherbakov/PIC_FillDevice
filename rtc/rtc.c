@@ -75,7 +75,6 @@ void CalculateMonthAndDay()
   }
 }
 
-#pragma tmpdata RtcTmpData
 void CalculateJulianDay()
 {
 	unsigned int julianday;
@@ -117,9 +116,7 @@ void CalculateJulianDay()
 	}
 	rtc_date.JulianDayL =   (day10 + (byte) julianday);
 }
-#pragma tmpdata
 
-#pragma tmpdata RtcTmpData
 void CalculateNextSecond()
 {
 	// The next transition HIGH->LOW will happen at that time
@@ -167,9 +164,7 @@ void CalculateNextSecond()
 	rtc_date.Minutes = min;
 	rtc_date.Seconds = sec;
 }
-#pragma tmpdata
 
-#pragma tmpdata RtcTmpData
 void GetRTCData()
 {
 	unsigned int 	day;
@@ -219,7 +214,6 @@ void GetRTCData()
 
 	CalculateJulianDay();
 }
-#pragma tmpdata
 
 void SetRTCData()
 {
@@ -230,9 +224,6 @@ void SetRTCData()
 
 void SetRTCDataPart1()
 {
-  // Stop adjusting XTAL because RTC will be reset soon
-	InitClockData();
-
 	SWStartI2C();
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
 	if(SWAckI2C(READ))	{ SWStopI2C(); return; }
@@ -274,8 +265,6 @@ void SetRTCDataPart2()
 
 void SetupRTC()
 {
-	InitClockData();
-
 	SWStartI2C();
 
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);

@@ -31,30 +31,22 @@ static byte hq_current_byte;
 //------------------------------------------------
 void set_led_state(char on_time, char off_time)
 {
-	char  prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts  
 	led_on_time = on_time;
 	led_off_time = off_time;
 	LEDP = led_on_time ? 1 : 0;	// Turn on/off LED
 	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
-	INTCONbits.GIE = prev;		// Enable interrupts	
 }
 
 void set_led_on()
 {
-	char  prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts   
-	LEDP = 1;				// Turn on LED
 	led_counter = 0;
-	INTCONbits.GIE = prev;		// Enable interrupts	
+	LEDP = 1;				// Turn on LED
 }
 
 void set_led_off()
 {
-	char  prev = INTCONbits.GIE;
-	LEDP = 0;				// Turn off LED
 	led_counter = 0;
-	INTCONbits.GIE = prev;		// Enable interrupts	
+	LEDP = 0;				// Turn off LED
 }
 
 

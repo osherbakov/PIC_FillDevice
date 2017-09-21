@@ -1,6 +1,7 @@
 #include "config.h"
 #include "clock.h"
 
+/*******************************************************
 
 static unsigned char MSB[NUM_SAMPLES];
 static unsigned int LSB[NUM_SAMPLES];
@@ -22,7 +23,6 @@ void InitClockData(void)
 	curr_lsb = 0;
 }
 
-#pragma tmpdata ClockTmpData
 void UpdateClockData()
 {
 	char i;
@@ -104,4 +104,4 @@ void ProcessClockData()
 	}
 }
 
-#pragma tmpdata
+************************************************************************/

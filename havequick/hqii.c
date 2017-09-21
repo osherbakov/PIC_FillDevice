@@ -74,7 +74,6 @@ char	DecodeByte(byte data)
 // HQ data - KKHHMMSSDDDYYM
 byte hq_data[14];
 
-#pragma tmpdata HQIITmpData
 void CalculateHQDate()
 {
 	byte dataout;
@@ -117,7 +116,6 @@ void CalculateHQDate()
 	// FOM	- Figure of Merit
 	hq_data[13] = hamming_table[DEFAULT_FOM];
 }
-#pragma tmpdata
 
 static void ExtractHQDate(void)
 {
@@ -302,8 +300,7 @@ char ReceiveHQTime(void )
 
   	//	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-	if( GetHQTime() )	
-	  return ST_TIMEOUT;
+	if( GetHQTime() )	return ST_TIMEOUT;
 	
 	//  2. Find the next time when we will have HQ stream
 	CalculateNextSecond();

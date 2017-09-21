@@ -110,7 +110,6 @@ void disable_tx_hqii()
 
 void enable_tx_hqii()
 {
-	InitClockData();
   	hq_enabled = 1;
 }  
 
