@@ -30,7 +30,7 @@
 //--------------------------------------------------------------
 #define tA  	100	   // F LOW -> D HIGH	(45ms - 55ms)
 #define tE  	3000   // REQ -> Fill		(0 - 2.3 sec)
-#define tZ  	1000   // Query cell duration
+#define tZ  	2000   // Query cell duration
 #define tF  	200    // End of fill - > response (4ms - 2sec)
 
 static char GetQueryByte(void)
@@ -208,7 +208,7 @@ static void SetTimeFromCell(void)
 	if(ms_100 < 0)
 	{
 		ms_100 += 10;  // Add next second
-  		CalculateNextSecond();
+  	CalculateNextSecond();
 	}
 	if( !rtc_date.Valid )
 	{

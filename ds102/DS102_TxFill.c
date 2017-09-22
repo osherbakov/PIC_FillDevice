@@ -25,7 +25,7 @@
 //--------------------------------------------------------------
 // Timeouts in ms
 //--------------------------------------------------------------
-#define tB  500    		// Query -> Response from Radio (0.8ms - 5ms)
+#define tB  1000    	// Query -> Response from Radio (0.8ms - 5ms)
 #define tD  1000     	// PIN_C Pulse Width (0.25ms - 75ms)
 #define tG  1000     	// PIN_B Pulse Wodth (0.25ms - 80ms)
 #define tH  1000     	// BAD HIGH - > REQ LOW (0.25ms - 80ms)
@@ -92,8 +92,8 @@ static char GetEquipmentMode23Type(void)
   WPUB_PIN_E = 0;
   
   set_timeout(tB);
-  prev = INTCONbits.GIE;
-  INTCONbits.GIE = 0;
+//  prev = INTCONbits.GIE;
+//  INTCONbits.GIE = 0;
 
   i = 0;
   result = ST_TIMEOUT;
@@ -115,7 +115,7 @@ static char GetEquipmentMode23Type(void)
       PreviousState = NewState;
     }
   }
-  INTCONbits.GIE = prev;
+//  INTCONbits.GIE = prev;
   return result;
 }
 
@@ -162,14 +162,20 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
   	char   Result = ST_TIMEOUT;
 
+  	digitalWrite(PIN_C, HIGH);  // Set pullup 
+  	pinMode(PIN_C, INPUT); 
 	// For MODE23 fill we:
 	//  1. Keep pin B high with pullup
 	//  2. read PIN_B 
-  	digitalWrite(PIN_B, HIGH);  // Set pullup 
-  	digitalWrite(PIN_C, HIGH);  // Set pullup 
-    pinMode(PIN_B, INPUT);	
-  	pinMode(PIN_C, INPUT); 
-    WPUB_PIN_B = 1;
+	if(fill_type != MODE1) {
+	  	digitalWrite(PIN_B, HIGH);  // Set pullup 
+    	pinMode(PIN_B, INPUT);	
+    	WPUB_PIN_B = 1;
+	}else {
+	  	digitalWrite(PIN_B, LOW);  // Keep pin_B LOW
+    	pinMode(PIN_B, OUTPUT);	
+    	WPUB_PIN_B = 0;
+	}
 
 	delayMicroseconds(tK1);    // Satisfy Setup time tK1
 
@@ -183,7 +189,6 @@ static char WaitDS102Req(byte fill_type, byte req_type)
   	while( is_not_timeout() )  
   	{
     	NewState_C = pin_C();
-    	NewState_B = pin_B();
     	if(PreviousState_C != NewState_C)  
     	{
       		PreviousState_C = NewState_C;
@@ -199,6 +204,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 	  	// Do not check for pin B in MODE1 fill or on REQ_FIRST
     	if( (req_type != REQ_FIRST) && (fill_type != MODE1) ) 
     	{
+    		NewState_B = pin_B();
 	    	if(NewState_B == LOW) {
       			Result = ST_ERR;  // Bad CRC
       		}			
