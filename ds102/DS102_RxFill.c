@@ -190,35 +190,13 @@ static char SendBadFillAck(void)
   delay(tH);
 }
 
-static void SetTimeFromCell(void)
-{
-  char ms_100;
-  
-	ExtractTODData();
-	if( !IsValidYear()) return;
-	
-	CalculateNextSecond();
-	// The time is in chunks of 1/10 sec
-	// Additionally, we used 	
-	//	  set_timeout(tF);
-	// to detect last byte - so actual 0ms time is "tF" ms earlier
 
-	ms_100 = data_cell[11] >> 4;
-	ms_100 =  9 - ms_100 - ((tF + 50)/ 100);
-	if(ms_100 < 0)
-	{
-		ms_100 += 10;  // Add next second
-  	CalculateNextSecond();
-	}
-	if( !rtc_date.Valid )
-	{
-		SendBadFillAck();
-	}else
-	{
-		while(ms_100-- > 0) delay(100);
-		SetRTCData();		
-	}
-}
+// Detect if there is Type 1 Fill device connected
+// It is detected by LOW on PIN B
+char CheckFillType1()
+{
+	return (pin_B() == LOW);
+}	
 
 typedef enum {
   DF_INIT = 0,  // Initial state
@@ -292,6 +270,18 @@ char CheckFillType23()
 	return ret_val;
 }
 
+// PIN_F should stay LOW during Type23 Fill 
+char CheckFillType23Connected()
+{
+	return (pin_F() == LOW);
+}	
+
+// PIN_B should stay LOW during Type1 Fill 
+char CheckFillType1Connected()
+{
+	return (pin_B() == LOW);
+}	
+
 static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 {
 	byte records, byte_cnt, record_size;
@@ -305,15 +295,13 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 
   	while(1)
 	{
- 		set_led_on();
-
     	// Do retries for Mode 2 and 3 only
     	num_tries = 0; 
     	while(1)
     	{
+ 			set_led_on();
      		SendFillRequest();	// REQ the data
 		  	byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
-   			set_led_off();
 
       		if( (byte_cnt == 0) || (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
 		  	if( (byte_cnt == MODE2_3_CELL_SIZE) && 
@@ -348,16 +336,8 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 			// Prepare for the next record
 			record_size = 0;
 			saved_base_address = base_address++;
-      		// Check if the cell that we received is the 
-      		// TOD cell - set up time
-//			if( (data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) && 
-//						(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) )
-//			{
-//				SetTimeFromCell();
-//			}
-   			set_led_off();
-			SendFillRequest();	// ACK the previous and REQ the next packet
 		}
+		set_led_off();
 	}
 	return records;
 }

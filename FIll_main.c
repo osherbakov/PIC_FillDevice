@@ -24,6 +24,7 @@ static enum
 	FILL_RX,
 	FILL_RX_DS102_WAIT,
 	FILL_RX_RS232_WAIT,
+	FILL_RX_TYPE1,
 	FILL_RX_TYPE23,
 	FILL_RX_DS102,
 	FILL_RX_PC,
@@ -83,14 +84,14 @@ static void SetNextState(char nextState)
 			break;
 			
 		case ZERO_FILL:
-			set_led_state(5, 5);		// About to zero-out pattern
+			set_led_state(5, 5);		// About to zero-out pattern (Fastest Blink)
 			break;
 
 		case FILL_RX_DS102_WAIT:
 		case FILL_RX_RS232_WAIT:
 		case HQ_GPS_RX :
 		case FILL_RX :
-			set_led_state(15, 15);		// "Key empty" blink pattern
+			set_led_state(15, 15);		// "Key empty" blink pattern (Fast Blink)
 			break;
 
 		case FILL_TX_MBITR:
@@ -119,18 +120,19 @@ static void SetNextState(char nextState)
 			break;
 
 		case FILL_RX_PC:
-			set_led_state(200, 50);		// "Try RS232" blink pattern
+			set_led_state(200, 50);		// "Try RS232 PC" blink pattern
 			break;
 
 	    case FILL_RX_DS102:
 		case FILL_TX_DS102:
 	    case FILL_TX_TIME_PROC:
+	    case FILL_RX_TYPE1:
 	    case FILL_RX_TYPE23:
-			set_led_state(150, 0);		// "Key loading" blink pattern
+			set_led_state(150, 0);		// "Key loading" blink pattern (Steady light)
 			break;
     
 		case FILL_RX_RS232:
-			set_led_state(200, 50);		// "Try RS232" blink pattern
+			set_led_state(200, 50);		// "Try RS232 PC" blink pattern
 			break;
 
 		case FILL_RX_DTD232:
@@ -462,21 +464,38 @@ void main()
 					SetNextState(FILL_RX_TYPE23);
 					break;
 				}
-				// If button pressed - Type 1!!!
-				if( TestButtonPress() )
-				{
+			  	result = CheckFillType1();
+			  	if(result > 0)
+			  	{
+					// Process Type 1 fills
 					fill_type = MODE1;
-					SetNextState(FILL_RX_DS102);
- 				}
+					SetNextState(FILL_RX_TYPE1);
+					break;
+				}
 				break;
 
-			case FILL_RX_TYPE23:
-			  	CheckFillType23();
+			case FILL_RX_TYPE1:
+			  	if ( !CheckFillType1Connected()) {
+					SetNextState(INIT);
+					break;
+			    }
 				if( TestButtonPress() )
 				{
 					SetNextState(FILL_RX_DS102);
 				}
 				break;
+
+			case FILL_RX_TYPE23:
+			  	if ( !CheckFillType23Connected()) {
+					SetNextState(INIT);
+					break;
+			    }
+				if( TestButtonPress() )
+				{
+					SetNextState(FILL_RX_DS102);
+				}
+				break;
+
 
 			case FILL_RX_DS102: // Do actual DS-102 fill
 				TestFillResult(StoreDS102Fill(switch_pos, fill_type));

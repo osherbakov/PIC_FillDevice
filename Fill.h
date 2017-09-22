@@ -92,8 +92,13 @@ extern char CheckFillType(byte stored_slot);
 extern void SetType123PinsRx(void);
 
 // To receive fill - check for different fill types
+extern char CheckFillType1(void);
 extern char CheckFillType23(void);
+extern char CheckFillType1Connected(void);
+extern char CheckFillType23Connected(void);
+
 extern char CheckFillType4(void);
+
 extern char CheckFillRS232Type5(void);
 extern char CheckFillDTD232Type5(void);
 extern char CheckFillRS485Type5(void);
