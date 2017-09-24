@@ -297,11 +297,12 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 	{
     	// Do retries for Mode 2 and 3 only
     	num_tries = 0; 
+		set_led_on();
     	while(1)
     	{
- 			set_led_on();
      		SendFillRequest();	// REQ the data
 		  	byte_cnt = ReceiveDS102Cell(fill_type, &data_cell[0], FILL_MAX_SIZE);
+			set_led_off();
 
       		if( (byte_cnt == 0) || (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
 		  	if( (byte_cnt == MODE2_3_CELL_SIZE) && 
@@ -337,7 +338,6 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 			record_size = 0;
 			saved_base_address = base_address++;
 		}
-		set_led_off();
 	}
 	return records;
 }

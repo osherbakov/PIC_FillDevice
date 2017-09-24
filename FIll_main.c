@@ -454,7 +454,7 @@ void main()
 				}
 				break;
       
-      		// Wait for Type 2,3 DS-102 Fills
+      		// Wait for Type 1,2,3 DS-102 Fills
 			case FILL_RX_DS102_WAIT:
 			  	result = CheckFillType23();
 			  	if(result > 0)
@@ -471,6 +471,11 @@ void main()
 					fill_type = MODE1;
 					SetNextState(FILL_RX_TYPE1);
 					break;
+				}
+				if( TestButtonPress() )
+				{
+					fill_type = MODE1;
+					SetNextState(FILL_RX_DS102);
 				}
 				break;
 

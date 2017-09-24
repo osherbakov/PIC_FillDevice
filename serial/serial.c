@@ -266,7 +266,13 @@ void PCInterface()
 			if(p_data[5] == '=') {
 				SetPCKey(slot);
 			}
-			GetPCKey(slot);
+			if(slot == '0' || slot == ' ')	{	// Special case - all keys
+				for(i = 1; i <=13; i++) {
+					GetPCKey(i);
+ 				}
+			}else {			
+				GetPCKey(slot);
+			}
 			set_eusart_rx(p_data, 6);  // Restart collecting data
 		}
   	}  
