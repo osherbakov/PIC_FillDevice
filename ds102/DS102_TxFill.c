@@ -172,9 +172,9 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     	pinMode(PIN_B, INPUT);	
     	WPUB_PIN_B = 1;
 	}else {
-	  	digitalWrite(PIN_B, LOW);  // Keep pin_B LOW
+	  	digitalWrite(PIN_B, HIGH);  // Keep pin_B HIGH
     	pinMode(PIN_B, OUTPUT);	
-    	WPUB_PIN_B = 0;
+    	WPUB_PIN_B = 1;
 	}
 
 	delayMicroseconds(tK1);    // Satisfy Setup time tK1
@@ -191,17 +191,28 @@ static char WaitDS102Req(byte fill_type, byte req_type)
     	NewState_C = pin_C();
     	if(PreviousState_C != NewState_C)  
     	{
-      		PreviousState_C = NewState_C;
       		// check if we should return now or wait for the PIN_C to go HIGH
       		// If this is the last request - return just as PinC goes LOW	
-      		if( (NewState_C == HIGH) || (req_type == REQ_LAST) ) 
+      		if( NewState_C == HIGH ) 
       		{
-        		Result = (Result != ST_ERR) ? ST_OK : ST_ERR;
+				Result = ST_OK;
         		break;
- 	    	} 
+ 	    	}else {		// PIN_C is LOW now 
+				if(req_type == REQ_LAST) {	// For the last fill don't wait for the PIN_C going HIGH
+					Result = ST_OK;
+	        		break;
+				}
+  				// For Type 1 Fill the first request may be just a long pull of PIN_C
+				if(fill_type == MODE1) {
+					Result = ST_OK;
+      				set_timeout(tD);
+				}
+			}
+      		PreviousState_C = NewState_C;
     	}
 
 	  	// Do not check for pin B in MODE1 fill or on REQ_FIRST
+		// For Type 1 there may be no ACK/REQ 
     	if( (req_type != REQ_FIRST) && (fill_type != MODE1) ) 
     	{
     		NewState_B = pin_B();
@@ -209,13 +220,6 @@ static char WaitDS102Req(byte fill_type, byte req_type)
       			Result = ST_ERR;  // Bad CRC
       		}			
     	}
-  	}
-  	// Timeout occured - must return -1, except some special cases
-  	// For Type 1 Fill the first request may be just a long pull of PIN_C
-  	// For Type 1 there may be no ACK/REQ byte - treat timeout as OK
-  	if( (fill_type == MODE1) && (NewState_C == LOW) )
-  	{
-		Result = ST_OK;
   	}
   	return Result;
 }
@@ -231,7 +235,7 @@ static void StartMode23Handshake(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
   WPUB_PIN_B = 1;
   delay(200);
@@ -249,7 +253,7 @@ static void EndMode23Handshake(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_E, HIGH);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -270,7 +274,7 @@ static void AcquireMode23Bus(void)
   digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
@@ -283,10 +287,10 @@ static void AcquireMode23Bus(void)
 
 static void AcquireMode1Bus(void)
 {
-  digitalWrite(PIN_B, LOW);
+  digitalWrite(PIN_B, HIGH);
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, LOW);
+  digitalWrite(PIN_E, HIGH);
   digitalWrite(PIN_F, HIGH);
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
@@ -444,19 +448,20 @@ char SendDS102Fill(byte stored_slot)
 	 			bytes -= byte_cnt;
 			}
 	 		// After sending a record check for the next request
-			if( fill_type == MODE1) break;  // No retries for Type 1 fills
 	 		wait_result = WaitDS102Req(fill_type, (records > 1) ? REQ_NEXT : REQ_LAST );
 			if( wait_result == ST_OK) break;
 			if( num_retries >= TYPE23_RETRIES) break;
 			num_retries++;
 		}
 		records--;
+		
+		// Any errors not corrected - exit
+	   	if(wait_result == ST_ERR) break;
 	   	// If all records were sent - ignore timeout
 	  	if(records == 0){
 			wait_result = ST_DONE;
 			break;
 		}
-	   	if(wait_result != ST_OK) break;
 	}	
   	EndFill();
    	ReleaseBus();

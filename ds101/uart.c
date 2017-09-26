@@ -40,6 +40,8 @@ void OpenRS232()
 int RxRS232Char()
 {
 	byte bitcount, data;
+	byte prev;
+	int  result;
 
 	TRIS_RxPC = INPUT;
 
@@ -49,6 +51,11 @@ int RxRS232Char()
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
   	set_timeout(RX_TIMEOUT1_RS);
+	result = -1;
+  	
+	prev = INTCONbits.GIE;
+  	INTCONbits.GIE = 0;
+
   	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -65,13 +72,16 @@ int RxRS232Char()
 			}
  			while(!PIR5bits.TMR6IF){} ;	// Wait for stop bit
  			if(RxPC){
-     			return -1;  // No stop bit
+     			result = -1;  // No stop bit
    			}else{
-   				return ((int)data) & 0x00FF;
+   				result = ((int)data) & 0x00FF;
      		}
+			break;
 		}
 	}
-	return -1;
+	INTCONbits.GIE = prev;
+
+	return result;
 }
 
 
@@ -117,7 +127,9 @@ void OpenDTD()
 //  >=0 - if symbol was detected 
 int RxDTDChar()
 {
-	byte bitcount, data;
+	byte 	bitcount, data;
+	byte 	prev;
+	int		result;
 
 	TRIS_RxDTD = INPUT;
 
@@ -126,8 +138,13 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(RX_TIMEOUT1_DTD);
-  while( is_not_timeout() )
+  	set_timeout(RX_TIMEOUT1_DTD);
+	
+	prev = INTCONbits.GIE;
+  	INTCONbits.GIE = 0;
+
+	result = -1;
+  	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(RxDTD )
@@ -144,14 +161,18 @@ int RxDTDChar()
 			while(!PIR5bits.TMR6IF){} ; // Wait for stop bit
  			if(RxDTD)
  			{
-     		return -1;
-   		}else
-   		{
-   			return ((int)data) & 0x00FF;
-     	}
+    	 		result =  -1;
+   			}else
+   			{
+   				result =  ((int)data) & 0x00FF;
+     		}
+			break;
 		}
 	}
-	return -1;
+
+  	INTCONbits.GIE = prev;
+
+	return result;
 }
 
 
@@ -186,8 +207,8 @@ void OpenRS485()
 {
 	TRIS_Data_N = INPUT;
 	TRIS_Data_P = INPUT;
-  WPUB_Data_P = 1;
-  WPUB_Data_N = 1;
+  	WPUB_Data_P = 1;
+  	WPUB_Data_N = 1;
 }
 
 //
@@ -197,7 +218,9 @@ void OpenRS485()
 //  >=0 - if symbol was detected 
 int RxRS485Char()
 {
-	byte bitcount, data;
+	byte 	bitcount, data;
+	byte	prev;
+	int		result;
 
 	TRIS_Data_N = INPUT;
 	TRIS_Data_P = INPUT;
@@ -207,8 +230,12 @@ int RxRS485Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  set_timeout(RX_TIMEOUT1_DTD);
-  while( is_not_timeout() )
+  	set_timeout(RX_TIMEOUT1_DTD);
+
+	prev = INTCONbits.GIE;
+  	INTCONbits.GIE = 0;
+
+  	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(Data_N && !Data_P)
@@ -225,14 +252,16 @@ int RxRS485Char()
 			while(!PIR5bits.TMR6IF){} ;
 			if(Data_N)
  			{
-     		return -1;
-   		}else
-   		{
-   			return ((int)data) & 0x00FF;
-     	}
+     			result = -1;
+   			}else
+   			{
+   				result =  ((int)data) & 0x00FF;
+     		}
 		}
 	}
-	return -1;
+
+  	INTCONbits.GIE = prev;
+	return result;
 }
 
 void TxRS485Char(char data)

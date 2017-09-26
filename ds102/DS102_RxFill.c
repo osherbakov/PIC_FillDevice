@@ -192,10 +192,12 @@ static char SendBadFillAck(void)
 
 
 // Detect if there is Type 1 Fill device connected
-// It is detected by LOW on PIN B
+// It is detected by LOW on PIN B, or maybe not...
+// Needs more investigation
 char CheckFillType1()
 {
-	return (pin_B() == LOW);
+	return 0;
+//	return (pin_B() == LOW);
 }	
 
 typedef enum {
@@ -277,9 +279,12 @@ char CheckFillType23Connected()
 }	
 
 // PIN_B should stay LOW during Type1 Fill 
+// .. or not....
+// Need to figure out that later, how to detect the presence of the KYK-13 or KOI-18 fill device
 char CheckFillType1Connected()
 {
-	return (pin_B() == LOW);
+	return 0;
+//	return (pin_B() == LOW);
 }	
 
 static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
@@ -391,5 +396,4 @@ void SetType123PinsRx()
   WPUB_PIN_E = 1;
   // Set up pins mode and levels
   delay(tB);
-  
 }
