@@ -108,7 +108,7 @@ void TxAXID(char mode)
 // Ideally, it would be done with virtual functions in C++
 void SetupDS101Mode(char slot, char mode )
 {
-		char TxMode = ((mode == TX_RS232) || 
+	char TxMode = ((mode == TX_RS232) || 
 										(mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
     CurrentName = TxMode ? master_name : slave_name;
     IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
@@ -153,22 +153,22 @@ char ProcessDS101(void)
         Command = p_data[1];
         p_data +=2; nSymb -= 2;  // 2 chars were processed
         
-				// Extract the PF flag and detect the FRAME type
+		// Extract the PF flag and detect the FRAME type
         PF = Command & PMASK;      // Poll/Final flag
 
-				// Only accept your or broadcast data, 
+		// Only accept your or broadcast data, 
         if( IsValidAddressAndCommand(Address, Command) )
         {
           unsigned char NRR = (Command >> 5) & 0x07;
           unsigned char NSR = (Command >> 1) & 0x07;
 
-		  		// Select the type of the frame to process
+		  // Select the type of the frame to process
           if(IsIFrame(Command))          // IFRAME
           {
             if( (NSR == NR) && (NRR == NS)) 
             {
                 NR = (NR + 1) & 0x07;	// Increment received frame number
-			    			ProcessIFrame(p_data, nSymb);
+				ProcessIFrame(p_data, nSymb);
             }else
             {
               TxSFrame(REJ);				// Reject frame
@@ -177,14 +177,14 @@ char ProcessDS101(void)
           {
             if( NRR == NS ) 
             {
-							ProcessSFrame(Command & SMASK);
-	        	}else
+				ProcessSFrame(Command & SMASK);
+	       	}else
             {
               TxSFrame(REJ);				// Reject frame
             }
           }else if(IsUFrame(Command))    // UFRAME
           {
-						ProcessUFrame(Command & UMASK);
+				ProcessUFrame(Command & UMASK);
           }
         }
     }
