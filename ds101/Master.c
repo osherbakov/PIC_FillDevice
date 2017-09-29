@@ -71,15 +71,14 @@ void MasterStart(char slot)
 	frame_len = 0;
 	master_state = MS_IDLE;	
 	CurrentAddress = BROADCAST;
-  CurrentNumber = MASTER_NUMBER;
+  	CurrentNumber = MASTER_NUMBER;
 	ResetTimeout();
 }	
 
 char GetMasterStatus()
 {
-	return 
-		(master_state == MS_TIMEOUT) ? ST_TIMEOUT :
-			(master_state == MS_DONE) ? ST_DONE : 
+	return (master_state == MS_TIMEOUT) ? ST_TIMEOUT :
+			  (master_state == MS_DONE) ? ST_DONE : 
 				(master_state == MS_ERROR) ? ST_ERR : ST_OK; 
 }	
 
@@ -96,7 +95,7 @@ void TxDataBlock(void)
 	// Read the block of data
 	array_read(base_address, (unsigned char *)&Key_buff[0], byte_count);
 	base_address += byte_count;
-  TxIFrame(&Key_buff[0], byte_count);
+  	TxIFrame(&Key_buff[0], byte_count);
 }	
 
 void MasterProcessIdle()
@@ -111,48 +110,42 @@ void MasterProcessIdle()
 			frame_len = 0;
 
 			TxUFrame(SNRM);		// Request connection
-    	ResetTimeout();
+    		ResetTimeout();
 			master_state = MS_SEND_SNRM1;
 			break;
 
 		case MS_SEND_SNRM1:
-			if(IsTimeoutExpired())
-			{
-				if(retry_flag == 0)
-				{
+			if(IsTimeoutExpired()){
+				if(retry_flag == 0){
 					TxRetry();
-        	ResetTimeout();
+        			ResetTimeout();
 					retry_flag = 1;
-				}else
-				{
+				}else{
 					master_state = MS_SEND_SNRM2;
 				}	
 			}
 			break;
 
 		case MS_SEND_SNRM2:
-			if(IsTimeoutExpired())
-			{
+			if(IsTimeoutExpired()){
 				master_state = MS_TIMEOUT;
 			}
 			break;
     
-    case MS_DONE:
-    case MS_ERROR:
-    case MS_TIMEOUT:
-      // Stay in this state
-      break;
+    	case MS_DONE:
+    	case MS_ERROR:
+    	case MS_TIMEOUT:
+      		// Stay in this state
+      		break;
       
 		default:
 			if(IsTimeoutExpired())
 			{
-				if(retry_flag == 0)
-				{
+				if(retry_flag == 0){
 					TxRetry();
-        	ResetTimeout();
+        			ResetTimeout();
 					retry_flag = 1;
-				}else
-				{
+				}else {
 					master_state = MS_ERROR;
 				}	
 			}
@@ -193,20 +186,20 @@ void MasterProcessIFrame(char *p_data, int n_chars)
 	   // Should be only in the MS_AXID_EXCH state
       case 0x0050:    // Received AXID
       case 0x0060:    // Received AXID
-				master_state = MS_REQ_DISC;
+		master_state = MS_REQ_DISC;
         TxSFrame(RR);
-      break;
+      	break;
 
 	  //*************************************************
 	  //			TERMINATE REMOTE CONNECTION
 	  //*************************************************
       case 0x0000:    // End of remote
         TxSFrame(RR);
-      break;
+      	break;
 
       default:    
         TxSFrame(RR);
-      break;
+      	break;
     }
   	ResetTimeout();
 }
@@ -224,30 +217,27 @@ void MasterProcessSFrame(unsigned char Cmd)
 				master_state = MS_RECONNECT;
 				break;
 
-			case MS_CHECK_RR:
+		   case MS_CHECK_RR:
 				TxSFrame(RR);  // Send RR
 				master_state = MS_SEND_DATA;
 				break;
 
-		  case MS_SEND_DATA:
-		   	if(block_counter)
-		   	{
-						TxDataBlock();  // Send Data block from EEPROM
-					  block_counter--;
-				}else
-				{
+		   case MS_SEND_DATA:
+			   	if(block_counter){
+					TxDataBlock();  // Send Data block from EEPROM
+					block_counter--;
+				}else{
 					// Done - request disconnect
 					TxUFrame(DISC);
 					master_state = MS_DISC;
 				}	
 				break;
 
-			case MS_DISC:
+		   case MS_DISC:
 				// Reset all to defaults on disconnect 
 				frame_len = 0;
 				NR = 0;
 				NS = 0;
-
 				master_state = MS_DONE;
 				break;
 		}
@@ -291,12 +281,10 @@ void MasterProcessUFrame(unsigned char Cmd)
 				break;
 
 		   case MS_SEND_DATA:
-		   		if(block_counter)
-		   		{
+		   		if(block_counter){
 					TxDataBlock();  // Send Data block from EEPROM
 					block_counter--;
-				}else
-				{
+				}else{
 					// Done - request disconnect
 					TxUFrame(DISC);
 					master_state = MS_DISC;
@@ -308,18 +296,17 @@ void MasterProcessUFrame(unsigned char Cmd)
 				frame_len = 0;
 				NR = 0;
 				NS = 0;
-
 				master_state = MS_DONE;
 				break;
 		}
 	}else if(Cmd == DISC)      // DISC
 	{
-	  // Reset all to defaults on disconnect 
-    frame_len = 0;
-	  NR = 0;
-	  NS = 0;
-
-	  master_state = MS_DONE;
+	    TxUFrame(UA);
+	  	// Reset all to defaults on disconnect 
+		frame_len = 0;
+	  	NR = 0;
+	  	NS = 0;
+	  	master_state = MS_DONE;
 	}
 	ResetTimeout();
 }

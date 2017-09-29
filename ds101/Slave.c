@@ -61,7 +61,7 @@ void SlaveStart(char slot)
 	block_counter = 0;
 	CurrentAddress = SLAVE_ADDRESS;
 	NewAddress = SLAVE_ADDRESS; 
-  CurrentNumber = SLAVE_NUMBER;
+  	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
 	ResetTimeout();
 	retry_flag = 1; // No retries until first data sent
@@ -78,12 +78,12 @@ char IsSlaveValidAddressAndCommand(unsigned char Address, unsigned char Command)
 {
 	if((Address == BROADCAST) || (Address == CurrentAddress))
 	{
-    // If no connection was established - return the DM (Disconnect Mode)
-    // Status message on every request
-    if(!Connected && ( IsIFrame(Command) || IsSFrame(Command) ) )
+	    // If no connection was established - return the DM (Disconnect Mode)
+	    // Status message on every request
+	    if(!Connected && ( IsIFrame(Command) || IsSFrame(Command) ) )
 		{
-        TxUFrame(DM);  // Send DM
-			  return FALSE;
+	       	TxUFrame(DM);  // Send DM
+			return FALSE;
 		}
 		if(Address != BROADCAST)
 		{
@@ -115,13 +115,13 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 {
 	char *p_data_saved = p_data;
 	int  n_saved_chars = n_chars;
-  if(frame_len == 0)	// No data left in the frame
-  {
-      frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
-      frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
-      p_data += 4;   n_chars -= 4;		// 4 chars were processed (FDU and Length)
-  }
-  frame_len -= n_chars;    
+	if(frame_len == 0)	// No data left in the frame
+	{
+	      frame_FDU = (((int)p_data[0]) << 8) + (((int)p_data[1]) & 0x00FF);
+	      frame_len = (((int)p_data[2]) << 8) + (((int)p_data[3]) & 0x00FF);
+	      p_data += 4;   n_chars -= 4;		// 4 chars were processed (FDU and Length)
+	}
+	frame_len -= n_chars;    
 
 	//  Save all data packets except AXID FDU
 	if( (frame_FDU != 0x0050) && (frame_FDU != 0x0060) )
@@ -129,8 +129,8 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 		SaveDataBlock(p_data_saved, n_saved_chars);
 	}	
 	
-  switch(frame_FDU)
-  {
+  	switch(frame_FDU)
+  	{
     case 0x0050:    // Get AXID
 	  // Send back requested AXID
 	  TxAXID(0);		
@@ -139,15 +139,13 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 //*************************************************
 //			KEY ISSUE SHA
 //*************************************************
-
-  case 0x03FF:    // Issue the key with SHA
+  	case 0x03FF:    // Issue the key with SHA
       TxSFrame(RR);
     break;
     
 //*************************************************
 //			CIK FILL/ISSUE
 //*************************************************
-
     case 0x02D8:    // CIK split issue
       TxSFrame(RR);
     break;
@@ -167,13 +165,12 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 //*************************************************
 //			KEY FILL/ISSUE
 //*************************************************
-
-  case 0x02B0:    // Key issue
+  	case 0x02B0:    // Key issue
 	// Send response
       TxSFrame(RR);
     break;
 
-  case 0x0298:    // Key issue done
+  	case 0x0298:    // Key issue done
       TxSFrame(RR);
     break;
 
@@ -189,8 +186,7 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 //*************************************************
 //			FILE FILL/ISSUE
 //*************************************************
-
-  case 0x02B8:    // Program transfer issue
+  	case 0x02B8:    // Program transfer issue
       TxSFrame(RR);
     break;
 
@@ -201,7 +197,7 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
 //*************************************************
 //			KEY FILL/ISSUE NAME
 //*************************************************
-  case 0x0190:    // Key fill name
+  	case 0x0190:    // Key fill name
       TxSFrame(RR);
     break;
 
@@ -210,10 +206,15 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
     break;
 
 //*************************************************
-//			TRKEK ISSUE
+//			TRKEK FILL/ISSUE
 //*************************************************
+    case 0x01E0:    // Transfer TrKEK Fill
+	  frame_len = 0;	// Force it to be in one frame
+      TxSFrame(RR);
+    break;
+    
     case 0x02E0:    // Transfer TrKEK Issue
-	frame_len = 0;	// Force it to be in one frame
+	  frame_len = 0;	// Force it to be in one frame
       TxSFrame(RR);
     break;
 
@@ -267,27 +268,27 @@ void SlaveProcessUFrame(unsigned char Cmd)
 {
 	if(Cmd == SNRM)            // SNRM
 	{
+	  TxUFrame(UA);  // Send UA
 	  // Reset all to defaults on connect 
 	  Connected = TRUE;
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
 
-	  TxUFrame(UA);  // Send UA
 	}else if(Cmd == DISC)      // DISC
 	{
+	  TxUFrame(UA);
 	  // Reset all to defaults on disconnect
 	  Connected = FALSE;
 	  frame_len = 0;
 	  NR = 0;
 	  NS = 0;
-	  TxUFrame(UA);
 	  // After the disconnect  - change the address
 	  CurrentAddress = NewAddress;
-		// Did we get any data? Yes - Signal as ST_DONE
-		if(block_counter > 0) {
-			status = ST_DONE;
-		}
+	  // Did we get any data? Yes - Signal as ST_DONE
+	  if(block_counter > 0) {
+		status = ST_DONE;
+	  }
 	}else if(Cmd == UI)      // UI
 	{
 	}else if(Cmd == UP)      // UP
@@ -309,11 +310,11 @@ void SlaveProcessIdle()
 		if(retry_flag == 0)
 		{
 			TxRetry();
-    	ResetTimeout();
+    		ResetTimeout();
 			retry_flag = 1;
 		}else
 		{
-  		status = ST_TIMEOUT;
+  			status = ST_TIMEOUT;
 		}	
 	}	
 }
