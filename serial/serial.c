@@ -116,7 +116,7 @@ char CheckFillRS232Type5()
 		 close_eusart();
 		 return MODE5;
 	}
-	return -1;
+	return ST_TIMEOUT;
 }	
 
 // Check serial port if there is a request to send DES keys
@@ -124,8 +124,6 @@ char CheckFillType4()
 {
 	if( !RCSTA1bits.SPEN)
 	{
-//  	TRIS_RxPC = 1;
-//  	TRIS_TxPC = 1;
 	  	if(!RxPC && TxPC)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
@@ -144,6 +142,7 @@ char CheckFillType4()
 			rx_idx = 0; // Data consumed
   			// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
+			flush_eusart();
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
 			rx_idx = 0; // Data consumed

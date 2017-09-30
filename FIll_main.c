@@ -508,12 +508,12 @@ void main()
 
       		// Wait for serial RS-232 or DS-101 fills				
       		case FILL_RX_RS232_WAIT:
-        		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+      			// Check if is is a DES keys fill from the PC (Type 4)
  				result = CheckFillType4();
 				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_PC);
-				  break;
+				  	break;
 				}
 
         		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
@@ -521,7 +521,7 @@ void main()
 				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_RS232);
-				  break;
+				  	break;
 				}
 
         		// If Pin_C is -5V - that is DTD-232 Type 5
@@ -529,7 +529,7 @@ void main()
 				if(result > 0){
 					fill_type = result;
 					SetNextState(FILL_RX_DTD232);
-			    break;
+			    	break;
 				}
 				
 /********************************************************
