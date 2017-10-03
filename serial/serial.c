@@ -104,7 +104,7 @@ char CheckFillRS232Type5()
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_CMD, DATA_POLARITY);
-	  		set_eusart_rx(SerialBuffer, 4);
+	  		rx_eusart_async(SerialBuffer, 4);
 	  	}	
 	}
 	
@@ -128,7 +128,7 @@ char CheckFillType4()
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_CMD, DATA_POLARITY);
-	  		set_eusart_rx(SerialBuffer, 4);
+	  		rx_eusart_async(SerialBuffer, 4);
 	  	}	
 	}
 	
@@ -180,7 +180,7 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 }
 
 
-void set_eusart_rx(unsigned char *p_rx_data, byte max_size)
+void rx_eusart_async(unsigned char *p_rx_data, byte max_size)
 {
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 0; // Disable Rx
@@ -222,7 +222,7 @@ void PCInterface()
 	if( RCSTA1bits.SPEN == 0)
 	{
 		open_eusart(BRREG_CMD, DATA_POLARITY);
- 		set_eusart_rx(p_data, 6);
+ 		rx_eusart_async(p_data, 6);
 	}
 	
 	// Wait to receive 6 characters
@@ -238,26 +238,26 @@ void PCInterface()
 	    	slot = p_data[5] & 0x0F;
 	    	type = (p_data[5] >> 4) & 0x0F;
 	  		StorePCFill(slot, type);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, KEY_DUMP, 5))
 	  	{
 	    	// The last char in /DUMPN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		WaitReqSendPCFill(slot);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, MEM_READ, 5))
 	  	{
 	    	// The last char in /READN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		ReadMemSendPCFill(slot);
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6);  // Restart collecting data
 	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
 	  	{
 			if(p_data[5] == '=') {
 				SetCurrentDayTime();
 			}
 	  	  	GetCurrentDayTime();
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6);  // Restart collecting data
 	    }else if(is_equal( p_data, KEY_CMD, 4))
 	  	{
 	    	// The next char in /KEY<n> is the slot number
@@ -272,7 +272,7 @@ void PCInterface()
 			}else {			
 				GetPCKey(slot);
 			}
-			set_eusart_rx(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6);  // Restart collecting data
 		}
   	}  
 }
@@ -281,18 +281,20 @@ void PCInterface()
 // Receive the specified number of characters with timeout
 // RX_TIMEOUT1_PC - timeout until 1st char received
 // RX_TIMEOUT2_PC - timeout for all consequtive chars
-byte rx_eusart(unsigned char *p_data, byte ncount)
+byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
+  	byte	symbol;
   	byte  nrcvd = 0;
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
-  	set_timeout(RX_TIMEOUT1_PC);
+  	set_timeout(timeout);
 	while( (nrcvd < ncount ) && is_not_timeout() )
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
 			// Get data byte and save it
-			*p_data++ = RCREG1;
+			symbol = RCREG1;
+			*p_data++ = symbol;
 			nrcvd++;
 		  	set_timeout(RX_TIMEOUT2_PC);
 			// overruns? clear it
@@ -306,33 +308,6 @@ byte rx_eusart(unsigned char *p_data, byte ncount)
   	return nrcvd;
 }
 
-// Continue to receive the specified number of characters with timeout
-// RX_TIMEOUT2_PC - timeout for all consequtive chars
-byte rx_eusart_cont(unsigned char *p_data, byte ncount)
-{
-  
-  	byte  nrcvd = 0;
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-
-  	set_timeout(RX_TIMEOUT2_PC);
-	while( (nrcvd < ncount ) && is_not_timeout() )
-	{
-		if(PIR1bits.RC1IF)	// Data is avaiable
-		{
-			// Get data byte and save it
-			*p_data++ = RCREG1;
-			nrcvd++;
-		  	set_timeout(RX_TIMEOUT2_PC);
-			// overruns? clear it
-			if(RCSTA1 & 0x06)
-			{
-				RCSTA1bits.CREN = 0;
-				RCSTA1bits.CREN = 1;
-			}
-		}
-	}
-  	return nrcvd;
-}
 
 byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
@@ -349,7 +324,7 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 			symbol = RCREG1;
 			*p_data++ = symbol;
 			if(symbol == '\n' || symbol == '\r')  {
-				return nrcvd;
+				break;
 			}	
 			nrcvd++;
   			set_timeout(timeout);

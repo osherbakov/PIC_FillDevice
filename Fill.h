@@ -54,12 +54,12 @@ typedef enum
 #define KEY_NAK  (0x15)	// Key nack
 #define KEY_EOL  (0x0D)	// Key End of Line
 
-#define  RX_TIMEOUT1_PC	 	(5000)  // 5 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT1_PC	 	(3000)  // 3 seconds - timeout until 1st symbol
 #define  RX_TIMEOUT2_PC	 	(100)   // 100ms - timeout after that
 #define  RX_TIMEOUT1_MBITR 	(3000)  // 3 seconds - timeout until 1st symbol
 #define  RX_TIMEOUT2_MBITR 	(100)   // 100ms - timeout after that
-#define  RX_TIMEOUT1_RS	  	(2000)  // 2 seconds - timeout until 1st symbol
-#define  RX_TIMEOUT1_DTD	(2000)  // 2 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT1_RS	  	(3000)  // 3 seconds - timeout until 1st symbol
+#define  RX_TIMEOUT2_RS	  	(100)  	// 100ms - timeout after that
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing

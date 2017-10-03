@@ -32,28 +32,6 @@ enum MASTER_STATE
 
 #define TX_WAIT   (2)    // 2 Seconds
 
-static char	retry_flag;
-static unsigned int Timeout;
-static void ResetTimeout(void)
-{
-	char	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0; 
-	Timeout = seconds_counter + TX_WAIT;
-  	INTCONbits.GIE = prev;
-	retry_flag = 0;
-}
-
-static char IsTimeoutExpired(void)
-{
-  	char  ret;
-	char	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0; 
-	ret = (seconds_counter > Timeout) ? 1 : 0;
-  	INTCONbits.GIE = prev;
-  	return ret;
-}
-
-
 static char master_state;
 
 static unsigned long short base_address;
@@ -72,7 +50,6 @@ void MasterStart(char slot)
 	master_state = MS_IDLE;	
 	CurrentAddress = BROADCAST;
   	CurrentNumber = MASTER_NUMBER;
-	ResetTimeout();
 }	
 
 char GetMasterStatus()
@@ -110,26 +87,16 @@ void MasterProcessIdle()
 			frame_len = 0;
 
 			TxUFrame(SNRM);		// Request connection
-    		ResetTimeout();
 			master_state = MS_SEND_SNRM1;
 			break;
 
 		case MS_SEND_SNRM1:
-			if(IsTimeoutExpired()){
-				if(retry_flag == 0){
-					TxRetry();
-        			ResetTimeout();
-					retry_flag = 1;
-				}else{
-					master_state = MS_SEND_SNRM2;
-				}	
-			}
+			TxUFrame(SNRM);		// Request connection
+			master_state = MS_SEND_SNRM2;
 			break;
 
 		case MS_SEND_SNRM2:
-			if(IsTimeoutExpired()){
-				master_state = MS_TIMEOUT;
-			}
+			master_state = MS_TIMEOUT;
 			break;
     
     	case MS_DONE:
@@ -139,16 +106,6 @@ void MasterProcessIdle()
       		break;
       
 		default:
-			if(IsTimeoutExpired())
-			{
-				if(retry_flag == 0){
-					TxRetry();
-        			ResetTimeout();
-					retry_flag = 1;
-				}else {
-					master_state = MS_ERROR;
-				}	
-			}
 			break;
 	}
 }
@@ -186,22 +143,22 @@ void MasterProcessIFrame(char *p_data, int n_chars)
 	   // Should be only in the MS_AXID_EXCH state
       case 0x0050:    // Received AXID
       case 0x0060:    // Received AXID
-		master_state = MS_REQ_DISC;
         TxSFrame(RR);
+		master_state = MS_REQ_DISC;
       	break;
 
 	  //*************************************************
 	  //			TERMINATE REMOTE CONNECTION
 	  //*************************************************
       case 0x0000:    // End of remote
-        TxSFrame(RR);
+		TxUFrame(DISC);
+		master_state = MS_DISC;
       	break;
 
       default:    
         TxSFrame(RR);
       	break;
     }
-  	ResetTimeout();
 }
 
 
@@ -238,6 +195,7 @@ void MasterProcessSFrame(unsigned char Cmd)
 				frame_len = 0;
 				NR = 0;
 				NS = 0;
+				PF = 1;
 				master_state = MS_DONE;
 				break;
 		}
@@ -249,7 +207,6 @@ void MasterProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
-	ResetTimeout();
 }
 
 void MasterProcessUFrame(unsigned char Cmd)
@@ -296,6 +253,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 				frame_len = 0;
 				NR = 0;
 				NS = 0;
+				PF = 1;
 				master_state = MS_DONE;
 				break;
 		}
@@ -306,7 +264,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 		frame_len = 0;
 	  	NR = 0;
 	  	NS = 0;
+		PF = 1;
 	  	master_state = MS_DONE;
 	}
-	ResetTimeout();
 }

@@ -30,6 +30,7 @@ void (*ProcessUFrame)(unsigned char Cmd);
 void (*ProcessIdle)(void);
 char (*IsValidAddressAndCommand)(unsigned char  Address, unsigned char  Command);
 char (*GetStatus)(void);
+void (*StartProcess)(char slot);
 
 
 void TxSFrame(unsigned char cmd)
@@ -93,30 +94,27 @@ void TxAXID(char mode)
 // Ideally, it would be done with virtual functions in C++
 void SetupDS101Mode(char slot, char mode )
 {
-	char TxMode = ((mode == TX_RS232) || 
-				(mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
-    CurrentName = TxMode ? master_name : slave_name;
+	char TxMode = ( (mode == TX_RS232) || 
+					(mode == TX_RS485) || 
+					(mode == TX_DTD232) ) ? TRUE : FALSE;
+    CurrentName = 	TxMode ? master_name : slave_name;
     IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
-    ProcessIdle = TxMode ? MasterProcessIdle : SlaveProcessIdle;
+    ProcessIdle = 	TxMode ? MasterProcessIdle : SlaveProcessIdle;
     ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
     ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
-  	GetStatus =  TxMode ? GetMasterStatus : GetSlaveStatus;
+  	GetStatus =  	TxMode ? GetMasterStatus : GetSlaveStatus;
+	StartProcess = 	TxMode ? MasterStart : SlaveStart;
   	OpenDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
         ((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
     WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : 
         ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
     ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
         ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
-
-    OpenDS101();
-
-    if(TxMode) 
-    	MasterStart(slot);
-    else
-    	SlaveStart(slot);
+    
+	OpenDS101();
+	StartProcess(slot);
 }	
-
 
 char ProcessDS101(void)
 {
@@ -150,26 +148,22 @@ char ProcessDS101(void)
 		  // Select the type of the frame to process
           if(IsIFrame(Command))          // IFRAME
           {
-            if( (NSR == NR) && (NRR == NS)) 
-            {
+            if( (NSR == NR) && (NRR == NS)) {
                 NR = (NR + 1) & 0x07;	// Increment received frame number
 				ProcessIFrame(p_data, nSymb);
-            }else
-            {
+            }else{
               TxSFrame(REJ);				// Reject frame
             }
           }else if(IsSFrame(Command))    // SFRAME
           {
-            if( NRR == NS ) 
-            {
+            if( NRR == NS ) {
 				ProcessSFrame(Command & SMASK);
-	       	}else
-            {
+	       	}else{
               TxSFrame(REJ);				// Reject frame
             }
           }else if(IsUFrame(Command))    // UFRAME
           {
-				ProcessUFrame(Command & UMASK);
+			ProcessUFrame(Command & UMASK);
           }
         }
     }

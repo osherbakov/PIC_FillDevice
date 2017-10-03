@@ -15,6 +15,8 @@ static unsigned char block_counter;             // Counter for blocks sent
 
 static char NewAddress;
 static char Connected;
+static char NumFrames;
+static int StationID;
 
 
 int frame_len;
@@ -22,26 +24,21 @@ int frame_FDU;
 
 static char status;
 
-#define RX_WAIT   (7)    // 7 Seconds
+#define RX_WAIT   (3)    // 3 Seconds
 
 static unsigned int Timeout;
-static char	retry_flag;
 static void ResetTimeout(void)
 {
 	char	prev = INTCONbits.GIE;
   	INTCONbits.GIE = 0; 
 	Timeout = seconds_counter + RX_WAIT;
   	INTCONbits.GIE = prev;
-	retry_flag = 0;
 }
 
 static char IsTimeoutExpired(void)
 {
   	char  ret;
-	char	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0; 
 	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
-  	INTCONbits.GIE = prev;
   	return ret;
 }
 
@@ -64,7 +61,6 @@ void SlaveStart(char slot)
   	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
 	ResetTimeout();
-	retry_flag = 1; // No retries until first data sent
 }
 
 
@@ -132,7 +128,10 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
   	switch(frame_FDU)
   	{
     case 0x0050:    // Get AXID
-	  // Send back requested AXID
+	  NumFrames = *p_data++;
+	  StationID = (((int)*p_data++) << 8);
+	  StationID += (((int)*p_data++) & 0x00FF);
+ 	  // Send back requested AXID
 	  TxAXID(0);		
     break;
 
@@ -305,16 +304,4 @@ void SlaveProcessUFrame(unsigned char Cmd)
 
 void SlaveProcessIdle()
 {
-	if( (status != ST_DONE) && IsTimeoutExpired() )
-	{
-		if(retry_flag == 0)
-		{
-			TxRetry();
-    		ResetTimeout();
-			retry_flag = 1;
-		}else
-		{
-  			status = ST_TIMEOUT;
-		}	
-	}	
 }

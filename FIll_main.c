@@ -292,8 +292,8 @@ void main()
 						// Type = 0 - empty slot
 						//		= 1 - Type 1 fill
 						//		= 2,3 - Type 2,3 fill
-						//		= 4 - DES Key fill
-						//		= 5 - DS-101 fill (both RS232 and RS485)
+						//		= 4 - DES MBITR Key fill
+						//		= 5 - DS-101 fill (both RS232, DTD and RS485)
 						fill_type = CheckFillType(switch_pos);
 						if( fill_type > 0)
 						{
@@ -344,19 +344,19 @@ void main()
 			//********************************************
 			//-----------FILL_TX--------------	
 			case FILL_TX:
-				if(fill_type == MODE5)          // Any DS-101 fill
+				if(fill_type == MODE5)          	// Any DS-101 fill
 				{
-					set_pin_a_as_gnd();						//  Set GND on Pin A
+					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
 					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
-				}else if(fill_type == MODE4)    // MBITR keys
+				}else if(fill_type == MODE4)    	// MBITR keys
 				{
-					set_pin_a_as_gnd();						//  Set GND on Pin A
+					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
 					SetNextState(FILL_TX_MBITR);
 				}else 
-				{       // Any type 1,2,3 fill - DS-102
-					set_pin_a_as_power();						//  Set +5V on Pin A for Type 1,2,3
+				{       							// Any type 1,2,3 fill - DS-102
+					set_pin_a_as_power();			//  Set +5V on Pin A for Type 1,2,3
           			set_pin_f_as_io();
 					SetNextState(FILL_TX_DS102_WAIT);
 				}

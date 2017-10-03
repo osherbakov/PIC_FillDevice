@@ -4,13 +4,13 @@
 #include "Fill.h"
 #include "serial.h"
 
-#define DTD_BAUDRATE  (2400L)
+#define DTD_BAUDRATE  	(2400L)
 #define DS101_BAUDRATE	(64000L)
 
-#define TIMER_DTD 	( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
-#define TIMER_DTD_START 	( -(TIMER_DTD/2) )
+#define TIMER_DTD 		( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
+#define TIMER_DTD_START ( -(TIMER_DTD/2) )
 #define TIMER_DTD_EDGE 	( (TIMER_DTD/2) )
-#define TIMER_DTD_CTRL ( (1<<2) | 2)     // ENA, 1:16
+#define TIMER_DTD_CTRL 	( (1<<2) | 2)     // ENA, 1:16
 
 #define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
@@ -24,10 +24,10 @@ int (*ReadCharDS101)(void);
 
 void OpenRS232()
 {
-  close_eusart();
+  	close_eusart();
 	TRIS_RxPC = INPUT;
 	TRIS_TxPC = OUTPUT;
-  TxPC  = 0;  // Set up the stop bit
+  	TxPC  = 0;  // Set up the stop bit
 }
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
@@ -50,7 +50,6 @@ int RxRS232Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  	set_timeout(RX_TIMEOUT1_RS);
 	result = -1;
   	
 	prev = INTCONbits.GIE;
@@ -113,10 +112,10 @@ void TxRS232Char(char data)
 
 void OpenDTD()
 {
-  close_eusart();
+  	close_eusart();
 	TRIS_RxDTD = INPUT;
 	TRIS_TxDTD = OUTPUT;
-  TxDTD  = 0;  // Set up the stop bit
+  	TxDTD  = 0;  // Set up the stop bit
 }
 
 
@@ -138,8 +137,6 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  	set_timeout(RX_TIMEOUT1_DTD);
-	
 	prev = INTCONbits.GIE;
   	INTCONbits.GIE = 0;
 
@@ -169,7 +166,6 @@ int RxDTDChar()
 			break;
 		}
 	}
-
   	INTCONbits.GIE = prev;
 
 	return result;
@@ -230,8 +226,6 @@ int RxRS485Char()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-  	set_timeout(RX_TIMEOUT1_DTD);
-
 	prev = INTCONbits.GIE;
   	INTCONbits.GIE = 0;
 

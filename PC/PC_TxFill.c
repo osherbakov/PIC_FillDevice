@@ -17,7 +17,7 @@ static char WaitPCReq(byte req_type)
 
 	char_to_expect = KEY_ACK; 
 	// wait in the loop until receive the ACK character, or timeout
-  	while( rx_eusart(&char_received, 1) && (char_received != char_to_expect) ) {}; 
+  	while( rx_eusart(&char_received, 1, RX_TIMEOUT1_PC) && (char_received != char_to_expect) ) {}; 
 	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT; 
 }
 

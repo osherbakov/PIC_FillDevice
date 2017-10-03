@@ -36,9 +36,8 @@ extern volatile byte rx_idx_max;  // Last byte index
 extern void PCInterface(void);
 
 extern void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity);
-extern void set_eusart_rx(unsigned char *p_rx_data, byte max_size);
-extern byte rx_eusart(unsigned char *p_data, byte ncount);
-extern byte rx_eusart_cont(unsigned char *p_data, byte ncount);
+extern void rx_eusart_async(unsigned char *p_rx_data, byte max_size);
+extern byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout);
 extern byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout);
 extern void tx_eusart(unsigned char *p_data, byte ncount);
 extern void flush_eusart(void);

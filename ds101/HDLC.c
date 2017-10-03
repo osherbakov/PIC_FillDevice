@@ -5,6 +5,7 @@
 #include <HDLC.h>
 #include <DS101.h>
 #include <delay.h>
+#include <Fill.h>
 
 
 #define TX_DELAY_MS	(50)
@@ -21,7 +22,9 @@ int RxData(char *p_data)
   	int  symbol;
   	char ch;
   	int  n_chars;
-  
+
+  	set_timeout(RX_TIMEOUT1_RS);
+
   	p_Rx_buff = p_data;
     while(1)
     {
@@ -30,6 +33,7 @@ int RxData(char *p_data)
       { 
         return -1;   
       }
+  	  set_timeout(RX_TIMEOUT2_RS);
        
       ch = (char) symbol;   
       switch(hdlc_state)
@@ -68,22 +72,11 @@ int RxData(char *p_data)
 }
 
 
-static char *p_data_retry;
-static int n_chars_retry;
-
-void TxRetry()
-{
-	TxData(p_data_retry, n_chars_retry);
-}
-
 
 void TxData(char *p_data, int n_chars)
 {
   unsigned int crc;
 
-	p_data_retry = p_data;
-	n_chars_retry = n_chars;
-	
 	DelayMs(TX_DELAY_MS);
 
 	// Send 5 flags  
