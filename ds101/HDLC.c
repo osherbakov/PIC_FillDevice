@@ -52,9 +52,10 @@ int RxData(char *p_data)
           if(ch == FLAG){
             hdlc_state = ST_IDLE;
             n_chars = p_data - p_Rx_buff;
-			    	// Get at least 2 chars and FCS should match
-            return  ( (n_chars > 2)  && CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
-									(n_chars - 2) : 0;
+	    	// Get at least 2 chars and FCS should match
+            return  ( (n_chars > 2)  && 
+            			CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
+							(n_chars - 2) : 0;
           }else if(ch == ESCAPE){
             hdlc_state = ST_ESCAPE;
           }else{

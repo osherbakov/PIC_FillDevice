@@ -25,8 +25,7 @@ enum MASTER_STATE
 	MS_WAIT_RR,
 	MS_DISC,
 	MS_DONE,
-	MS_TIMEOUT,
-	MS_ERROR
+	MS_TIMEOUT
 };
 
 
@@ -55,8 +54,7 @@ void MasterStart(char slot)
 char GetMasterStatus()
 {
 	return (master_state == MS_TIMEOUT) ? ST_TIMEOUT :
-			  (master_state == MS_DONE) ? ST_DONE : 
-				(master_state == MS_ERROR) ? ST_ERR : ST_OK; 
+			  (master_state == MS_DONE) ? ST_DONE : ST_OK; 
 }	
 
 // Get the next block from EEPROM and send it out
@@ -100,7 +98,6 @@ void MasterProcessIdle()
 			break;
     
     	case MS_DONE:
-    	case MS_ERROR:
     	case MS_TIMEOUT:
       		// Stay in this state
       		break;

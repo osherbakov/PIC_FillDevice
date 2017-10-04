@@ -17,31 +17,10 @@ static char NewAddress;
 static char Connected;
 static char NumFrames;
 static int StationID;
-
+static char status;
 
 int frame_len;
 int frame_FDU;
-
-static char status;
-
-#define RX_WAIT   (3)    // 3 Seconds
-
-static unsigned int Timeout;
-static void ResetTimeout(void)
-{
-	char	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0; 
-	Timeout = seconds_counter + RX_WAIT;
-  	INTCONbits.GIE = prev;
-}
-
-static char IsTimeoutExpired(void)
-{
-  	char  ret;
-	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
-  	return ret;
-}
-
 
 void SlaveStart(char slot)
 {
@@ -54,13 +33,12 @@ void SlaveStart(char slot)
 	NS = 0;
 	PF = 1;
 	frame_len = 0;
-	status = ST_OK;
 	block_counter = 0;
 	CurrentAddress = SLAVE_ADDRESS;
 	NewAddress = SLAVE_ADDRESS; 
   	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
-	ResetTimeout();
+	status = ST_OK;
 }
 
 
@@ -243,7 +221,6 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
       TxSFrame(RR);
     break;
   }
-  ResetTimeout();
 }
 
 void SlaveProcessSFrame(unsigned char Cmd)
@@ -260,7 +237,6 @@ void SlaveProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
-	ResetTimeout();
 }
 
 void SlaveProcessUFrame(unsigned char Cmd)
@@ -298,7 +274,6 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  NR = 0;
 	  TxUFrame(UA);
 	}
-	ResetTimeout();
 }	
 
 

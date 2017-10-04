@@ -95,28 +95,30 @@ static void SetNextState(char nextState)
 			break;
 
 		case FILL_TX_MBITR:
-				set_led_state(5, 150);	// "Connect Serial" blink pattern	
+			set_led_state(5, 150);		// "Connect Serial" blink pattern	
 			break;
 
 		case FILL_TX :
 		case FILL_TX_TIME :
 		case FILL_TX_DS102_WAIT:
-				set_led_state(50, 150);	// "Key valid" blink pattern
+			set_led_state(50, 150);		// "Key valid" blink pattern
 			break;
 
 		case HQ_TX:
 		case PC_CONN:
-		case FILL_TX_RS232:
 			set_led_state(5, 150);		// "Connect Serial" blink pattern
 			break;
-			
 
+		case FILL_TX_RS232:
+			set_led_state(20, 100);		// "Connect RS232" blink pattern
+			break;
+			
 		case FILL_TX_DTD232:
 			set_led_state(60, 60);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_TX_RS485:
-			set_led_state(80, 40);		// "Try RS485" blink pattern
+			set_led_state(100, 20);		// "Try RS485" blink pattern
 			break;
 
 		case FILL_RX_PC:
@@ -152,7 +154,6 @@ static void SetNextState(char nextState)
 			break;
 	
 		default:
-			set_led_state(150, 5);		// "Key loading" blink pattern
 			break;
 	}
 	current_state = nextState;
@@ -455,6 +456,7 @@ void main()
 				break;
       
       		// Wait for Type 1,2,3 DS-102 Fills
+      		// Check for each fill type in turn
 			case FILL_RX_DS102_WAIT:
 			  	result = CheckFillType23();
 			  	if(result > 0)
