@@ -176,6 +176,7 @@ typedef enum
 // To communicate with MBITR we do Soft UART
 
 //  Here are assignments of the pins for MBITR
+// PIN_C - Input, PIN_D - Output
 #define	 TxMBITR		(PIN_D)
 #define	 TRIS_TxMBITR 	(TRIS_PIN_D)
 #define	 ANSEL_TxMBITR 	(ANSEL_PIN_D)
@@ -218,5 +219,8 @@ typedef enum
 #define	 ANSEL_Data_N 	(ANSEL_PIN_E)
 #define	 WPUB_Data_N 	(WPUB_PIN_E)
 
+#define	 WAKEUP			(PIN_C)
+#define	 TRIS_WAKEUP 	(TRIS_PIN_C)
+#define	 ANSEL_WAKEUP 	(ANSEL_PIN_C)
 
 #endif	// __CONFIG_H__

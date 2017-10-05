@@ -17,12 +17,10 @@ static char NewAddress;
 static char Connected;
 static char NumFrames;
 static int StationID;
-
+static char status;
 
 int frame_len;
 int frame_FDU;
-
-static char status;
 
 void SlaveStart(char slot)
 {
@@ -35,12 +33,12 @@ void SlaveStart(char slot)
 	NS = 0;
 	PF = 1;
 	frame_len = 0;
-	status = ST_OK;
 	block_counter = 0;
 	CurrentAddress = SLAVE_ADDRESS;
 	NewAddress = SLAVE_ADDRESS; 
   	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
+	status = ST_OK;
 }
 
 
