@@ -77,6 +77,7 @@ static char GetQueryByte(void)
   	}
 
 	INTCONbits.GIE = prev;
+
   	return ret;
 }
 
@@ -170,6 +171,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   }
 
   INTCONbits.GIE = prev;
+
   return byte_count;
 }
 

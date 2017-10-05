@@ -24,25 +24,6 @@ int frame_FDU;
 
 static char status;
 
-#define RX_WAIT   (3)    // 3 Seconds
-
-static unsigned int Timeout;
-static void ResetTimeout(void)
-{
-	char	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0; 
-	Timeout = seconds_counter + RX_WAIT;
-  	INTCONbits.GIE = prev;
-}
-
-static char IsTimeoutExpired(void)
-{
-  	char  ret;
-	ret = (seconds_counter > Timeout) ? TRUE : FALSE;
-  	return ret;
-}
-
-
 void SlaveStart(char slot)
 {
 	base_address = get_eeprom_address(slot & 0x0F);
@@ -60,7 +41,6 @@ void SlaveStart(char slot)
 	NewAddress = SLAVE_ADDRESS; 
   	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
-	ResetTimeout();
 }
 
 
@@ -243,7 +223,6 @@ void SlaveProcessIFrame(char *p_data, int n_chars)
       TxSFrame(RR);
     break;
   }
-  ResetTimeout();
 }
 
 void SlaveProcessSFrame(unsigned char Cmd)
@@ -260,7 +239,6 @@ void SlaveProcessSFrame(unsigned char Cmd)
 	}else if(Cmd == SREJ)      // SREJ
 	{
 	}
-	ResetTimeout();
 }
 
 void SlaveProcessUFrame(unsigned char Cmd)
@@ -298,7 +276,6 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  NR = 0;
 	  TxUFrame(UA);
 	}
-	ResetTimeout();
 }	
 
 

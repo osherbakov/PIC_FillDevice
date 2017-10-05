@@ -4,18 +4,15 @@
 #include "Fill.h"
 #include "serial.h"
 
-#define DTD_BAUDRATE  	(2400L)
-#define DS101_BAUDRATE	(64000L)
+#define TIMER_DTD 			( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
+#define TIMER_DTD_START 	( -(TIMER_DTD/2) )
+#define TIMER_DTD_EDGE 		( (TIMER_DTD/2) )
+#define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
 
-#define TIMER_DTD 		( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
-#define TIMER_DTD_START ( -(TIMER_DTD/2) )
-#define TIMER_DTD_EDGE 	( (TIMER_DTD/2) )
-#define TIMER_DTD_CTRL 	( (1<<2) | 2)     // ENA, 1:16
-
-#define TIMER_DS101 	( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
+#define TIMER_DS101 		( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_START 	( -(TIMER_DS101/2) )
 #define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
-#define TIMER_DS101_CTRL ((1<<2) | 0)   // ENA, 1:1
+#define TIMER_DS101_CTRL 	((1<<2) | 0)   // ENA, 1:1
 
 void (*OpenDS101)();
 void (*WriteCharDS101)(char ch);
@@ -70,11 +67,7 @@ int RxRS232Char()
 				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
 			}
  			while(!PIR5bits.TMR6IF){} ;	// Wait for stop bit
- 			if(RxPC){
-     			result = -1;  // No stop bit
-   			}else{
-   				result = ((int)data) & 0x00FF;
-     		}
+			result =  RxPC ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -156,13 +149,7 @@ int RxDTDChar()
 				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
 			}
 			while(!PIR5bits.TMR6IF){} ; // Wait for stop bit
- 			if(RxDTD)
- 			{
-    	 		result =  -1;
-   			}else
-   			{
-   				result =  ((int)data) & 0x00FF;
-     		}
+			result = RxDTD ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -189,11 +176,11 @@ void TxDTDChar(char data)
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
-		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-		TxDTD = data & 0x01;	// Set the output
-		data >>= 1;				    // We use the fact that 
-						              // "0" bits are STOP bits
+		while(!PIR5bits.TMR6IF) {	/* wait until timer overflow bit is set*/};
+		PIR5bits.TMR6IF = 0;		// Clear timer overflow bit
+		TxDTD = data & 0x01;		// Set the output
+		data >>= 1;					// We use the fact that 
+						        	// "0" bits are STOP bits
 	}
 } 
 
@@ -244,13 +231,7 @@ int RxRS485Char()
 				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
 			}
 			while(!PIR5bits.TMR6IF){} ;
-			if(Data_N)
- 			{
-     			result = -1;
-   			}else
-   			{
-   				result =  ((int)data) & 0x00FF;
-     		}
+			result = (Data_N && !Data_P) ? -1 : ((int)data) & 0x00FF;
 		}
 	}
 

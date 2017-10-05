@@ -92,19 +92,18 @@ char CheckFillDTD232Type5()
 	return ST_TIMEOUT;
 }	
 
-
+// Check if there is the request from the PC to send DS-101/RS-232 keys
 char CheckFillRS232Type5()
 {
   	// Coming in first time - enable eusart and setup buffer
 	if( !RCSTA1bits.SPEN )
 	{
-//  	TRIS_RxPC = 1;
-//  	TRIS_TxPC = 1;
+		// If RxPC (PIN_D) is LOW and TxPC (PIN_C) is HIGH, then maybe there is RS-232 connected
 	  	if(!RxPC && TxPC)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_CMD, DATA_POLARITY);
-	  		rx_eusart_async(SerialBuffer, 4);
+	  		open_eusart(BRREG_PC, DATA_POLARITY);
+	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}
 	
@@ -115,6 +114,8 @@ char CheckFillRS232Type5()
 	{
 		 close_eusart();
 		 return MODE5;
+	}else if((rx_idx == 0) && is_timeout()) {
+		close_eusart();
 	}
 	return ST_TIMEOUT;
 }	
@@ -124,11 +125,12 @@ char CheckFillType4()
 {
 	if( !RCSTA1bits.SPEN)
 	{
+		// If RxPC (PIN_D) is LOW and TxPC (PIN_C) is HIGH, then maybe there is RS-232 connected
 	  	if(!RxPC && TxPC)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_CMD, DATA_POLARITY);
-	  		rx_eusart_async(SerialBuffer, 4);
+	  		open_eusart(BRREG_MBITR, DATA_POLARITY);
+	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}
 	
@@ -143,6 +145,7 @@ char CheckFillType4()
   			// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
 			flush_eusart();
+			set_timeout(RX_TIMEOUT1_PC);	// Restart timeout
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
 			rx_idx = 0; // Data consumed
@@ -151,6 +154,8 @@ char CheckFillType4()
 			flush_eusart();
 			return MODE4;
 		}
+	}else if((rx_idx == 0) && is_timeout()) {
+		close_eusart();
 	}
 	return ST_TIMEOUT;
 }
@@ -158,8 +163,10 @@ char CheckFillType4()
 
 void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 {
-	TRIS_RxPC = INPUT;
-	TRIS_TxPC = INPUT;
+	TRIS_RxPC 	= INPUT;
+	TRIS_TxPC 	= INPUT;
+	ANSEL_RxPC	= 0;
+	ANSEL_TxPC	= 0;
 
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
@@ -180,14 +187,14 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 }
 
 
-void rx_eusart_async(unsigned char *p_rx_data, byte max_size)
+void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout)
 {
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 0; // Disable Rx
 	rx_data = (volatile byte *) p_rx_data;
 	rx_idx = 0;
 	rx_idx_max = max_size - 1;
-	
+	set_timeout(timeout);
 	RCSTA1bits.CREN = 1; // Enable Rx
 	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
 }
@@ -221,8 +228,8 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart(BRREG_CMD, DATA_POLARITY);
- 		rx_eusart_async(p_data, 6);
+		open_eusart(BRREG_PC, DATA_POLARITY);
+ 		rx_eusart_async(p_data, 6, INF_TIMEOUT);
 	}
 	
 	// Wait to receive 6 characters
@@ -238,26 +245,26 @@ void PCInterface()
 	    	slot = p_data[5] & 0x0F;
 	    	type = (p_data[5] >> 4) & 0x0F;
 	  		StorePCFill(slot, type);
-			rx_eusart_async(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 	  	}else if(is_equal( p_data, KEY_DUMP, 5))
 	  	{
 	    	// The last char in /DUMPN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		WaitReqSendPCFill(slot);
-			rx_eusart_async(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 	  	}else if(is_equal( p_data, MEM_READ, 5))
 	  	{
 	    	// The last char in /READN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		ReadMemSendPCFill(slot);
-			rx_eusart_async(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
 	  	{
 			if(p_data[5] == '=') {
 				SetCurrentDayTime();
 			}
 	  	  	GetCurrentDayTime();
-			rx_eusart_async(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 	    }else if(is_equal( p_data, KEY_CMD, 4))
 	  	{
 	    	// The next char in /KEY<n> is the slot number
@@ -272,7 +279,7 @@ void PCInterface()
 			}else {			
 				GetPCKey(slot);
 			}
-			rx_eusart_async(p_data, 6);  // Restart collecting data
+			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 		}
   	}  
 }

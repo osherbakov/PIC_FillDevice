@@ -60,6 +60,7 @@ typedef enum
 #define  RX_TIMEOUT2_MBITR 	(100)   // 100ms - timeout after that
 #define  RX_TIMEOUT1_RS	  	(3000)  // 3 seconds - timeout until 1st symbol
 #define  RX_TIMEOUT2_RS	  	(100)  	// 100ms - timeout after that
+#define  INF_TIMEOUT		(-1)	// The biggest timeout we can get
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing
