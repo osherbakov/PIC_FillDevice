@@ -232,8 +232,6 @@ char ReceiveGPSTime()
 
 	SetRTCDataPart2();
 	
-  	// Reset the 10 ms clock
-  	rtc_date.MilliSeconds_10 = 0;
  	TMR2 = 0;
 
 	INTCONbits.RBIF = 0;		// Clear bit

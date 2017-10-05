@@ -11,7 +11,7 @@
 
 #define DATA_POLARITY_RX 	(0x20)
 #define DATA_POLARITY_TX 	(0x10)
-#define DATA_POLARITY  		(0x30)		// Appropriate Data polarity for regular RS-232 connected to our device.
+#define DATA_POLARITY  		(0x30)		// Appropriate Data polarity for RS-232 connected without Level Shifter.
 
 // Values for the Baud Rate Control registers
 #define BRREG_DTD 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )

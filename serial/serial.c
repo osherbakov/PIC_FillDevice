@@ -77,64 +77,23 @@ static void send_options(void)
 
 static unsigned char SerialBuffer[6];
 
-char CheckFillDTD232Type5()
-{
-	if( !RCSTA1bits.SPEN )
-	{
-	  	TRIS_RxDTD = 1;
-	  	TRIS_TxDTD = 1;
-	  	if(!RxDTD && TxDTD)
-	  	{
-	  		 close_eusart();
-	  		 return MODE5;
-	  	}	
-  	} 	
-	return ST_TIMEOUT;
-}	
-
-// Check if there is the request from the PC to send DS-101/RS-232 keys
-char CheckFillRS232Type5()
-{
-  	// Coming in first time - enable eusart and setup buffer
-	if( !RCSTA1bits.SPEN )
-	{
-		// If RxPC (PIN_D) is LOW and TxPC (PIN_C) is HIGH, then maybe there is RS-232 connected
-	  	if(!RxPC && TxPC)
-	  	{
-	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_PC, DATA_POLARITY);
-	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
-	  	}	
-	}
-	
-	if( (rx_idx >= 2) && 
-			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
-			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
-			  	  is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
-	{
-		 close_eusart();
-		 return MODE5;
-	}else if((rx_idx == 0) && is_timeout()) {
-		close_eusart();
-	}
-	return ST_TIMEOUT;
-}	
+//
+//		Functions to check for RS-232 MBITR Type 4, PC and DTD Type 5 fills
+//
 
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
 	if( !RCSTA1bits.SPEN)
 	{
-		// If RxPC (PIN_D) is LOW and TxPC (PIN_C) is HIGH, then maybe there is RS-232 connected
-	  	if(!RxPC && TxPC)
+		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
+	  	if(!RxPC)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_MBITR, DATA_POLARITY);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
-	}
-	
-	if(rx_idx >= 4)
+	}else if(rx_idx >= 4)
 	{
     // Four characters are collected - check if it is 
     //  /98 - serial number request, or
@@ -154,11 +113,51 @@ char CheckFillType4()
 			flush_eusart();
 			return MODE4;
 		}
-	}else if((rx_idx == 0) && is_timeout()) {
-		close_eusart();
 	}
 	return ST_TIMEOUT;
 }
+
+
+
+// Check if there is the request from the PC to send DS-101/RS-232 keys
+char CheckFillRS232Type5()
+{
+  	// Coming in first time - enable eusart and setup buffer
+	if( !RCSTA1bits.SPEN )
+	{
+		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
+	  	if(!RxPC)
+	  	{
+	      // Coming in first time - enable eusart and setup buffer
+	  		open_eusart(BRREG_PC, DATA_POLARITY);
+	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
+	  	}	
+	}else if( (rx_idx >= 2) && 
+			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
+			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
+			  	  is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
+	{
+		 close_eusart();
+		 return MODE5;
+	}
+	return ST_TIMEOUT;
+}	
+
+// Check if there is the request from the DTD to send DS-101/RS-232 keys
+char CheckFillDTD232Type5()
+{
+	if( !RCSTA1bits.SPEN )
+	{
+	  	TRIS_RxDTD = 1;
+	  	TRIS_TxDTD = 1;
+	  	if(!RxDTD && TxDTD)
+	  	{
+	  		 close_eusart();
+	  		 return MODE5;
+	  	}	
+  	} 	
+	return ST_TIMEOUT;
+}	
 
 
 void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
@@ -271,8 +270,7 @@ void PCInterface()
 		  	slot = p_data[4];
 			if(p_data[5] == '=') {
 				SetPCKey(slot);
-			}
-			if(slot == '0' || slot == ' ')	{	// Special case - all keys
+			}else if(slot == '0' || slot == ' ')	{	// Special case - all keys
 				for(i = 1; i <=13; i++) {
 					GetPCKey(i);
  				}

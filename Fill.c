@@ -26,7 +26,7 @@ static byte KeyGetMsg[] 	= "/Key\0";
 
 void GetCurrentDayTime()
 {
-  byte  ms_100, ms_10, month, weekday;
+  byte  month, weekday;
   byte	*p_buffer = &data_cell[0]; 
   
 	tx_eusart_str(TimeGetMsg);
@@ -41,15 +41,7 @@ void GetCurrentDayTime()
   *p_buffer++ = '0' + (rtc_date.Seconds >> 4);
   *p_buffer++ = '0' + (rtc_date.Seconds & 0x0F);
   *p_buffer++ = '.';
-
-  	ms_100 = 0;
-	ms_10 = rtc_date.MilliSeconds_10;
-	while(ms_10 >= 10)
-	{
-		ms_100++;
-		ms_10 -= 10; 
-	}
-  *p_buffer++ = '0' + ms_100;
+  *p_buffer++ = '0';
   
   *p_buffer++ = 'Z';
   *p_buffer++ = ' ';
@@ -131,13 +123,6 @@ void  FillTODData()
 	TOD_cell[12] = 0;
 	TOD_cell[13] = 0;
 	TOD_cell[14] = 0;
-
-	ms = rtc_date.MilliSeconds_10;
-	while(ms >= 10)
-	{
-		TOD_cell[11] += 0x10;
-		ms -= 10; 
-	}
 }
 
 void  ExtractTODData()
@@ -166,12 +151,12 @@ static char  ExtractTime(byte *p_buff, byte n_count)
   // find the block that has 6 digits
   while(1)
   {
+	// find the next digit and at least 6 characters remaining
     while ( !isdigit(*p_buff) && (n_count > 6))
     {
       p_buff++; n_count--;
     }
-    if(n_count >= 6)
-    {
+    if(n_count >= 6){
       if(isdigit(p_buff[0]) && isdigit(p_buff[1]) && isdigit(p_buff[2]) && 
           isdigit(p_buff[3]) && isdigit(p_buff[4]) && isdigit(p_buff[5]) )
       {
@@ -180,12 +165,10 @@ static char  ExtractTime(byte *p_buff, byte n_count)
         rtc_date.Seconds	= ((p_buff[4] & 0x0F) << 4) + (p_buff[5] & 0x0F);
         return TRUE;
       } 
-      while ( isdigit(*p_buff) && (n_count > 6))
-      {
+      while ( isdigit(*p_buff) && (n_count > 6)){
         p_buff++; n_count--;
       }
-    }else
-    {
+    }else{
       return FALSE;
     }  
   }  
@@ -214,7 +197,7 @@ static char  ExtractDate(byte *p_buff, byte n_count)
     	    if(is_equal(&p_buff[2], &month_names[month * 3], 3))
     	    {
         	  	if(month >= 10) month += 0x06;
-      	    	rtc_date.Day		= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
+      	    	rtc_date.Day	= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
             	rtc_date.Month	= month;
             	return TRUE;
       	  	}  
@@ -245,9 +228,9 @@ static char  ExtractYear(byte *p_buff, byte n_count)
     }
     if(n_count >= 4)
     {
-      if( isdigit(p_buff[0]) && isdigit(p_buff[1]) && 
-          isdigit(p_buff[2]) && isdigit(p_buff[3]) && 
-            ((n_count == 4) || !isdigit(p_buff[4])) )
+      if( (p_buff[0] == '2') && (p_buff[1] == '0') && 
+          	isdigit(p_buff[2]) && isdigit(p_buff[3]) && 
+            	!isdigit(p_buff[4]) )
       {
   	    rtc_date.Century	= ((p_buff[0] & 0x0F) << 4) + (p_buff[1] & 0x0F);
         rtc_date.Year		= ((p_buff[2] & 0x0F) << 4) + (p_buff[3] & 0x0F);
@@ -376,7 +359,7 @@ void SetPCKey(byte slot)
 
 	// Get the Fill type
 	do {
-		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
+		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, INF_TIMEOUT);
 		if(byte_cnt < 0 ) goto KeyErr;
 	} while(byte_cnt == 0);
 
@@ -389,7 +372,7 @@ void SetPCKey(byte slot)
 
 	// Now gow thru every line and save the appropriate key
 	while(1) {
-		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
+		byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, INF_TIMEOUT);
 		if(byte_cnt < 0) goto KeyErr;
 		if(byte_cnt == 0) goto KeyOK;
 

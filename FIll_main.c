@@ -319,7 +319,9 @@ void main()
 				  	{
 					  	SetNextState(PC_CONN);// Switch to the PC connection mode
 					}
-				}else if(power_pos == ZERO_POS)		// GPS/HQ time receive
+				}else if(
+					((switch_pos == HQ_TIME_POS) || (switch_pos == SG_TIME_POS)) 
+						&& (power_pos == ZERO_POS))		// GPS/HQ time receive
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
@@ -327,8 +329,7 @@ void main()
 				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
-				  set_pin_f_as_power();
-					enable_tx_hqii();				// Enable HQ output
+				  	set_pin_f_as_power();
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS) // SINCGARS Time only fill
 				{
@@ -362,8 +363,9 @@ void main()
 					SetNextState(FILL_TX_DS102_WAIT);
 				}
 				break;
-
+			//------------------------------------------------------------
       		// DS-102 Fills	- type 1,2, and 3
+			//------------------------------------------------------------
 			case FILL_TX_DS102_WAIT:
 				if( CheckType123Equipment(fill_type) > 0 )
 				{
@@ -381,8 +383,9 @@ void main()
 					TestFillResult(SendDS102Fill(switch_pos));
 				}
 				break;
-
-      		// DS-101 Fills				
+			//------------------------------------------------------------
+      		// DS-101 Type 5 Fills				
+			//------------------------------------------------------------
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -400,7 +403,7 @@ void main()
 				// On the timeout - switch to next mode
 				if(result < 0)
 				{
-					SetNextState(FILL_TX_RS232);	
+					SetNextState(FILL_TX_RS485);	
 				}else
 				{
 					TestFillResult(result);
@@ -419,11 +422,16 @@ void main()
 				}
 				break;
 
+			//------------------------------------------------------------
+      		// MBITR Type 4 fill
+			//------------------------------------------------------------
 			case FILL_TX_MBITR:
  				TestFillResult(WaitReqSendMBITRFill(switch_pos));
 				break;
 
+			//------------------------------------------------------------
       		// SINCGARS time fill
+			//------------------------------------------------------------
 			case FILL_TX_TIME:
 				if( CheckType123Equipment(fill_type) > 0 )
 				{
@@ -436,7 +444,7 @@ void main()
 				break;
 			//-----------FILL_TX--------------	
 			//********************************************
-
+			//
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
@@ -508,7 +516,9 @@ void main()
 				TestFillResult(StoreDS102Fill(switch_pos, fill_type));
 				break;
 
+			//
       		// Wait for serial RS-232 or DS-101 fills				
+			//
       		case FILL_RX_RS232_WAIT:
       			// Check if is is a DES keys fill from the PC (Type 4)
  				result = CheckFillType4();
@@ -527,12 +537,12 @@ void main()
 				}
 
         		// If Pin_C is -5V - that is DTD-232 Type 5
-				result = CheckFillDTD232Type5();
-				if(result > 0){
-					fill_type = result;
-					SetNextState(FILL_RX_DTD232);
-			    	break;
-				}
+//				result = CheckFillDTD232Type5();
+//				if(result > 0){
+//					fill_type = result;
+//					SetNextState(FILL_RX_DTD232);
+//			    	break;
+//				}
 				
 /********************************************************
 				result = CheckFillRS485Type5();
@@ -550,36 +560,15 @@ void main()
 				break;
 
 			case FILL_RX_RS232:
-				result = StoreRS232Fill(switch_pos, MODE5);
-				if(result < 0)
-				{
-					SetNextState(FILL_RX);
-				}else
-				{
-					TestFillResult(result);
-				}
+				TestFillResult(StoreRS232Fill(switch_pos, MODE5));
 				break;
 
 			case FILL_RX_DTD232:
-				result = StoreDTD232Fill(switch_pos, MODE5);
-				if(result < 0)
-				{
-					SetNextState(FILL_RX);
-				}else
-				{
-					TestFillResult(result);
-				}
+				TestFillResult(StoreDTD232Fill(switch_pos, MODE5));
 				break;
 
 			case FILL_RX_RS485:
-				result = StoreRS485Fill(switch_pos, MODE5);
-				if(result < 0)
-				{
-					SetNextState(FILL_RX);
-				}else
-				{
-					TestFillResult(result);
-				}
+				TestFillResult(StoreRS485Fill(switch_pos, MODE5));
 				break;
 			//-----------FILL_RX--------------	
 			//********************************************
@@ -607,6 +596,7 @@ void main()
 			//********************************************
 			//-----------HQII TX and RX--------------	
 			case HQ_TX:
+				enable_tx_hqii();				// Enable HQ output
 				break;
 
 			case HQ_GPS_RX:

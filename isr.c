@@ -94,8 +94,6 @@ void high_isr (void)
 	  			hq_byte_counter = 1;    	// First byte sent
 	  			hq_bit_counter = 0;     	// Bit 0 was sent
 			}
-      		// Adjust current time
-			rtc_date.MilliSeconds_10 = 0; 	// At this moment we are exactly at 0 ms
       		// Increment big timeout counter
       		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
 		}else
@@ -174,12 +172,6 @@ void high_isr (void)
 			if(timeout_counter <= 0) timeout_flag = 1;
 		}
 
-  		// Update RTC time
-		rtc_date.MilliSeconds_10++;
-		if(rtc_date.MilliSeconds_10 >= 100)
-		{
-  			rtc_date.MilliSeconds_10 = 0;
-  		}
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{
@@ -195,18 +187,14 @@ void high_isr (void)
 	// Maintain a circular buffer pointed by rx_data
 	if(PIR1bits.RC1IF)
 	{
-		if(rx_idx <= rx_idx_max)
-		{	
-			rx_data[rx_idx++] = RCREG1;
-		}else
+		if(rx_idx > rx_idx_max)
 		{
-			byte i;
-			for( i = 0; i < rx_idx_max; i++)
+			for( rx_idx = 0; rx_idx < rx_idx_max; rx_idx++)
 			{
-				rx_data[i] = rx_data[i+1];
+				rx_data[rx_idx] = rx_data[rx_idx+1];
 			}
-			rx_data[rx_idx_max] = RCREG1;
 		}
+		rx_data[rx_idx++] = RCREG1;
 		// overruns? clear it
 		if(RCSTA1 & 0x06)
 		{
