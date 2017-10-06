@@ -136,15 +136,10 @@ static char ReadPin(void)
 char pin_B()
 {
   char ret;
-//  char r1, r2, r3;
 
   TRIS_PIN_B = 1;
   ANSEL_PIN_B = 0;
   ret = digitalRead(PIN_B);
-//  r1 = digitalRead(PIN_B);
-//  r2 = digitalRead(PIN_B);
-//  r3 = digitalRead(PIN_B);
-//  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_B = 1;
@@ -157,15 +152,10 @@ char pin_B()
 char pin_C()
 {
   char ret;
-//  char r1, r2, r3;
 
   TRIS_PIN_C = 1;
   ANSEL_PIN_C = 0;
   ret = digitalRead(PIN_C);
-//  r1 = digitalRead(PIN_C);
-//  r2 = digitalRead(PIN_C);
-//  r3 = digitalRead(PIN_C);
-//  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_C = 1;
@@ -178,15 +168,10 @@ char pin_C()
 char pin_D()
 {
   char ret;
-//  char r1, r2, r3;
 
   TRIS_PIN_D = 1;
   ANSEL_PIN_D = 0;
   ret = digitalRead(PIN_D);
-//  r1 = digitalRead(PIN_D);
-//  r2 = digitalRead(PIN_D);
-//  r3 = digitalRead(PIN_D);
-//  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_D = 1;
@@ -199,15 +184,10 @@ char pin_D()
 char pin_E()
 {
   char ret;
-//  char r1, r2, r3;
 
   TRIS_PIN_E = 1;
   ANSEL_PIN_E = 0;
   ret = digitalRead(PIN_E);
-//  r1 = digitalRead(PIN_E);
-//  r2 = digitalRead(PIN_E);
-//  r3 = digitalRead(PIN_E);
-//  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   if(ret == LOW) return ret;
   // Set up it to be analog input
   ANSEL_PIN_E = 1;
@@ -220,14 +200,9 @@ char pin_E()
 char pin_F()
 {
   char ret;
-//  char r1, r2, r3;
 
   TRIS_PIN_F = 1;
   ret = digitalRead(PIN_F);
-//  r1 = digitalRead(PIN_F);
-//  r2 = digitalRead(PIN_F);
-//  r3 = digitalRead(PIN_F);
-//  ret = ((r1 == r2) || (r1 == r3)) ? r1 : r2 ;
   return ret;
 }
 
