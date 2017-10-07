@@ -9,14 +9,8 @@
 #define TIMER_DTD_EDGE 		( (TIMER_DTD/2) )
 #define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
 
-#define TIMER_DS101 		( ( (XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
-#define TIMER_DS101_START 	( -(TIMER_DS101/2) )
-#define TIMER_DS101_EDGE 	( (TIMER_DS101/2) )
-#define TIMER_DS101_CTRL 	((1<<2) | 0)   // ENA, 1:1
-
-void (*OpenDS101)();
-void (*WriteCharDS101)(char ch);
-int (*ReadCharDS101)(void);
+#define TIMER_DS101 		( ((XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
+#define TIMER_DS101_CTRL 	( (1<<2) | 0)   // ENA, 1:1
 
 
 void OpenRS232()
@@ -184,8 +178,6 @@ void TxDTDChar(char data)
 	}
 } 
 
-
-
 void OpenRS485()
 {
 	TRIS_Data_N = INPUT;
@@ -194,91 +186,320 @@ void OpenRS485()
   	WPUB_Data_N = 1;
 }
 
-//
-// Soft UART to communicate with the DS101 via RS-485 at 64Kbd
-// Returns:
-//  -1  - if no symbol within timeout
-//  >=0 - if symbol was detected 
-int RxRS485Char()
+// DS-101 64000bps Differential Manchester/Bi-phase coding
+typedef enum {
+	INIT = 0,
+	GET_FLAG_EDGE,
+	COMP_FLAG,
+	GET_FLAG,
+	GET_SAMPLE_EDGE,
+	COMP_SAMPLE,
+	GET_SAMPLE,
+	GET_DATA_EDGE,
+	COMP_DATA,
+	GET_DATA,
+	SEND_START_FLAG,
+	SEND_DATA,
+	SEND_END_FLAG,
+	DONE,
+	TIMEOUT
+} HDLC_STATES;
+
+
+
+#define PERIOD_CNTR   		(TIMER_DS101)
+#define HALF_PERIOD_CNTR   	(PERIOD_CNTR/2)
+#define SAMPLE_CNTR 		((PERIOD_CNTR * 7)/10)	// PERIOD_CNTR * 0.66
+#define TIMEOUT_CNTR   		(PERIOD_CNTR * 5)
+#define TIMER_CTRL			(TIMER_DS101_CTRL)
+
+#define	FLAG				(0x7E)
+#define	PRE_FLAG			(0xFC)	// Flag one bit before
+
+#define 	Timer_Period	(PR6)
+#define 	Timer_Counter	(TMR6)
+#define 	Timer_Ctrl		(T6CON)
+#define 	TimerFlag		(PIR5bits.TMR6IF)
+#define 	PIN				(Data_P)
+
+int RxRS485Data(char *pData)
 {
-	byte 	bitcount, data;
-	byte	prev;
-	int		result;
-
-	TRIS_Data_N = INPUT;
-	TRIS_Data_P = INPUT;
-
-	PR6 = TIMER_DS101;
-	T6CON = TIMER_DS101_CTRL;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+	HDLC_STATES			st;
+	int 				byte_count;
+	unsigned char		bit_count;
+	unsigned char		stuff_count;
+	unsigned char		rcvd_bit;
+	unsigned char		rcvd_byte;
+	
+	unsigned char		prev_PIN;
+	byte 				prev;
+	
+	st = INIT;
+	Timer_Ctrl 		= TIMER_CTRL;
       	
 	prev = INTCONbits.GIE;
   	INTCONbits.GIE = 0;
 
-  	while( is_not_timeout() )
-	{
-		// Start conditiona was detected - count 1.5 cell size	
-		if(Data_N && !Data_P)
-		{
-			TMR6 = TIMER_DS101_START;
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag
-			for(bitcount = 0; bitcount < 8 ; bitcount++)
-			{
-				// Wait until timer overflows
-				while(!PIR5bits.TMR6IF){} ;
-				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | ((Data_N) ? 0x00 : 0x80);
+	while(1) {
+		switch(st) {
+		  case INIT:
+			bit_count 	= 0;
+			byte_count	= 0;
+			rcvd_bit 	= 0;
+			rcvd_byte 	= 0;
+			stuff_count = 0;
+			prev_PIN	= PIN;
+			
+			Timer_Period	= TIMEOUT_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+
+			st = GET_FLAG_EDGE;
+		 	break;
+			
+		case GET_FLAG_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_FLAG;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
 			}
-			while(!PIR5bits.TMR6IF){} ;
-			result = (Data_N && !Data_P) ? -1 : ((int)data) & 0x00FF;
-		}
-	}
+			break;
 
-  	INTCONbits.GIE = prev;
-	return result;
-}
+		case COMP_FLAG:
+			Timer_Period	= SAMPLE_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			prev_PIN = PIN;
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			st = (rcvd_byte == FLAG) ? GET_SAMPLE : GET_FLAG;
+			break;
 
-void TxRS485Char(char data)
+		case GET_FLAG:
+			while(!TimerFlag) {}
+			Timer_Period	= TIMEOUT_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = GET_FLAG_EDGE;
+			break;
+
+		case GET_SAMPLE_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_SAMPLE;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
+			}
+			break;
+
+		case COMP_SAMPLE:
+			Timer_Period	= SAMPLE_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			prev_PIN = PIN;
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			if(++bit_count >= 8) {
+				bit_count = 0;
+				if(rcvd_byte != FLAG) {
+					*pData++ = rcvd_byte;
+					bit_count = 0;				
+					byte_count++;
+					st = GET_DATA;
+					break;
+				}	
+			}
+			st = GET_SAMPLE;
+			break;
+
+		case GET_SAMPLE:
+			while(!TimerFlag) {}
+			Timer_Period	= TIMEOUT_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = GET_SAMPLE_EDGE;
+			break;
+
+		case GET_DATA_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_DATA;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
+			}
+			break;
+
+		case COMP_DATA:
+			Timer_Period	= SAMPLE_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			prev_PIN = PIN;
+			
+			// Beginning of bit stuffing
+			//  basically, every "0" after five consequtive "1" should be ignored 
+			if(rcvd_bit == 0) {
+				if(stuff_count >= 5) {
+					stuff_count = 0;
+					st = GET_DATA;
+					break;
+				}
+				stuff_count = 0;
+			}else {		// Increment counter it is "1"
+				stuff_count++;
+			}
+			// End of bit stuffing
+			
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			if(++bit_count >= 8) {
+				*pData++ = rcvd_byte;
+				bit_count = 0;				
+				byte_count++;
+			}
+			st = GET_DATA;
+			break;
+
+		case GET_DATA:
+			while(!TimerFlag) {}
+			Timer_Period	= TIMEOUT_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = ((rcvd_bit == 0) && (rcvd_byte == PRE_FLAG) ) ? DONE : GET_DATA_EDGE;
+			break;
+			
+		case TIMEOUT:
+  			INTCONbits.GIE = prev;
+			return -1;
+			break;
+
+		case DONE:
+  			INTCONbits.GIE = prev;
+			return byte_count;
+			break;
+			
+		default:
+			break;
+		}			
+	}	
+}	
+
+#define		NUM_INITIAL_FLAGS	(20)
+#define		NUM_FINAL_FLAGS		(10)
+
+void TxRS485Data(char *pData, int nBytes)
 {
-	byte 	bitcount;
-	TRIS_Data_N = OUTPUT;
-	TRIS_Data_P = OUTPUT;
+	HDLC_STATES			st;
+	unsigned char 		byte_count;
+	unsigned char		bit_count;
+	unsigned char		stuff_count;
+	unsigned char		tx_byte;
+	unsigned char		next_bit;
+	unsigned char		bit_to_send;
+	byte 				prev;
 
-	data = ~data;
+	st = INIT;
 
-	PR6 = TIMER_DS101;
-	T6CON = TIMER_DS101_CTRL;	
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+	Timer_Ctrl 		= TIMER_CTRL;
 
-	Data_N = 1;      // Issue the start bit
-	Data_P = 0;      // Issue the start bit
-	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+	prev = INTCONbits.GIE;
+  	INTCONbits.GIE = 0;
+	
+	while(1) {
+		switch(st) {
+		  case INIT:
+			bit_count 	= 0;
+			byte_count	= 0;
+			stuff_count = 0;
+			
 
-	// send 8 data bits
-	for(bitcount = 0; bitcount < 8; bitcount++)
-	{
-		Data_N = data & 0x01; // Set the output N
-		Data_P = ~Data_N;     // Set the output P
-		data >>= 1;				
-		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-	}
+			Timer_Period	= HALF_PERIOD_CNTR;
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
+			st 				= SEND_START_FLAG;
+		 	break;
 
-	Data_N = 0;// Set the STOP bit 1
-	Data_P = 1;// Set the STOP bit 1
-	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+		  case SEND_START_FLAG:
+		  	byte_count	 = NUM_INITIAL_FLAGS;
 
-	Data_N = 0;// Set the STOP bit 2	
-	Data_P = 1;// Set the STOP bit 1
-	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+		  	while(byte_count-- > 0) {
+			  	tx_byte = FLAG;
+			  	bit_count = 8;
+			  	while(bit_count-- > 0)
+			  	{
+					while(!TimerFlag) {}
+			  		PIN = next_bit = ~next_bit;	// Always flip the bit at the beginning of the cell 
+				  	next_bit = tx_byte & 0x01 ? next_bit : ~next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
+				  	tx_byte >>= 1;
+					while(!TimerFlag) {}
+					TimerFlag = 0;
+					PIN = next_bit;
+				}	
+			}
+			st = SEND_DATA;
+		 	break;
 
-	Data_N = 0;// Set the STOP bit 3	
-	Data_P = 1;// Set the STOP bit 1
-	while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-	PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-} 
+		  case SEND_DATA:
+		  	byte_count	 	= nBytes;
+			stuff_count 	= 0;
+
+		  	while(byte_count-- > 0) {
+			  	tx_byte = *pData++;
+			  	bit_count = 8;
+			  	while(bit_count-- > 0)
+			  	{
+					while(!TimerFlag) {}
+			  		PIN = next_bit = ~next_bit;	// Always flip the bit at the beginning of the cell 
+					// Start calculating the next bit
+					bit_to_send = tx_byte & 0x01;
+					// Do bit stuffing - after five consequtive "1"s ALWAYS insert "0"
+					if(stuff_count >= 5) {
+						next_bit = ~next_bit;	// Send "0"
+						stuff_count = 0;
+						bit_count++;
+					}else {
+						// Count "1"s 
+						if(bit_to_send) {
+							stuff_count++;
+						} else {
+							stuff_count = 0;
+						} 
+				  		tx_byte >>= 1;
+				  		next_bit = bit_to_send ? next_bit : ~next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
+					}
+					while(!TimerFlag) {}
+					TimerFlag = 0;
+					PIN = next_bit;
+				}	
+			}
+			st = SEND_END_FLAG;
+		 	break;
+
+		  case SEND_END_FLAG:
+		  	byte_count	 = NUM_FINAL_FLAGS;
+
+		  	while(byte_count-- > 0) {
+			  	tx_byte = FLAG;
+			  	bit_count = 8;
+			  	while(bit_count-- > 0)
+			  	{
+					while(!TimerFlag) {}
+			  		PIN = next_bit = ~next_bit;	// Always flip the bit at the beginning of the cell 
+				  	next_bit = tx_byte & 0x01 ? next_bit : ~next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
+				  	tx_byte >>= 1;
+					while(!TimerFlag) {}
+					TimerFlag = 0;
+					PIN = next_bit;
+				}	
+			}
+			st = DONE;
+		 	break;
+
+		case DONE:
+  			INTCONbits.GIE = prev;
+			return;
+			break;
+		} 	
+	}	
+}	
+

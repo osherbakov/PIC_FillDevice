@@ -32,13 +32,20 @@ char (*IsValidAddressAndCommand)(unsigned char  Address, unsigned char  Command)
 char (*GetStatus)(void);
 void (*StartProcess)(char slot);
 
+void (*OpenDS101)(void);
+int  (*RxDS101Data)(char *p_data);
+void (*TxDS101Data)(char *p_data, int n_count);
+void (*WriteCharDS101)(char ch);
+int  (*ReadCharDS101)(void);
+
 
 void TxSFrame(unsigned char cmd)
 {
 	char *p_buff = &RxTx_buff[0];
 	p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | (NR << 5) | PF_BIT;
-    TxData(p_buff, 2);
+	CRC16appnd(p_buff, 2);
+    TxDS101Data(p_buff, 2 + 2);
 }
 
 void TxUFrame(unsigned char cmd)
@@ -46,7 +53,8 @@ void TxUFrame(unsigned char cmd)
 	char *p_buff = &RxTx_buff[0];
 	p_buff[0] = CurrentAddress;  
     p_buff[1] = cmd | PF_BIT;
-    TxData(p_buff, 2);
+	CRC16appnd(p_buff, 2);
+    TxDS101Data(p_buff, 2 + 2);
 }
 
 void TxIFrame(char *p_data, int n_chars)
@@ -56,7 +64,9 @@ void TxIFrame(char *p_data, int n_chars)
   	p_buff[0] = CurrentAddress;  
     p_buff[1] = (NR << 5) | (NS << 1) | PF_BIT;
     memcpy((void *)&p_buff[2], (void *)p_data, n_chars);
-    TxData(p_buff, n_chars + 2);
+	n_chars += 2;
+	CRC16appnd(p_buff, n_chars);
+    TxDS101Data(p_buff, n_chars + 2);
     NS++;  NS &= 0x07;
 }
 
@@ -106,12 +116,13 @@ void SetupDS101Mode(char slot, char mode )
   	GetStatus =  	TxMode ? GetMasterStatus : GetSlaveStatus;
 	StartProcess = 	TxMode ? MasterStart : SlaveStart;
   	OpenDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
-        ((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
-    WriteCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Char : 
-        ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
-    ReadCharDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Char : 
-        ( (mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
-    
+        			((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
+    WriteCharDS101 = ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
+    ReadCharDS101 =  ((mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
+
+    RxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Data : RxRS232Data;
+    TxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Data : TxRS232Data;
+
 	OpenDS101();
 	StartProcess(slot);
 }	
@@ -128,9 +139,10 @@ char ProcessDS101(void)
     ProcessIdle();
 
     p_data = &RxTx_buff[0];
-    nSymb = RxData(p_data);
-    if(nSymb > 0)    
+    nSymb = RxDS101Data(p_data);
+    if((nSymb > 4) && CRC16chk(p_data, nSymb))
     {
+		nSymb -= 2;		// FCC/CRC was checked and consumed
         // Extract all possible info from the incoming packet
         Address = p_data[0];
         Command = p_data[1];

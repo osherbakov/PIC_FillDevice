@@ -47,11 +47,11 @@ typedef enum
     ST_ESCAPE
 }RX_STATE;
 
-extern int RxData(char *p_data);
-extern void TxData(char *p_data, int n_count);
-extern void TxRetry(void);
 
+// Virtual functions that are pointing to the appropriate Phy call
 extern void (*OpenDS101)(void);
+extern int (*RxDS101Data)(char *p_data);
+extern void (*TxDS101Data)(char *p_data, int n_count);
 extern void (*WriteCharDS101)(char ch);
 extern int (*ReadCharDS101)(void);
 
@@ -64,9 +64,12 @@ extern void OpenDTD(void);
 extern void TxDTDChar(char ch);
 extern int RxDTDChar(void);
 
+extern int RxRS232Data(char *p_data);
+extern void TxRS232Data(char *p_data, int n_count);
+
 extern void OpenRS485(void);
-extern void TxRS485Char(char ch);
-extern int RxRS485Char(void);
+extern int RxRS485Data(unsigned char *p_data);
+extern void TxRS485Data(unsigned char *p_data, int n_count);
 
 #endif
 

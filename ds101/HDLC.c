@@ -18,7 +18,6 @@ RX_STATE hdlc_state = ST_IDLE;
 //   >0  - Data received
 int RxRS232Data(char *p_data)
 {
-  	char *p_Rx_buff;
   	int  symbol;
   	char ch;
   	int  n_chars;
@@ -26,7 +25,6 @@ int RxRS232Data(char *p_data)
   	set_timeout(RX_TIMEOUT1_RS);
     hdlc_state = ST_IDLE;
 
-  	p_Rx_buff = p_data;
     while(1)
     {
       symbol = ReadCharDS101();
@@ -46,24 +44,25 @@ int RxRS232Data(char *p_data)
              hdlc_state = ST_ESCAPE;
           }else{
             *p_data++ = ch;
+			n_chars++;
             hdlc_state = ST_DATA;
           }
           break;
         case ST_DATA:
           if(ch == FLAG){
             hdlc_state = ST_IDLE;
-            n_chars = p_data - p_Rx_buff;
-	    	// Get at least 2 chars and FCS should match
-            return  ( (n_chars > 2)  && CRC16chk((unsigned char *)p_Rx_buff, n_chars) ) ? 
-									(n_chars - 2) : 0;
+	    	// Get at least 2 chars
+            return  n_chars;
           }else if(ch == ESCAPE){
             hdlc_state = ST_ESCAPE;
           }else{
             *p_data++ = ch;
+			n_chars++;
           }
           break;
         case ST_ESCAPE:
           *p_data++ = ch;
+		  n_chars++;
           hdlc_state = ST_DATA;
           break;
       }
@@ -75,7 +74,6 @@ int RxRS232Data(char *p_data)
 
 void TxRS232Data(char *p_data, int n_chars)
 {
-  unsigned int crc;
 
 	DelayMs(TX_DELAY_MS);
 
@@ -86,7 +84,6 @@ void TxRS232Data(char *p_data, int n_chars)
   	WriteCharDS101(FLAG);
   	WriteCharDS101(FLAG);
 
-  	CRC16ini();
   	while(n_chars-- > 0)
   	{
     	char ch = *p_data++;
@@ -95,11 +92,6 @@ void TxRS232Data(char *p_data, int n_chars)
       		WriteCharDS101(ESCAPE);
     	}
     	WriteCharDS101(ch);
-    	CRC16nxt(ch);
   	}
-  	// Send the CRC 16 now
-  	crc = CRC16crc();
-  	WriteCharDS101(crc & 0x00FF);
-  	WriteCharDS101((crc >> 8) & 0x00FF);
 	WriteCharDS101(FLAG);
 }

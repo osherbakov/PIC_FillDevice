@@ -92,18 +92,17 @@ void CRC16appnd(unsigned char *p_buffer, int blk_len)
 {
   unsigned int res;
   int   i;
-  int	last_idx = blk_len - 2;
   
   CRC16ini();
 
-  for(i = 0; i < last_idx; i++)
+  for(i = 0; i < blk_len; i++)
   {
     CRC16nxt(p_buffer[i]);
   }
 
   res = CRC16crc();
-  p_buffer[last_idx++] = res & 0x00FF;
-  p_buffer[last_idx] = (res >> 8) & 0x00FF;
+  p_buffer[blk_len++] = res & 0x00FF;
+  p_buffer[blk_len] = (res >> 8) & 0x00FF;
 }
 
 char CRC16chk(unsigned char *p_buffer, int blk_len)
@@ -112,7 +111,7 @@ char CRC16chk(unsigned char *p_buffer, int blk_len)
   int i;
   int	last_idx = blk_len - 2;
   
-    CRC16ini();
+  CRC16ini();
 
   for(i = 0; i < last_idx; i++)
   {
