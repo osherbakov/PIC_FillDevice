@@ -232,3 +232,229 @@ char SetupCurrentTime()
   
   return 0;
 }
+
+
+// Test Manchester Encoding/Decoding
+typedef enum {
+	INIT = 0,
+	GET_FLAG_EDGE,
+	COMP_FLAG,
+	GET_FLAG,
+	GET_SAMPLE_EDGE,
+	COMP_SAMPLE,
+	GET_SAMPLE,
+	GET_DATA_EDGE,
+	COMP_DATA,
+	GET_DATA,
+	SEND_START_FLAG,
+	SEND_DATA,
+	SEND_END_FLAG,
+	DONE,
+	TIMEOUT
+} HDLC_STATES;
+
+
+
+#define PERIOD_CNTR   		(200)
+#define HALF_PERIOD_CNTR   	(PERIOD_CNTR/2)
+#define SAMPLE_CNTR 		(133)	// PERIOD_CNTR * 0.66
+#define TIMEOUT_CNTR   		(PERIOD_CNTR * 5)
+#define	FLAG				(0x7E)
+#define	PRE_FLAG			(0xFC)	// Flag one bit before
+
+volatile int 	Timer;
+volatile char	PIN;
+volatile char	TimerFlag;
+
+char RxHDLCData(unsigned char *pData)
+{
+	HDLC_STATES			st;
+	unsigned char 		byte_count;
+	unsigned char		bit_count;
+	unsigned char		stuff_count;
+	unsigned char		rcvd_bit;
+	unsigned char		rcvd_byte;
+	
+	unsigned char		prev_PIN;
+	
+	st = INIT;
+	
+	while(1) {
+		switch(st) {
+		  case INIT:
+			bit_count 	= 0;
+			byte_count	= 0;
+			rcvd_bit 	= 0;
+			rcvd_byte 	= 0;
+			stuff_count = 0;
+			prev_PIN	= PIN;
+			
+			Timer	= TIMEOUT_CNTR;
+			st = GET_FLAG_EDGE;
+		 	break;
+			
+		case GET_FLAG_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_FLAG;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
+			}
+			break;
+
+		case COMP_FLAG:
+			TimerFlag = 0;
+			Timer = SAMPLE_CNTR;
+			prev_PIN = PIN;
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			st = (rcvd_byte == FLAG) ? GET_SAMPLE : GET_FLAG;
+			break;
+
+		case GET_FLAG:
+			while(!TimerFlag) {}
+			TimerFlag = 0;
+			Timer = TIMEOUT_CNTR;
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = GET_FLAG_EDGE;
+			break;
+
+		case GET_SAMPLE_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_SAMPLE;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
+			}
+			break;
+
+		case COMP_SAMPLE:
+			TimerFlag = 0;
+			Timer = SAMPLE_CNTR;
+			prev_PIN = PIN;
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			if(++bit_count >= 8) {
+				bit_count = 0;
+				if(rcvd_byte != FLAG) {
+					*pData++ = rcvd_byte;
+					bit_count = 0;				
+					byte_count++;
+					st = GET_DATA;
+					break;
+				}	
+			}
+			st = GET_SAMPLE;
+			break;
+
+		case GET_SAMPLE:
+			while(!TimerFlag) {}
+			TimerFlag = 0;
+			Timer = TIMEOUT_CNTR;
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = GET_SAMPLE_EDGE;
+			break;
+
+		case GET_DATA_EDGE:
+			if(PIN != prev_PIN) {
+				st = COMP_DATA;	
+			}else if(TimerFlag)	{
+				st = TIMEOUT;
+			}
+			break;
+
+		case COMP_DATA:
+			TimerFlag = 0;
+			Timer = SAMPLE_CNTR;
+			prev_PIN = PIN;
+			
+			// Beginning of bit stuffing
+			//  basically, every "0" after five consequtive "1" should be ignored 
+			if(rcvd_bit == 0) {
+				if(stuff_count >= 5) {
+					stuff_count = 0;
+					st = GET_DATA;
+					break;
+				}
+				stuff_count = 0;
+			}else {		// Increment counter it is "1"
+				stuff_count++;
+			}
+			// End of bit stuffing
+			
+			rcvd_byte	=  (rcvd_byte >> 1) | rcvd_bit;
+			if(++bit_count >= 8) {
+				*pData++ = rcvd_byte;
+				bit_count = 0;				
+				byte_count++;
+			}
+			st = GET_DATA;
+			break;
+
+		case GET_DATA:
+			while(!TimerFlag) {}
+			TimerFlag = 0;
+			Timer = TIMEOUT_CNTR;
+			rcvd_bit = (PIN == prev_PIN)? 0x80 : 0x00;
+			prev_PIN = PIN;
+			st = ((rcvd_bit == 0) && (rcvd_byte == PRE_FLAG) ) ? DONE : GET_DATA_EDGE;
+			break;
+			
+		case TIMEOUT:
+			return -1;
+			break;
+
+		case DONE:
+			return byte_count;
+			break;
+			
+		default:
+			break;
+		}			
+	}	
+}	
+
+#define		NUM_INITIAL_FLAGS	(20)
+#define		NUM_FINAL_FLAGS		(10)
+
+void TxHDLCData(unsigned char *pData, unsigned char nBytes)
+{
+	unsigned char 		byte_count;
+	unsigned char		bit_count;
+	unsigned char		stuff_count;
+	unsigned char		tx_byte;
+	unsigned char		next_bit;
+	st = INIT;
+	
+	while(1) {
+		switch(st) {
+		  case INIT:
+			bit_count 	= 0;
+			byte_count	= 0;
+			stuff_count = 0;
+			prev_bit	= 0;
+			
+			TimerFlag = 0;
+			Timer	= HALF_PERIOD_CNTR;
+			st = SEND_START_FLAG;
+		 	break;
+
+		  case SEND_START_FLAG:
+		  	byte_count	 = NUM_INITIAL_FLAGS;
+		  	while(byte_count-- > 0) {
+			  	tx_byte = FLAG;
+			  	bit_count = 8;
+			  	while(bit_count-- > 0)
+			  	{
+			  		PIN = ~next_bit;	// Flip the pin
+				  	next_bit = tx_byte & 0x01 ? next_bit : ~next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
+				  	tx_byte >>= 1;
+					while(!TimerFlag) {}
+					TimerFlag = 0;
+					PIN = next_bit;
+					while(!TimerFlag) {}
+				}	
+			}	
+		 	break;
+
+		} 	
+	}	
+}	
