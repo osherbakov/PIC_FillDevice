@@ -33,7 +33,7 @@ void prepare_write(unsigned short long  address)
 	  {
 		  bit_shift = (EEPROM_ADDRESS_BYTES - 1 - cnt) * 8;
 		  putcSPI(address >> bit_shift);  	// send starting from 
-		  																// the high byte of address 
+											// the high byte of address 
 	  }
 } 
 
@@ -65,7 +65,7 @@ void array_write(unsigned short long  address,
 	  count -= byte_count;
 	  while(byte_count--)
 	  {
-      putcSPI(*wrptr++);  	//send data byte 
+      	putcSPI(*wrptr++);  	//send data byte 
 	  }
 	  SPI_CS = 1;             //negate chip select 
   }
@@ -129,8 +129,8 @@ void busy_polling (void)
 unsigned char get_eeprom_id()
 {
 	unsigned char chip_id;
-  	SPI_CS = 0;               //assert chip select 
-  	putcSPI(0xAB /*SPI_RDID*/ );       	//send Release from PD and get ID command 
+  	SPI_CS = 0;               		//assert chip select 
+  	putcSPI(0xAB /*SPI_RDID*/ );    //send Release from PD and get ID command 
   	putcSPI(0x00);       			//send dummy address 
   	putcSPI(0x00);
 	putcSPI(0x00);

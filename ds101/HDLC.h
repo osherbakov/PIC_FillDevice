@@ -14,6 +14,7 @@
 // HDLC Flags and special symbols
 #define   FLAG    (0x7E)
 #define   ESCAPE  (0x1B)
+#define   INV_BIT (0x20)
 
 #define   BROADCAST (0xFF)
 

@@ -17,7 +17,7 @@ extern void setup_start_io();
 
 void setup_clocks()
 {
-  OSCTUNE = 0;    // No PLL
+  	OSCTUNE = 0;    // No PLL
 	OSCCONbits.IDLEN = 1; 	// On Sleep() enter IDLE
 
 	// Select appropriate clock source
@@ -36,7 +36,7 @@ void setup_clocks()
 #if XTAL_FREQ == 1MHZ
 	OSCCONbits.IRCF = 0x3;	// 1MHz
 #endif
-	OSCCONbits.SCS = 0x02;	// Internal
+	OSCCONbits.SCS = 0x00;	// Internal with MUX (can be PLL'd*4)
 
 	// TIMER 0 - to count OSC_CLOCK in 16-bit mode
 	// Used to adjust/sync the internal clock with RTC 1PPS clock

@@ -14,6 +14,7 @@ typedef struct BCD_date
 	unsigned char	Hours;
 	unsigned char	Minutes;
 	unsigned char	Seconds;
+	unsigned char	MilliSeconds10;
 }RTC_date_t;
 
 // Timer and RTC functions

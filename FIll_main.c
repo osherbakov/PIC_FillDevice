@@ -350,7 +350,7 @@ void main()
 				{
 					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
-					SetNextState(FILL_TX_RS232);	// Start with RS232 and cycle thru 3 modes
+					SetNextState(FILL_TX_RS485);	// Start with RS232 and cycle thru 3 modes
 				}else if(fill_type == MODE4)    	// MBITR keys
 				{
 					set_pin_a_as_gnd();				//  Set GND on Pin A
@@ -363,6 +363,7 @@ void main()
 					SetNextState(FILL_TX_DS102_WAIT);
 				}
 				break;
+
 			//------------------------------------------------------------
       		// DS-102 Fills	- type 1,2, and 3
 			//------------------------------------------------------------
@@ -383,17 +384,16 @@ void main()
 					TestFillResult(SendDS102Fill(switch_pos));
 				}
 				break;
+
 			//------------------------------------------------------------
       		// DS-101 Type 5 Fills				
 			//------------------------------------------------------------
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0)
-				{
+				if(result < 0){
 					SetNextState(FILL_TX_DTD232);	
-				}else
-				{
+				}else{
 					TestFillResult(result);
 				}
 				break;	
@@ -401,11 +401,9 @@ void main()
 			case FILL_TX_DTD232:
 				result = SendDTD232Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0)
-				{
+				if(result < 0){
 					SetNextState(FILL_TX_RS485);	
-				}else
-				{
+				}else{
 					TestFillResult(result);
 				}
 				break;	
@@ -413,11 +411,9 @@ void main()
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0)
-				{
+				if(result < 0){
 					SetNextState(FILL_TX_RS232);	
-				}else
-				{
+				}else{
 					TestFillResult(result);
 				}
 				break;

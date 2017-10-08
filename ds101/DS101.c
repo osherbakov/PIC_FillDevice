@@ -115,8 +115,8 @@ void SetupDS101Mode(char slot, char mode )
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
   	GetStatus =  	TxMode ? GetMasterStatus : GetSlaveStatus;
 	StartProcess = 	TxMode ? MasterStart : SlaveStart;
-  	OpenDS101 = ( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
-        			((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
+  	OpenDS101 = 	( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
+        				((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
     WriteCharDS101 = ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
     ReadCharDS101 =  ((mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
@@ -142,7 +142,7 @@ char ProcessDS101(void)
     nSymb = RxDS101Data(p_data);
     if((nSymb > 4) && CRC16chk(p_data, nSymb))
     {
-		nSymb -= 2;		// FCC/CRC was checked and consumed
+		nSymb -= 2;		// FCC/CRC at the end was checked and consumed
         // Extract all possible info from the incoming packet
         Address = p_data[0];
         Command = p_data[1];

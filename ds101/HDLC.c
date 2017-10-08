@@ -61,7 +61,7 @@ int RxRS232Data(char *p_data)
           }
           break;
         case ST_ESCAPE:
-          *p_data++ = ch;
+          *p_data++ = ch ^ INV_BIT;
 		  n_chars++;
           hdlc_state = ST_DATA;
           break;
@@ -90,8 +90,11 @@ void TxRS232Data(char *p_data, int n_chars)
     	if( (ch == FLAG) || (ch == ESCAPE) )
     	{
       		WriteCharDS101(ESCAPE);
-    	}
-    	WriteCharDS101(ch);
+			WriteCharDS101(ch ^ INV_BIT);
+    	}else {
+    		WriteCharDS101(ch);
+		}
+
   	}
 	WriteCharDS101(FLAG);
 }
