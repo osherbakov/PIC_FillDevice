@@ -200,11 +200,8 @@ typedef enum {
 	INIT = 0,
 	GET_EDGE,
 	GET_FLAG_EDGE,
-	GET_FLAG,
 	GET_SAMPLE_EDGE,
-	GET_SAMPLE,
 	GET_DATA_EDGE,
-	GET_DATA,
 	SEND_START_FLAG,
 	SEND_DATA,
 	SEND_END_FLAG,
@@ -219,10 +216,9 @@ typedef enum {
 #define HALF_PERIOD_CNTR   	(PERIOD_CNTR/2)
 #define QTR_PERIOD_CNTR   	(PERIOD_CNTR/4)
 #define EIGTH_PERIOD_CNTR   (PERIOD_CNTR/8)
-#define SAMPLE_CNTR 		(HALF_PERIOD_CNTR + EIGTH_PERIOD_CNTR)	// PERIOD_CNTR * 0.66
+#define SAMPLE_CNTR 		(HALF_PERIOD_CNTR + EIGTH_PERIOD_CNTR)	// PERIOD_CNTR * 0.625 ( 0.5 + 0.125)
 
 #define	FLAG				(0x7E)
-#define	PRE_FLAG			(0xFC)	// Flag one bit before
 
 #define 	Timer_Period	(PR6)
 #define 	Timer_Counter	(TMR6)
@@ -250,12 +246,6 @@ int RxRS485Data(char *pData)
 	// Take care of physical pins
 	TRIS_PIN_P = INPUT;
 	TRIS_PIN_N = INPUT;
-
-	TRIS_PIN_C	= OUTPUT;
-	TRIS_PIN_D	= OUTPUT;
-
-	PIN_C = 0;
-	PIN_D = 0;
 
 	st = INIT;
 	Timer_Ctrl 		= TIMER_CTRL;
@@ -285,83 +275,75 @@ int RxRS485Data(char *pData)
 		 	break;
 
 		// Initial state - we are looking for any edge within big timeout
-		case GET_EDGE:			
-			if(PIN_IN != rcvd_Sample) {
-				PIN_D = 1;
+		case GET_EDGE:	
+			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
+			{
 				Timer_Counter 	= 0;
 				TimerFlag 		= 0;			// Clear overflow flag
 
 				prev_Sample = PIN_IN;
-
-				st = GET_FLAG;	
-				PIN_D = 0;
+				st = GET_FLAG_EDGE;
+				
+				while(!TimerFlag) {}
+				rcvd_Sample	= PIN_IN;
 			}
 			break;
 		
-		// Set of 2 states to catch HDLC Flags to achieve frace sync
+		// State to catch HDLC Flags to achieve frame sync
 		// We exit it when we detect First HDLC flag
 		case GET_FLAG_EDGE:		// We stay in this state until we get the edge
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-//			if(PIN_IN != rcvd_Sample) 
 			{
-				PIN_D = 1;
 				Timer_Counter 	= 0;
 				TimerFlag 		= 0;			// Clear overflow flag
 				
 				// We now have 0.75T time to calclulate everything
-				rcvd_byte = (rcvd_byte >> 1) | ((rcvd_Sample == prev_Sample)? 0x80 : 0x00);
+				rcvd_byte >>= 1; 
+				if(rcvd_Sample == prev_Sample) {
+					rcvd_byte |= 0x80;
+				}
+
 				prev_Sample = PIN_IN;
 
-				st = (rcvd_byte == FLAG) ? GET_SAMPLE : GET_FLAG;
-				PIN_D = 0;
+				if(rcvd_byte == FLAG) { 
+					rcvd_byte = 0;
+					st = GET_SAMPLE_EDGE;
+				}
+
+				while(!TimerFlag) {}
+				rcvd_Sample	= PIN_IN;
 			}
 			break;
 
-		case GET_FLAG:			// In this state we wait for 0.75T mark
-			while(!TimerFlag) {}
-			PIN_C = 1;
-			rcvd_Sample	= PIN_IN;
-			st = GET_FLAG_EDGE;
-			PIN_C = 0;
-			break;
-
-		// Set of 2 states to handle HDLC Flags to achieve frame sync	
+		// State to handle HDLC Flags to achieve frame sync	
 		// We exit it when we detect First non-HDLC flag symbol
 		case GET_SAMPLE_EDGE:
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-//			if(PIN_IN != rcvd_Sample) {	// Edge detected
 			{
-				PIN_D = 1;
 				Timer_Counter 	= 0;
 				TimerFlag 		= 0;			// Clear overflow flag
 				
 				// We now have 0.75T time to calclulate everything
-				rcvd_byte = (rcvd_byte >> 1) | ((rcvd_Sample == prev_Sample)? 0x80 : 0x00);
+				rcvd_byte >>= 1; 
+				if(rcvd_Sample == prev_Sample) {
+					rcvd_byte |= 0x80;
+				}
 				prev_Sample = PIN_IN;
 				bit_count++;
 
-				st = GET_SAMPLE;
-				// Check if the assembled byte is not FLAG - if yes - save it
+				// If the assembled byte is not FLAG - save it
 				if(bit_count >= 8) {
 					bit_count = 0;
 					if(rcvd_byte != FLAG) {
-						PIN_D = 0;
 						*pData++ = rcvd_byte;
 						byte_count++;
-						st = GET_DATA;
-						PIN_D = 1;
+						st = GET_DATA_EDGE;
 					}	
 				}
-				PIN_D = 0;
-			}
-			break;
 
-		case GET_SAMPLE:
-			while(!TimerFlag) {}
-			PIN_C = 1;
-			rcvd_Sample = PIN_IN;
-			st = GET_SAMPLE_EDGE;
-			PIN_C = 0;
+				while(!TimerFlag) {}
+				rcvd_Sample = PIN_IN;
+			}
 			break;
 
 		// Set of 2 states to handle HDLC Data	
@@ -369,54 +351,44 @@ int RxRS485Data(char *pData)
 		// We also handle bit stuffing here
 		case GET_DATA_EDGE:
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-//			if(PIN_IN != rcvd_Sample) {
 			{
 				Timer_Counter 	= 0;
 				TimerFlag 		= 0;	// Clear overflow flag
 
-				PIN_D = 1;
 				// We now have 0.75T time to calclulate everything
-
 				// Beginning of bit stuffing
 				//  basically, every "0" after five consecutive "1" should be ignored 
-				if(rcvd_Sample != prev_Sample) {	// is this a "0" bit ?
+				if(rcvd_Sample == prev_Sample){		// Increment counter of consecutive "1"
+					rcvd_byte = (rcvd_byte >> 1) | 0x80;
+					bit_count++;
+					stuff_count++;
+				}else {
 					if(stuff_count < 5) {
-						rcvd_byte = (rcvd_byte >> 1) | ((rcvd_Sample == prev_Sample)? 0x80 : 0x00);
+						rcvd_byte >>= 1;
 						bit_count++;
 					}
 					stuff_count = 0;
-				}else {		// Increment counter of consecutive "1"
-					rcvd_byte = (rcvd_byte >> 1) | ((rcvd_Sample == prev_Sample)? 0x80 : 0x00);
-					bit_count++;
-					stuff_count++;
 				}
 				// End of bit stuffing
-				st = GET_DATA;
+
+				prev_Sample = PIN_IN;
 
 				// We got 6 "1" in a row - report as done
-				if(stuff_count > 5) {
+				if(stuff_count >= 6) {
 					st = DONE;
 				}else {
 					if(bit_count >= 8) {
-						PIN_D = 0;
 						bit_count = 0;				
 						*pData++ = rcvd_byte;
 						byte_count++;
-						PIN_D = 1;
 					}
 				}
-				PIN_D = 0;
+
+				while(!TimerFlag) {}
+				rcvd_Sample = PIN_IN;
 			}
 			break;
-
-		case GET_DATA:
-			while(!TimerFlag) {}
-			PIN_C = 1;
-			rcvd_Sample = PIN_IN;
-			st = GET_DATA_EDGE;
-			PIN_C = 0;
-			break;
-			
+		
 		case TIMEOUT:
   			INTCONbits.GIE = prevIRQ;
 			return -1;
