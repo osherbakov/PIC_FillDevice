@@ -140,7 +140,7 @@ char ProcessDS101(void)
 
     p_data = &RxTx_buff[0];
     nSymb = RxDS101Data(p_data);
-    if((nSymb > 4) && CRC16chk(p_data, nSymb))
+    if((nSymb >= 4) && CRC16chk(p_data, nSymb))
     {
 		nSymb -= 2;		// FCC/CRC at the end was checked and consumed
         // Extract all possible info from the incoming packet
@@ -229,8 +229,9 @@ char CheckFillRS485Type5()
   		TRIS_Data_P	= INPUT;
   		WPUB_Data_N = 1;
   		WPUB_Data_P = 1;
-	
-	 	return ( Data_P && !Data_N ) ? MODE5 : -1;
+		delayMicroseconds(100);
+
+	 	return ( Data_P != Data_N ) ? MODE5 : -1;
 	}
 	return -1;
 }	

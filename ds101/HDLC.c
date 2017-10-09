@@ -10,6 +10,13 @@
 
 #define TX_DELAY_MS	(50)
 
+typedef enum
+{
+    ST_IDLE,
+    ST_DATA,
+    ST_ESCAPE
+}RX_STATE;
+
 RX_STATE hdlc_state = ST_IDLE;
 
 // Returns:
