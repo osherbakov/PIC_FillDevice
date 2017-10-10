@@ -235,6 +235,8 @@ static		int 				byte_count;
 static		unsigned char		bit_count;
 static		unsigned char		stuff_count;
 static		unsigned char		rcvd_byte;
+
+static		unsigned char		flag_detected;
 	
 static		unsigned char		rcvd_Sample;		// The current Sample at 0.75T
 static		unsigned char		prev_Sample;		// The Sample at the 0.0T
@@ -254,139 +256,157 @@ int RxRS485Data(char *pData)
   	INTCONbits.GIE = 0;
 
 	// Set the big 16-bit timeout counter
+  	T1GCONbits.TMR1GE = 0;	// No gating
   	TMR1H = 0;
   	TMR1L = 0;				// Reset the timer
-  	T1GCONbits.TMR1GE = 0;	// No gating
 	PIR1bits.TMR1IF = 0;	// Clear Flag
+
+	// Start the timer to sample at 0.625T
+	Timer_Period	= SAMPLE_CNTR;	
 
 	while(!PIR1bits.TMR1IF) {
 
 		switch(st) {
 		  case INIT:
-			bit_count 	= 0;
-			byte_count	= 0;
-			rcvd_byte 	= 0;
-			stuff_count = 0;
+			bit_count 		= 0;
+			byte_count		= 0;
+			rcvd_byte 		= 0;
+			stuff_count 	= 0;
+			flag_detected 	= 0;
+
 			prev_Sample = rcvd_Sample = PIN_IN;
 	
-			Timer_Period	= SAMPLE_CNTR;	// Start the timer to sample at 0.75T
-
 			st = GET_EDGE;
 		 	break;
 
 		// Initial state - we are looking for any edge within big timeout
 		case GET_EDGE:	
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-			{
-				Timer_Counter 	= 0;
-				TimerFlag 		= 0;			// Clear overflow flag
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;			// Clear overflow flag
 
-				prev_Sample = PIN_IN;
-				st = GET_FLAG_EDGE;
+			// Save the value at the edge
+			prev_Sample = PIN_IN;
+			st = GET_FLAG_EDGE;
 				
-				while(!TimerFlag) {}
-				rcvd_Sample	= PIN_IN;
-			}
+			while(!TimerFlag) {}
+			rcvd_Sample	= PIN_IN;
 			break;
 		
-		// State to catch HDLC Flags to achieve frame sync
+		// State to catch first HDLC Flag (0x7E) to achieve frame sync
 		// We exit it when we detect First HDLC flag
 		case GET_FLAG_EDGE:		// We stay in this state until we get the edge
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-			{
-				Timer_Counter 	= 0;
-				TimerFlag 		= 0;			// Clear overflow flag
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;			// Clear overflow flag
 				
-				// We now have 0.75T time to calclulate everything
-				rcvd_byte >>= 1; 
-				if(rcvd_Sample == prev_Sample) {
-					rcvd_byte |= 0x80;
-				}
-
-				prev_Sample = PIN_IN;
-
-				if(rcvd_byte == FLAG) { 
-					rcvd_byte = 0;
-					st = GET_SAMPLE_EDGE;
-				}
-
-				while(!TimerFlag) {}
-				rcvd_Sample	= PIN_IN;
+			rcvd_byte >>= 1; 
+			if(rcvd_Sample == prev_Sample) {
+				rcvd_byte |= 0x80;
 			}
+
+			// Save the value at the edge
+			prev_Sample = PIN_IN;
+
+			if(rcvd_byte == FLAG) { 
+				rcvd_byte = 0;
+				bit_count = 0;
+				stuff_count = 0;
+
+				st = GET_SAMPLE_EDGE;
+			}
+
+			while(!TimerFlag) {}
+			rcvd_Sample	= PIN_IN;
 			break;
 
 		// State to handle HDLC Flags to achieve frame sync	
 		// We exit it when we detect First non-HDLC flag symbol
+		//  Here we also check for bit stuffing (if after 5 "1" comes "0" - discard it!
 		case GET_SAMPLE_EDGE:
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-			{
-				Timer_Counter 	= 0;
-				TimerFlag 		= 0;			// Clear overflow flag
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;			// Clear overflow flag
 				
-				// We now have 0.75T time to calclulate everything
-				rcvd_byte >>= 1; 
-				if(rcvd_Sample == prev_Sample) {
-					rcvd_byte |= 0x80;
-				}
-				prev_Sample = PIN_IN;
+			// Beginning of bit stuffing detection and handling
+			//  Every "0" after five consecutive "1" should be ignored 
+			if(rcvd_Sample == prev_Sample){	// "1" bit is received
+				rcvd_byte = (rcvd_byte >> 1) | 0x80;
 				bit_count++;
-
-				// If the assembled byte is not FLAG - save it
-				if(bit_count >= 8) {
-					bit_count = 0;
-					if(rcvd_byte != FLAG) {
-						*pData++ = rcvd_byte;
-						byte_count++;
-						st = GET_DATA_EDGE;
-					}	
+				stuff_count++;				// Increment counter of consecutive "1"
+				if(stuff_count > 5) {
+					flag_detected = 1;	// More than 5 "1"s in a row - flag
+				}	
+			}else {							// "0" bit is received
+				if(stuff_count != 5) {
+					rcvd_byte >>= 1;
+					bit_count++;
 				}
-
-				while(!TimerFlag) {}
-				rcvd_Sample = PIN_IN;
+				stuff_count = 0;
 			}
+			// End of bit stuffing handling
+
+			// Save the value at the edge
+			prev_Sample = PIN_IN;
+
+			// If the assembled byte is not FLAG - save it
+			if(bit_count >= 8) {
+				bit_count = 0;
+				if(flag_detected && (rcvd_byte == FLAG)) {
+				}else {
+					*pData++ = rcvd_byte;
+					byte_count++;
+					st = GET_DATA_EDGE;
+				}
+				flag_detected = 0;
+			}
+
+			while(!TimerFlag) {}
+			rcvd_Sample = PIN_IN;
 			break;
 
-		// Set of 2 states to handle HDLC Data	
+		// State to handle HDLC Data	
 		// We exit it when we detect first HDLC flag symbol (or any symbol with 6 and more "1"s
 		// We also handle bit stuffing here
 		case GET_DATA_EDGE:
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
-			{
-				Timer_Counter 	= 0;
-				TimerFlag 		= 0;	// Clear overflow flag
+			Timer_Counter 	= 0;
+			TimerFlag 		= 0;	// Clear overflow flag
 
-				// We now have 0.75T time to calclulate everything
-				// Beginning of bit stuffing
-				//  basically, every "0" after five consecutive "1" should be ignored 
-				if(rcvd_Sample == prev_Sample){		// Increment counter of consecutive "1"
-					rcvd_byte = (rcvd_byte >> 1) | 0x80;
+			// Beginning of bit stuffing detection and handling
+			//  Every "0" after five consecutive "1" should be ignored 
+			if(rcvd_Sample == prev_Sample){	// "1" bit is received
+				rcvd_byte = (rcvd_byte >> 1) | 0x80;
+				bit_count++;
+				stuff_count++;				// Increment counter of consecutive "1"
+				if(stuff_count > 5) {
+					flag_detected = 1;	// More than 5 "1"s in a row - flag
+				}	
+			}else {							// "0" bit is received
+				if(stuff_count != 5) {
+					rcvd_byte >>= 1;
 					bit_count++;
-					stuff_count++;
-				}else {
-					if(stuff_count < 5) {
-						rcvd_byte >>= 1;
-						bit_count++;
-					}
-					stuff_count = 0;
 				}
-				// End of bit stuffing
-
-				prev_Sample = PIN_IN;
-
-				// We got 6 "1" in a row - report as done
-				if(stuff_count >= 6) {
-					st = DONE;
-				}else {
-					if(bit_count >= 8) {
-						bit_count = 0;				
-						*pData++ = rcvd_byte;
-						byte_count++;
-					}
-				}
-
-				while(!TimerFlag) {}
-				rcvd_Sample = PIN_IN;
+				stuff_count = 0;
 			}
+			// End of bit stuffing handling
+
+			// Save the value at the edge
+			prev_Sample = PIN_IN;
+
+			// We got 6 "1" in a row - report as done
+			if(flag_detected) {
+				st = DONE;
+			}else {
+				if(bit_count >= 8) {
+					bit_count = 0;				
+					*pData++ = rcvd_byte;
+					byte_count++;
+				}
+			}
+
+			while(!TimerFlag) {}
+			rcvd_Sample = PIN_IN;
 			break;
 		
 		case TIMEOUT:
