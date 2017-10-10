@@ -235,12 +235,16 @@ static		int 				byte_count;
 static		unsigned char		bit_count;
 static		unsigned char		stuff_count;
 static		unsigned char		flag_detected;
+static		unsigned char		flag_count;
+
 static		unsigned char		rcvd_byte;
 	
 static		unsigned char		rcvd_Sample;		// The current Sample at 0.75T
 static		unsigned char		prev_Sample;		// The Sample at the 0.0T
 
 static		byte 				prevIRQ;
+
+#define		NUM_FLAGS			(3)					// Number of flags needed to be detected
 
 int RxRS485Data(char *pData)
 {
@@ -268,6 +272,9 @@ int RxRS485Data(char *pData)
 			byte_count	= 0;
 			rcvd_byte 	= 0;
 			stuff_count = 0;
+			flag_detected = 0;
+			flag_count = 0;
+
 			prev_Sample = rcvd_Sample = PIN_IN;
 	
 			Timer_Period	= SAMPLE_CNTR;	// Start the timer to sample at 0.75T
@@ -308,6 +315,7 @@ int RxRS485Data(char *pData)
 				bit_count = 0;
 				stuff_count = 0;
 				flag_detected = 1;
+				flag_count = 1;
 				st = GET_SAMPLE_EDGE;
 			}
 
@@ -330,7 +338,9 @@ int RxRS485Data(char *pData)
 				rcvd_byte = (rcvd_byte >> 1) | 0x80;
 				bit_count++;
 				stuff_count++;							// Increment counter of consecutive "1"s
-				if(stuff_count > 5) flag_detected = 1;	// Detect consecutive "1"s
+				if(stuff_count > 5) {
+					flag_detected = 1;	// Detect consecutive "1"s
+				}	
 			}else {								
 				// Bit "0" is received
 				if(stuff_count != 5) {
@@ -343,10 +353,11 @@ int RxRS485Data(char *pData)
 
 			prev_Sample = PIN_IN;
 
-			// If the assembled byte is NOT FLAG - save it
+			// If the assembled byte is NOT FLAG, and we have seen NUM_FLAGS before - save it
 			if(bit_count >= 8) {
 				bit_count = 0;
-				if(!flag_detected) {
+				if(	flag_detected && (rcvd_byte == FLAG))flag_counter++;
+				if( !flag_detected && (flag_counter >= NUM_FLAGS)) {
 					*pData++ = rcvd_byte;
 					byte_count++;
 					st = GET_DATA_EDGE;
