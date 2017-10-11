@@ -308,14 +308,22 @@ int RxRS485Data(char *pData)
 
 		// Initial state - we are looking for any edge within big timeout
 		case GET_EDGE:	
-			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
+			if(rcvd_Sample){while(PIN_IN && !PIR1bits.TMR1IF){}} else{while(!PIN_IN && !PIR1bits.TMR1IF) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;			// Clear overflow flag
 
 			// Save the value at the edge
 			prev_Sample = PIN_IN;
-			st = GET_FLAG_EDGE;
-				
+
+			if(PIR1bits.TMR1IF) {
+				st = TIMEOUT;
+			}else {
+			  	TMR1H = 0;
+			  	TMR1L = 0;				// Reset the timer
+				PIR1bits.TMR1IF = 0;	// Clear Flag
+				st = GET_FLAG_EDGE;
+			}
+			
 			while(!TimerFlag) {}
 			rcvd_Sample	= PIN_IN;
 			break;

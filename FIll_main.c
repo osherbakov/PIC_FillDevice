@@ -296,7 +296,7 @@ void main()
 						//		= 4 - DES MBITR Key fill
 						//		= 5 - DS-101 fill (both RS232, DTD and RS485)
 						fill_type = CheckFillType(switch_pos);
-						if( fill_type > 0)
+						if( fill_type != 0)
 						{
 							SetNextState(FILL_TX);	// Be ready to send fill
 						}else
@@ -368,7 +368,8 @@ void main()
       		// DS-102 Fills	- type 1,2, and 3
 			//------------------------------------------------------------
 			case FILL_TX_DS102_WAIT:
-				if( CheckType123Equipment(fill_type) > 0 )
+				result = CheckType123Equipment(fill_type);
+				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
 				  SetNextState(FILL_TX_DS102);
 				}
@@ -391,7 +392,8 @@ void main()
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0){
+				if( (result == ST_TIMEOUT) || (result == NONE) ) 
+				{
 					SetNextState(FILL_TX_DTD232);	
 				}else{
 					TestFillResult(result);
@@ -401,7 +403,8 @@ void main()
 			case FILL_TX_DTD232:
 				result = SendDTD232Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0){
+				if( (result == ST_TIMEOUT) || (result == NONE) ) 
+				{
 					SetNextState(FILL_TX_RS485);	
 				}else{
 					TestFillResult(result);
@@ -411,7 +414,8 @@ void main()
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
 				// On the timeout - switch to next mode
-				if(result < 0){
+				if( (result == ST_TIMEOUT) || (result == NONE) ) 
+				{
 					SetNextState(FILL_TX_RS232);	
 				}else{
 					TestFillResult(result);
@@ -429,7 +433,8 @@ void main()
       		// SINCGARS time fill
 			//------------------------------------------------------------
 			case FILL_TX_TIME:
-				if( CheckType123Equipment(fill_type) > 0 )
+				result = CheckType123Equipment(fill_type);
+				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
 					SetNextState(FILL_TX_TIME_PROC);
 				}
@@ -463,7 +468,7 @@ void main()
       		// Check for each fill type in turn
 			case FILL_RX_DS102_WAIT:
 			  	result = CheckFillType23();
-			  	if(result > 0)
+				if( (result != ST_TIMEOUT) && (result != NONE) )
 			  	{
 					// Process Type 2, and 3 fills
 					fill_type = result;
@@ -471,7 +476,7 @@ void main()
 					break;
 				}
 			  	result = CheckFillType1();
-			  	if(result > 0)
+				if( (result != ST_TIMEOUT) && (result != NONE) )
 			  	{
 					// Process Type 1 fills
 					fill_type = MODE1;
@@ -486,7 +491,8 @@ void main()
 				break;
 
 			case FILL_RX_TYPE1:
-			  	if ( !CheckFillType1Connected()) {
+			  	if ( !CheckFillType1Connected()) 
+				{
 					SetNextState(INIT);
 					break;
 			    }
@@ -497,7 +503,8 @@ void main()
 				break;
 
 			case FILL_RX_TYPE23:
-			  	if ( !CheckFillType23Connected()) {
+			  	if ( !CheckFillType23Connected()) 
+				{
 					SetNextState(INIT);
 					break;
 			    }
@@ -518,7 +525,8 @@ void main()
       		case FILL_RX_RS232_WAIT:
       			// Check if is is a DES keys fill from the PC (Type 4)
  				result = CheckFillType4();
-				if(result > 0){
+				if( (result != ST_TIMEOUT) && (result != NONE) )
+				{
 					fill_type = result;
 					SetNextState(FILL_RX_PC);
 				  	break;
@@ -526,7 +534,8 @@ void main()
 
         		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
  				result = CheckFillRS232Type5();
-				if(result > 0){
+				if( (result != ST_TIMEOUT) && (result != NONE) )
+				{
 					fill_type = result;
 					SetNextState(FILL_RX_RS232);
 				  	break;
@@ -534,7 +543,8 @@ void main()
 
         		// If Pin_C is -5V - that is DTD-232 Type 5
 //				result = CheckFillDTD232Type5();
-//				if(result > 0){
+//				if( (result != ST_TIMEOUT) && (result != NONE) )
+//				{
 //					fill_type = result;
 //					SetNextState(FILL_RX_DTD232);
 //			    	break;
@@ -542,7 +552,7 @@ void main()
 				
 /********************************************************
 				result = CheckFillRS485Type5();
-				if(result > 0)
+				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
 					fill_type = result;
 					SetNextState(FILL_RX_RS485);
