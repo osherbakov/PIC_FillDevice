@@ -25,11 +25,11 @@
 //--------------------------------------------------------------
 // Timeouts in ms
 //--------------------------------------------------------------
-#define tB  1000    	// Query -> Response from Radio (0.8ms - 5ms)
-#define tD  1000     	// PIN_C Pulse Width (0.25ms - 75ms)
-#define tG  1000     	// PIN_B Pulse Wodth (0.25ms - 80ms)
-#define tH  1000     	// BAD HIGH - > REQ LOW (0.25ms - 80ms)
-#define tF  4000    	// End of fill - > response (4ms - 2sec)
+#define tB  100    		// Query -> Response from Radio (0.8ms - 5ms)
+#define tD  200     	// PIN_C Pulse Width (0.25ms - 75ms)
+#define tG  200     	// PIN_B Pulse Wodth (0.25ms - 80ms)
+#define tH  200     	// BAD HIGH - > REQ LOW (0.25ms - 80ms)
+#define tF  3000    	// End of fill - > response (4ms - 2sec)
 #define tC  (30000)  	// .5 minute - > until REQ (300us - 5min )
 
 // Sends byte data on PIN_B with clocking on PIN_E
@@ -92,8 +92,8 @@ static char GetEquipmentMode23Type(void)
   WPUB_PIN_E = 0;
   
   set_timeout(tB);
-//  prev = INTCONbits.GIE;
-//  INTCONbits.GIE = 0;
+  prev = INTCONbits.GIE;
+  INTCONbits.GIE = 0;
 
   i = 0;
   result = ST_TIMEOUT;
@@ -115,7 +115,7 @@ static char GetEquipmentMode23Type(void)
       PreviousState = NewState;
     }
   }
-//  INTCONbits.GIE = prev;
+  INTCONbits.GIE = prev;
   return result;
 }
 
@@ -346,7 +346,7 @@ char CheckType123Equipment(byte fill_type)
   		SendMode23Query(MODE3);
 	  	Equipment = GetEquipmentMode23Type();
    		EndMode23Handshake();
-   		if(Equipment < 0)	// Timeout occured
+   		if(Equipment <= 0)	// Timeout occured
 	  	{
 		  	ReleaseBus();
 	  	}

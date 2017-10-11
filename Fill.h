@@ -64,7 +64,7 @@ typedef enum
 
 // The proper delays to generate 8kHz
 // Correction factor for the timing
-#define _bitPeriod (1000000L / 8000)
+#define _bitPeriod (1000000L / 2000)
 #define tT (_bitPeriod/2) 
 
 extern byte	 data_cell[];

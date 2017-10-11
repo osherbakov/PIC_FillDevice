@@ -24,6 +24,12 @@ void OpenRS232()
   	TxPC  = 0;  // Set up the stop bit
 }
 
+void CloseRS232()
+{
+	TRIS_RxPC = INPUT;
+	TRIS_TxPC = INPUT;
+}
+
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
 //  TMR6 is used to count bits in Tx and Rx
 //
@@ -106,6 +112,13 @@ void OpenDTD()
 	TRIS_RxDTD = INPUT;
 	TRIS_TxDTD = OUTPUT;
   	TxDTD  = 0;  // Set up the stop bit
+}
+
+void CloseDTD()
+{
+  	close_eusart();
+	TRIS_RxDTD = INPUT;
+	TRIS_TxDTD = INPUT;
 }
 
 
@@ -192,7 +205,21 @@ void OpenRS485()
 	ANSEL_Data_P = 0;
 
   	OSCTUNEbits.PLLEN = 1;    	// *4 PLL (64MHZ)
-	DelayMs(80);				// Wait for PLL to become stable
+	DelayMs(4 * 20);			// Wait for PLL to become stable
+}
+
+void CloseRS485()
+{
+	TRIS_Data_N = INPUT;
+  	WPUB_Data_N = 1;
+	ANSEL_Data_N = 0;
+
+	TRIS_Data_P = INPUT;
+  	WPUB_Data_P = 1;
+	ANSEL_Data_P = 0;
+
+  	OSCTUNEbits.PLLEN = 0;    	// No PLL (16MHZ)
+	DelayMs(20);				// Wait for the clock to become stable
 }
 
 // DS-101 64000bps Differential Manchester/Bi-phase coding
@@ -447,7 +474,7 @@ void TxRS485Data(char *pData, int nBytes)
 	PIN_N 			= 0;
 	next_bit 		= 1;
 
-	DelayMs(80);				// Wait for PLL to become stable
+	DelayMs(4 * 10);			// Little timeout
 
 	Timer_Ctrl 		= TIMER_CTRL;
 

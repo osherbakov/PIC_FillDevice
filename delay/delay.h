@@ -11,8 +11,6 @@ extern volatile char timeout_flag;
 extern void set_timeout(int a);
 extern char is_timeout(void);
 extern char is_not_timeout(void);
-//#define is_timeout() (timeout_flag)
-//#define is_not_timeout() (!timeout_flag)
 
 
 #define DelayMs(x) 		Delay1K((XTAL_FREQ * ((int)(x))) / 4 )

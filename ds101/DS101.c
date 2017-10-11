@@ -13,7 +13,7 @@ char master_name[14] = "DTD 2243";
 char slave_name[14] = "PRC152 radio";
 
 #pragma udata big_buffer   // Select large section
-char  RxTx_buff[512];
+unsigned char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
 unsigned char CurrentAddress;
@@ -32,7 +32,6 @@ char (*IsValidAddressAndCommand)(unsigned char  Address, unsigned char  Command)
 char (*GetStatus)(void);
 void (*StartProcess)(char slot);
 
-void (*OpenDS101)(void);
 int  (*RxDS101Data)(char *p_data);
 void (*TxDS101Data)(char *p_data, int n_count);
 void (*WriteCharDS101)(char ch);
@@ -66,8 +65,8 @@ void TxIFrame(char *p_data, int n_chars)
     memcpy((void *)&p_buff[2], (void *)p_data, n_chars);
 	n_chars += 2;
 	CRC16appnd(p_buff, n_chars);
-    TxDS101Data(p_buff, n_chars + 2);
     NS++;  NS &= 0x07;
+    TxDS101Data(p_buff, n_chars + 2);
 }
 
 void TxAXID(char mode)
@@ -104,9 +103,7 @@ void TxAXID(char mode)
 // Ideally, it would be done with virtual functions in C++
 void SetupDS101Mode(char slot, char mode )
 {
-	char TxMode = ( (mode == TX_RS232) || 
-					(mode == TX_RS485) || 
-					(mode == TX_DTD232) ) ? TRUE : FALSE;
+	char TxMode = ( (mode == TX_RS232) || (mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
     CurrentName = 	TxMode ? master_name : slave_name;
     IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
     ProcessIdle = 	TxMode ? MasterProcessIdle : SlaveProcessIdle;
@@ -115,15 +112,12 @@ void SetupDS101Mode(char slot, char mode )
     ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
   	GetStatus =  	TxMode ? GetMasterStatus : GetSlaveStatus;
 	StartProcess = 	TxMode ? MasterStart : SlaveStart;
-  	OpenDS101 = 	( (mode == TX_RS485) || (mode == RX_RS485)) ? OpenRS485 : 
-        				((mode == TX_RS232) || (mode == RX_RS232)) ? OpenRS232 : OpenDTD;
     WriteCharDS101 = ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
     ReadCharDS101 =  ((mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
     RxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Data : RxRS232Data;
     TxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Data : TxRS232Data;
 
-	OpenDS101();
 	StartProcess(slot);
 }	
 
@@ -186,52 +180,60 @@ char ProcessDS101(void)
 
 char StoreRS232Fill(char slot, char mode)
 {
+	char	ret;
+	OpenRS232();
 	SetupDS101Mode(slot, RX_RS232 );
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseRS232();
+	return ret;
 }
 
 char StoreDTD232Fill(char slot, char mode)
 {
+	char	ret;
+	OpenDTD();
 	SetupDS101Mode(slot, RX_DTD232);
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseDTD();
+	return ret;
 }
 
 char StoreRS485Fill(char slot, char mode)
 {
+	char	ret;
+	OpenRS485();
 	SetupDS101Mode(slot, RX_RS485 );
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseRS485();
+	return ret;
 }
 
 char SendRS232Fill(char slot)
 {
+	char	ret;
+	OpenRS232();
 	SetupDS101Mode(slot, TX_RS232);
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseRS232();
+	return ret;
 }
 
 char SendDTD232Fill(char slot)
 {
+	char	ret;
+	OpenDTD();
 	SetupDS101Mode(slot, TX_DTD232);
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseDTD();
+	return ret;
 }
 
 char SendRS485Fill(char slot)
 {
+	char	ret;
+	OpenRS485();
 	SetupDS101Mode(slot, TX_RS485);
-	return ProcessDS101();
+	ret = ProcessDS101();
+	CloseRS485();
+	return ret;
 }
-
-// The Type5 RS485 fill is detected when PIN_P is always higher than PIN_N
-char CheckFillRS485Type5()
-{
-	if( !RCSTA1bits.SPEN )
-  	{  
-  		TRIS_Data_N	= INPUT;
-  		TRIS_Data_P	= INPUT;
-  		WPUB_Data_N = 1;
-  		WPUB_Data_P = 1;
-		delayMicroseconds(100);
-
-	 	return ( Data_P != Data_N ) ? MODE5 : -1;
-	}
-	return -1;
-}	

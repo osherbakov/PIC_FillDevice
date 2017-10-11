@@ -51,10 +51,12 @@ char WaitReqSendPCFill(byte stored_slot)
 			{
 				FillTODData();
 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  	tx_eusart(TOD_cell, MODE2_3_CELL_SIZE);
+		  		tx_eusart(TOD_cell, MODE2_3_CELL_SIZE);
+	    		flush_eusart();
 			}else
 			{
 				tx_eusart(&data_cell[0], byte_cnt);
+	    		flush_eusart();
 			}
 			bytes -= byte_cnt;
 		}

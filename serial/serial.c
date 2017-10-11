@@ -73,6 +73,7 @@ static void send_options(void)
 	}
 	// Terminate everything with "OK\n"
 	tx_eusart_buff(OK_RESP);
+   	flush_eusart();
 }
 
 static unsigned char SerialBuffer[6];
@@ -87,7 +88,7 @@ char CheckFillType4()
 	if( !RCSTA1bits.SPEN)
 	{
 		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
-	  	if(!RxPC)
+	  	if(RxPC == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_MBITR, DATA_POLARITY);
@@ -126,7 +127,7 @@ char CheckFillRS232Type5()
 	if( !RCSTA1bits.SPEN )
 	{
 		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
-	  	if(!RxPC)
+	  	if(RxPC == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_PC, DATA_POLARITY);
@@ -148,15 +149,28 @@ char CheckFillDTD232Type5()
 {
 	if( !RCSTA1bits.SPEN )
 	{
-	  	TRIS_RxDTD = 1;
-	  	TRIS_TxDTD = 1;
-	  	if(!RxDTD && TxDTD)
+	  	TRIS_RxDTD = INPUT;
+	  	TRIS_TxDTD = INPUT;
+		DelayMs(10);
+	  	if(RxDTD == LOW)
 	  	{
 	  		 close_eusart();
 	  		 return MODE5;
 	  	}	
   	} 	
 	return ST_TIMEOUT;
+}	
+
+// The Type5 RS485 fill is detected when PIN_P is different from PIN_N
+char CheckFillRS485Type5()
+{
+	TRIS_Data_N	= INPUT;
+	TRIS_Data_P	= INPUT;
+	WPUB_Data_N = 1;
+	WPUB_Data_P = 1;
+	DelayMs(10);
+
+	return ( Data_P != Data_N ) ? MODE5 : -1;
 }	
 
 
@@ -167,6 +181,8 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	ANSEL_RxPC	= 0;
 	ANSEL_TxPC	= 0;
 
+	RCSTA1bits.CREN = 0; // Disable Rx
+ 	TXSTA1bits.TXEN = 0; // Disable Tx	
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
 	RCSTA1bits.SPEN = 0; // Disable EUSART
@@ -174,31 +190,13 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
-	rx_data = (volatile byte *) &data_cell[0];
 	rx_idx = 0;
-	rx_idx_max = FILL_MAX_SIZE - 1;
-	tx_data = (volatile byte *) &data_cell[0];
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
  	TXSTA1bits.TXEN = 1; // Enable Tx	
 	RCSTA1bits.SPEN = 1; // Enable EUSART
 }
-
-
-void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout)
-{
-	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
-	RCSTA1bits.CREN = 0; // Disable Rx
-	rx_data = (volatile byte *) p_rx_data;
-	rx_idx = 0;
-	rx_idx_max = max_size - 1;
-	set_timeout(timeout);
-	RCSTA1bits.CREN = 1; // Enable Rx
-	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
-}
-
-
 
 void close_eusart()
 {
@@ -217,7 +215,19 @@ void flush_eusart()
 		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
 	}
 }
-  
+
+void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout)
+{
+	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
+	RCSTA1bits.CREN = 0; // Disable Rx
+	rx_data = (volatile byte *) p_rx_data;
+	rx_idx = 0;
+	rx_idx_max = max_size - 1;
+	set_timeout(timeout);
+	RCSTA1bits.CREN = 1; // Enable Rx
+	PIE1bits.RC1IE = 1;	 // Enable RX interrupt
+}
+
   
 void PCInterface()
 {

@@ -36,11 +36,11 @@ extern void TxAXID(char mode);
 
 enum DS_MODE{
 	RX_RS232 = 0,
-	RX_RS485 = 1,
-	TX_RS232 = 2,
-	TX_RS485 = 3,
-	RX_DTD232 = 4,
-	TX_DTD232 = 5
+	RX_DTD232 = 1,
+	RX_RS485 = 2,
+	TX_RS232 = 3,
+	TX_DTD232 = 4,
+	TX_RS485 = 5
 };	
 
 extern char SendRS232Fill(char slot);
