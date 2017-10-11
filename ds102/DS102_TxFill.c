@@ -74,15 +74,16 @@ static void SendMode23Query(byte Data)
   	WPUB_PIN_E = 0;
 }
 
+static  byte  NewState;	
+static	byte  PreviousState;
+
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
 //   The total number of clocks is 40 (41), but only the last bit matters
-static char GetEquipmentMode23Type(void)
+static signed char GetEquipmentMode23Type(void)
 {
-  byte i;
-  byte  NewState;	
-  byte  PreviousState;
   char 	prev;
-  char	result;
+  signed char	result;
+  byte i;
 
   digitalWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
   digitalWrite(PIN_E, LOW);      	// Turn_on the pullup register
@@ -92,12 +93,14 @@ static char GetEquipmentMode23Type(void)
   WPUB_PIN_E = 0;
   
   set_timeout(tB);
+
   prev = INTCONbits.GIE;
   INTCONbits.GIE = 0;
 
   i = 0;
-  result = ST_TIMEOUT;
-  PreviousState = LOW;
+  result = -1;
+  PreviousState = pin_E();
+
   while(is_not_timeout())
   {
     NewState = pin_E();
@@ -123,6 +126,7 @@ static char GetEquipmentMode23Type(void)
 static void SendDS102Byte(byte Data)
 {
   byte i;
+
   pinMode(PIN_D, OUTPUT);    // make a pin active
   pinMode(PIN_E, OUTPUT);    // make a pin active
   digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
@@ -154,12 +158,12 @@ static void SendDS102Cell(byte *p_cell, byte count)
 //      -1 	- Timeout
 //		0 	- Request received
 //		1 	- PinB was asserted - fill error
+static	byte  NewState_C;	
+static	byte  NewState_B;	
+static 	byte  PreviousState_C;
+
 static char WaitDS102Req(byte fill_type, byte req_type)
 {
-	byte  NewState_C;	
-	byte  NewState_B;	
-  	byte  PreviousState_C;
-
   	char   Result = ST_TIMEOUT;
 
   	digitalWrite(PIN_C, HIGH);  // Set pullup 
@@ -254,10 +258,12 @@ static void EndMode23Handshake(void)
   digitalWrite(PIN_C, HIGH);
   digitalWrite(PIN_D, HIGH);
   digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_F, LOW);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
+  pinMode(PIN_F, OUTPUT);    
   WPUB_PIN_B = 1;
 }
 
@@ -268,6 +274,21 @@ static void  EndFill(void)
   delay(tZ);
 }
 
+
+static void AcquireMode1Bus(void)
+{
+  digitalWrite(PIN_B, HIGH);
+  digitalWrite(PIN_C, HIGH);
+  digitalWrite(PIN_D, HIGH);
+  digitalWrite(PIN_E, HIGH);
+  digitalWrite(PIN_F, HIGH);
+  pinMode(PIN_B, OUTPUT);
+  pinMode(PIN_C, INPUT);
+  pinMode(PIN_D, OUTPUT);
+  pinMode(PIN_E, OUTPUT);
+  pinMode(PIN_F, OUTPUT);
+  delayMicroseconds(200);
+}
 
 static void AcquireMode23Bus(void)
 {
@@ -282,22 +303,7 @@ static void AcquireMode23Bus(void)
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
   WPUB_PIN_B = 1;
-  delayMicroseconds(tJ);
-}
-
-static void AcquireMode1Bus(void)
-{
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
-  pinMode(PIN_B, OUTPUT);
-  pinMode(PIN_C, INPUT);
-  pinMode(PIN_D, OUTPUT);
-  pinMode(PIN_E, OUTPUT);
-  pinMode(PIN_F, OUTPUT);
-  delayMicroseconds(tJ);
+  delayMicroseconds(200);
 }
 
 
@@ -334,7 +340,7 @@ byte nofill_cell[] =
 // For Type 1 - return MODE1 right away
 char CheckType123Equipment(byte fill_type)
 {
-  	char Equipment = NONE;
+  	signed char Equipment = NONE;
   	if((fill_type == MODE1))
   	{
 	  	AcquireMode1Bus();
@@ -349,6 +355,7 @@ char CheckType123Equipment(byte fill_type)
    		if(Equipment <= 0)	// Timeout occured
 	  	{
 		  	ReleaseBus();
+			Equipment = NONE;
 	  	}
   	}
   	return Equipment;

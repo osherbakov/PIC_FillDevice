@@ -87,10 +87,10 @@ static void SetNextState(char nextState)
 			set_led_state(5, 5);		// About to zero-out pattern (Fastest Blink)
 			break;
 
+		case FILL_RX :
+		case HQ_GPS_RX :
 		case FILL_RX_DS102_WAIT:
 		case FILL_RX_RS232_WAIT:
-		case HQ_GPS_RX :
-		case FILL_RX :
 			set_led_state(15, 15);		// "Key empty" blink pattern (Fast Blink)
 			break;
 
@@ -298,10 +298,10 @@ void main()
 						fill_type = CheckFillType(switch_pos);
 						if( fill_type > 0)
 						{
-							SetNextState(FILL_TX);	// Be ready to send
+							SetNextState(FILL_TX);	// Be ready to send fill
 						}else
 						{
-							SetNextState(FILL_RX) ; // Receive fill
+							SetNextState(FILL_RX) ; // Be ready to receive fill
 						}
 					}
 				}else if(switch_pos == PC_POS )		// Talk to PC
@@ -326,7 +326,7 @@ void main()
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
           			SetNextState(HQ_GPS_RX);
-				}else if(switch_pos == HQ_TIME_POS)	// HQ tmt
+				}else if(switch_pos == HQ_TIME_POS)	// HQ Transmit
 				{
 					set_pin_a_as_gnd();			// Make ground on Pin A
 				  	set_pin_f_as_power();

@@ -33,11 +33,14 @@
 #define tZ  	2000   // Query cell duration
 #define tF  	200    // End of fill - > response (4ms - 2sec)
 
+
+static	byte  PreviousState;
+static	byte  NewState;	
+static	byte  bit_count;
+static	byte  Data;
+
 static char GetQueryByte(void)
 {
-	byte  PreviousState, NewState;	
-	byte  bit_count;
-	byte  Data;
 	byte  prev; 
 	char  ret;
   
@@ -116,12 +119,10 @@ static void SendEquipmentType(void)
   WPUB_PIN_E = 1;
 }
 
+static  byte  byte_count;
+
 static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 {
-  byte  bit_count;
-  byte  byte_count;
-  byte  PreviousState, NewState;	
-  byte  Data;
   byte  prev;
 
   pinMode(PIN_D, INPUT);		// make pin input DATA
