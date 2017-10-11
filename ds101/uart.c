@@ -330,7 +330,7 @@ int RxRS485Data(char *pData)
 		
 		// State to catch first HDLC Flag (0x7E) to achieve frame sync
 		// We exit it when we detect First HDLC flag
-		case GET_FLAG_EDGE:		// We stay in this state until we get the edge
+		case GET_FLAG_EDGE:	
 			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;			// Clear overflow flag

@@ -147,6 +147,7 @@ char CheckFillRS232Type5()
 // Check if there is the request from the DTD to send DS-101/RS-232 keys
 char CheckFillDTD232Type5()
 {
+/*********************************	
 	if( !RCSTA1bits.SPEN )
 	{
 	  	TRIS_RxDTD = INPUT;
@@ -158,6 +159,7 @@ char CheckFillDTD232Type5()
 	  		 return MODE5;
 	  	}	
   	} 	
+*********************************/
 	return ST_TIMEOUT;
 }	
 

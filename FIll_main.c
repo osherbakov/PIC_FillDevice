@@ -14,6 +14,10 @@ static enum
 	IDLE,
 	BIST,
 	BIST_ERR,
+	CHECK_KEY,
+	CHECK_KEY_OK,
+	CHECK_KEY_ERR,
+	CHECK_KEY_EMPTY,
 	FILL_TX,
 	FILL_TX_DS102_WAIT,
 	FILL_TX_MBITR,
@@ -76,7 +80,7 @@ static void SetNextState(char nextState)
 	switch(nextState)
 	{
 		case INIT:
-			set_led_state(100, 0);		// Steady Light
+			set_led_state(10, 5000);		// Short Blink
 			break;
 
 		case IDLE:
@@ -84,18 +88,18 @@ static void SetNextState(char nextState)
 			break;
 			
 		case ZERO_FILL:
-			set_led_state(5, 5);		// About to zero-out pattern (Fastest Blink)
+			set_led_state(10, 10);		// About to zero-out pattern (Fastest Blink)
 			break;
 
 		case FILL_RX :
 		case HQ_GPS_RX :
 		case FILL_RX_DS102_WAIT:
 		case FILL_RX_RS232_WAIT:
-			set_led_state(15, 15);		// "Key empty" blink pattern (Fast Blink)
+			set_led_state(20, 20);		// "Key empty" blink pattern (Fast Blink)
 			break;
 
 		case FILL_TX_MBITR:
-			set_led_state(5, 150);		// "Connect Serial" blink pattern	
+			set_led_state(10, 150);		// "Connect Serial" blink pattern	
 			break;
 
 		case FILL_TX :
@@ -106,7 +110,7 @@ static void SetNextState(char nextState)
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(5, 150);		// "Connect Serial" blink pattern
+			set_led_state(10, 150);		// "Connect Serial" blink pattern
 			break;
 
 		case FILL_TX_RS232:
@@ -146,11 +150,23 @@ static void SetNextState(char nextState)
 			break;
 	
 		case ERROR:
-			set_led_state(15, 5);		// "Fill error" blink pattern
+			set_led_state(20, 10);		// "Fill error" blink pattern
 			break;
 
 		case DONE:
 			set_led_state(100, 100);	// "Done - key valid" blink pattern
+			break;
+	
+		case CHECK_KEY_OK:
+			set_led_state(100, 0);		// "Key Present" blink pattern (Steady light)
+			break;
+		
+		case CHECK_KEY_ERR:
+			set_led_state(20, 10);		// "Key Parity error" blink pattern (Fast Blink)
+			break;
+
+		case CHECK_KEY_EMPTY:
+			set_led_state(0, 100);		// "Key EMPTY" blink pattern (No light)
 			break;
 	
 		default:
@@ -188,11 +204,11 @@ static void  PinsToDefault(void)
 	close_eusart();
 	set_pin_f_as_io();
 	set_pin_a_as_power(); // Remove ground from pin A
-	TRIS_PIN_B = 1;
-	TRIS_PIN_C = 1;
-	TRIS_PIN_D = 1;
-	TRIS_PIN_E = 1;
-	TRIS_PIN_F = 1;
+	TRIS_PIN_B = INPUT;
+	TRIS_PIN_C = INPUT;
+	TRIS_PIN_D = INPUT;
+	TRIS_PIN_E = INPUT;
+	TRIS_PIN_F = INPUT;
 }
 
 static void bump_idle_counter(void)
@@ -220,8 +236,13 @@ void main()
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
-  	allow_type45_fill = (prev_button_pos == DOWN_POS) ? TRUE : FALSE;
-	
+	allow_type45_fill = FALSE;
+	if(prev_button_pos == DOWN_POS)	
+	{
+  		allow_type45_fill = TRUE;
+  		SetNextState(CHECK_KEY);
+	}
+		
   	bump_idle_counter();
   
 	while(1)
@@ -232,20 +253,20 @@ void main()
 		if(idle_counter < seconds_counter)
 		{
 			SetNextState(IDLE);
-	  		setup_sleep_io();
 			while(1) 
 			{
-				INTCONbits.GIE = 0;		// Disable interrupts
-				INTCONbits.PEIE = 0;
+	  			setup_sleep_io();
 				Sleep();
 			};
 		}
 
+
+		button_pos = get_button_state();
 	  	//
-	  	// Check the switch position - did it change?
+	  	// Check the switch position - did it change? Only do it when button is not pressed
 	  	//
 		switch_pos = get_switch_state();
-		if(switch_pos && (switch_pos != prev_switch_pos))
+		if( (button_pos == UP_POS) && switch_pos && (switch_pos != prev_switch_pos))
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
@@ -257,7 +278,7 @@ void main()
 	  	// Check the power position - did it change?
 	  	//
 		power_pos = get_power_state();
-		if( power_pos != prev_power_pos )
+		if( (button_pos == UP_POS) && (power_pos != prev_power_pos) )
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
@@ -268,7 +289,7 @@ void main()
 				SetNextState(INIT);
 			}
 		}
-
+		
 		switch(current_state)
 		{
 			// This case when any switch or button changes
@@ -445,23 +466,24 @@ void main()
 				break;
 			//-----------FILL_TX--------------	
 			//********************************************
-			//
+			
+			
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
         		PinsToDefault();
-			  	if( !allow_type45_fill ){ 
+			  	if( allow_type45_fill ){ 
+        			// Only RS-232 and RS-485 fills are allowed 
+					set_pin_a_as_gnd();				//  Set GND on Pin A
+          			set_pin_f_as_power();
+  					SetNextState(FILL_RX_RS232_WAIT);
+				}else {
 				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
-          			set_pin_a_as_power();         // Set +5V on Pin A
+          			set_pin_a_as_power();         	// Set +5V on Pin A
           			set_pin_f_as_io();
   			  		SetType123PinsRx();
  					SetNextState(FILL_RX_DS102_WAIT);
-        		}else{ 
-        			// Only RS-232 and RS-485 fills are allowed 
-					set_pin_a_as_gnd();						//  Set GND on Pin A
-          			set_pin_f_as_power();
-  					SetNextState(FILL_RX_RS232_WAIT);
-				}
+ 				}		
 				break;
       
       		// Wait for Type 1,2,3 DS-102 Fills
@@ -542,23 +564,21 @@ void main()
 				}
 
         		// If Pin_C is -5V - that is DTD-232 Type 5
-//				result = CheckFillDTD232Type5();
-//				if( (result != ST_TIMEOUT) && (result != NONE) )
-//				{
-//					fill_type = result;
-//					SetNextState(FILL_RX_DTD232);
-//			    	break;
-//				}
+				result = CheckFillDTD232Type5();
+				if( (result != ST_TIMEOUT) && (result != NONE) )
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_DTD232);
+			    	break;
+				}
 				
-/********************************************************
 				result = CheckFillRS485Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
 					fill_type = result;
 					SetNextState(FILL_RX_RS485);
-			    break;
+			    	break;
 				}
-*********************************************************/				
         		break;
      
 			case FILL_RX_PC:  
@@ -618,6 +638,23 @@ void main()
 				break;
 			//-----------HQII TX and RX--------------	
 			//********************************************
+
+			//********************************************
+			//-----------Check if key is loaded and valid --------------	
+			case CHECK_KEY:
+				fill_type = CheckFillType(switch_pos);
+				if( fill_type != 0)
+				{
+					SetNextState(CHECK_KEY_OK);	// Will be ready to send fill
+				}else
+				{
+					SetNextState(CHECK_KEY_EMPTY); // Key is empty
+				}
+				break;
+
+			case CHECK_KEY_OK:
+			case CHECK_KEY_EMPTY:
+				break;
 
 			//********************************************
 			//-----------DONE and ERROR--------------	
