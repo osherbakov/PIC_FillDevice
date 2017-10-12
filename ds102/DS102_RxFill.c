@@ -286,7 +286,7 @@ char CheckFillType23Connected()
 // Need to figure out that later, how to detect the presence of the KYK-13 or KOI-18 fill device
 char CheckFillType1Connected()
 {
-	return 0;
+	return 1;
 //	return (pin_B() == LOW);
 }	
 
