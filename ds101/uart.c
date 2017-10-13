@@ -23,7 +23,7 @@ void OpenRS232(char Master)
 	TRIS_TxPC = OUTPUT;
   	TxPC  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(1000);		// Keep pins that way to detect condition
+		DelayMs(2000);		// Keep pins that way for the slave to detect condition
     }	
 }
 
@@ -116,7 +116,7 @@ void OpenDTD(char Master)
 	TRIS_TxDTD = OUTPUT;
   	TxDTD  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(1000);		// Keep pins that way to detect condition
+		DelayMs(2000);		// Keep pins that way for the slave to detect condition
     }	
 }
 
@@ -216,7 +216,10 @@ void OpenRS485(char Master)
 		TRIS_Data_P = OUTPUT;
 		Data_P 			= HIGH;
 		Data_N 			= LOW;
-		DelayMs(4 * 1000);		// Keep pins that way to detect condition
+		DelayMs(2000);			// Keep pins that way for the slave to detect condition
+		DelayMs(2000);			// Keep pins that way for the slave to detect condition
+		DelayMs(2000);			// Keep pins that way for the slave to detect condition
+		DelayMs(2000);			// Keep pins that way for the slave to detect condition
 	}else {
 		TRIS_Data_N = INPUT;
 		TRIS_Data_P = INPUT;

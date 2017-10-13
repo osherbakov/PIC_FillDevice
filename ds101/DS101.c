@@ -100,19 +100,24 @@ void TxAXID(char mode)
     TxIFrame(&AXID_buff[0], 21);		// 7 + 14 = 21
 }
 
+typedef enum {
+	SLAVE = 0,
+	MASTER = 1
+} DS101_MODE;
+
 // Select appropriate functions based on the mode requested.
 // Ideally, it would be done with virtual functions in C++
 void SetupDS101Mode(char slot, char mode )
 {
-	char TxMode = ( (mode == TX_RS232) || (mode == TX_RS485) || (mode == TX_DTD232) ) ? TRUE : FALSE;
-    CurrentName = 	TxMode ? master_name : slave_name;
-    IsValidAddressAndCommand = TxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
-    ProcessIdle = 	TxMode ? MasterProcessIdle : SlaveProcessIdle;
-    ProcessUFrame = TxMode ? MasterProcessUFrame : SlaveProcessUFrame;
-    ProcessSFrame = TxMode ? MasterProcessSFrame : SlaveProcessSFrame;
-    ProcessIFrame = TxMode ? MasterProcessIFrame : SlaveProcessIFrame;
-  	GetStatus =  	TxMode ? GetMasterStatus : GetSlaveStatus;
-	StartProcess = 	TxMode ? MasterStart : SlaveStart;
+	char TxRxMode = ( (mode == TX_RS232) || (mode == TX_RS485) || (mode == TX_DTD232) ) ? MASTER : SLAVE;
+    CurrentName = 	TxRxMode ? master_name : slave_name;
+    IsValidAddressAndCommand = TxRxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
+    ProcessIdle = 	TxRxMode ? MasterProcessIdle : SlaveProcessIdle;
+    ProcessUFrame = TxRxMode ? MasterProcessUFrame : SlaveProcessUFrame;
+    ProcessSFrame = TxRxMode ? MasterProcessSFrame : SlaveProcessSFrame;
+    ProcessIFrame = TxRxMode ? MasterProcessIFrame : SlaveProcessIFrame;
+  	GetStatus =  	TxRxMode ? GetMasterStatus : GetSlaveStatus;
+	StartProcess = 	TxRxMode ? MasterStart : SlaveStart;
     WriteCharDS101 = ((mode == TX_RS232) || (mode == RX_RS232)) ? TxRS232Char : TxDTDChar;
     ReadCharDS101 =  ((mode == TX_RS232) || (mode == RX_RS232)) ? RxRS232Char : RxDTDChar;
 
@@ -184,7 +189,7 @@ char StoreRS232Fill(char slot, char mode)
 {
 	char	ret;
 	SetupDS101Mode(slot, RX_RS232 );
-	OpenRS232(0);
+	OpenRS232(SLAVE);
 	ret = ProcessDS101();
 	CloseRS232();
 	return ret;
@@ -194,7 +199,7 @@ char StoreDTD232Fill(char slot, char mode)
 {
 	char	ret;
 	SetupDS101Mode(slot, RX_DTD232);
-	OpenDTD(0);
+	OpenDTD(SLAVE);
 	ret = ProcessDS101();
 	CloseDTD();
 	return ret;
@@ -204,7 +209,7 @@ char StoreRS485Fill(char slot, char mode)
 {
 	char	ret;
 	SetupDS101Mode(slot, RX_RS485 );
-	OpenRS485(0);
+	OpenRS485(SLAVE);
 	ret = ProcessDS101();
 	CloseRS485();
 	return ret;
@@ -214,7 +219,7 @@ char SendRS232Fill(char slot)
 {
 	char	ret;
 	SetupDS101Mode(slot, TX_RS232);
-	OpenRS232(1);
+	OpenRS232(MASTER);
 	ret = ProcessDS101();
 	CloseRS232();
 	return ret;
@@ -224,7 +229,7 @@ char SendDTD232Fill(char slot)
 {
 	char	ret;
 	SetupDS101Mode(slot, TX_DTD232);
-	OpenDTD(1);
+	OpenDTD(MASTER);
 	ret = ProcessDS101();
 	CloseDTD();
 	return ret;
@@ -234,7 +239,7 @@ char SendRS485Fill(char slot)
 {
 	char	ret;
 	SetupDS101Mode(slot, TX_RS485);
-	OpenRS485(1);
+	OpenRS485(MASTER);
 	ret = ProcessDS101();
 	CloseRS485();
 	return ret;

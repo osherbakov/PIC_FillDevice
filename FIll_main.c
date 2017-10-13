@@ -386,7 +386,7 @@ void main()
 				break;
 
 			//------------------------------------------------------------
-      		// DS-102 Fills	- type 1,2, and 3
+      		// DS-102 Tx Fills	- type 1,2, and 3
 			//------------------------------------------------------------
 			case FILL_TX_DS102_WAIT:
 				result = CheckType123Equipment(fill_type);
@@ -408,7 +408,7 @@ void main()
 				break;
 
 			//------------------------------------------------------------
-      		// DS-101 Type 5 Fills				
+      		// DS-101 Tx Type 5 Fills (RS-232 and DTD, RS485)			
 			//------------------------------------------------------------
 			case FILL_TX_RS232:
 				result = SendRS232Fill(switch_pos);
@@ -554,7 +554,7 @@ void main()
 				  	break;
 				}
 
-        		// If Pin_E is -5V - that is RS-485 Type 5
+        		// If Pin_E and Pin_B are different, that is RS-485 Type 5
 				result = CheckFillRS485Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
