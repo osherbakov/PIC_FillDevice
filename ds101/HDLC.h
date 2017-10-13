@@ -49,12 +49,12 @@ extern void (*WriteCharDS101)(char ch);
 extern int (*ReadCharDS101)(void);
 
 
-extern void OpenRS232(void);
+extern void OpenRS232(char Master);
 extern void TxRS232Char(char ch);
 extern int RxRS232Char(void);
 extern void CloseRS232(void);
 
-extern void OpenDTD(void);
+extern void OpenDTD(char Master);
 extern void TxDTDChar(char ch);
 extern int RxDTDChar(void);
 extern void CloseDTD(void);
@@ -62,7 +62,7 @@ extern void CloseDTD(void);
 extern int RxRS232Data(char *p_data);
 extern void TxRS232Data(char *p_data, int n_count);
 
-extern void OpenRS485(void);
+extern void OpenRS485(char Master);
 extern int RxRS485Data(unsigned char *p_data);
 extern void TxRS485Data(unsigned char *p_data, int n_count);
 extern void CloseRS485(void);

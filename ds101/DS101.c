@@ -37,6 +37,7 @@ void (*TxDS101Data)(char *p_data, int n_count);
 void (*WriteCharDS101)(char ch);
 int  (*ReadCharDS101)(void);
 
+static char KeySlot;
 
 void TxSFrame(unsigned char cmd)
 {
@@ -117,8 +118,7 @@ void SetupDS101Mode(char slot, char mode )
 
     RxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? RxRS485Data : RxRS232Data;
     TxDS101Data = ( (mode == TX_RS485) || (mode == RX_RS485)) ? TxRS485Data : TxRS232Data;
-
-	StartProcess(slot);
+    KeySlot = slot;
 }	
 
 char ProcessDS101(void)
@@ -127,6 +127,8 @@ char ProcessDS101(void)
   char *p_data;
   unsigned char Address;
   unsigned char Command;
+
+  StartProcess(KeySlot);
 
   while(GetStatus() == ST_OK)
   {
@@ -181,8 +183,8 @@ char ProcessDS101(void)
 char StoreRS232Fill(char slot, char mode)
 {
 	char	ret;
-	OpenRS232();
 	SetupDS101Mode(slot, RX_RS232 );
+	OpenRS232(0);
 	ret = ProcessDS101();
 	CloseRS232();
 	return ret;
@@ -191,8 +193,8 @@ char StoreRS232Fill(char slot, char mode)
 char StoreDTD232Fill(char slot, char mode)
 {
 	char	ret;
-	OpenDTD();
 	SetupDS101Mode(slot, RX_DTD232);
+	OpenDTD(0);
 	ret = ProcessDS101();
 	CloseDTD();
 	return ret;
@@ -201,8 +203,8 @@ char StoreDTD232Fill(char slot, char mode)
 char StoreRS485Fill(char slot, char mode)
 {
 	char	ret;
-	OpenRS485();
 	SetupDS101Mode(slot, RX_RS485 );
+	OpenRS485(0);
 	ret = ProcessDS101();
 	CloseRS485();
 	return ret;
@@ -211,8 +213,8 @@ char StoreRS485Fill(char slot, char mode)
 char SendRS232Fill(char slot)
 {
 	char	ret;
-	OpenRS232();
 	SetupDS101Mode(slot, TX_RS232);
+	OpenRS232(1);
 	ret = ProcessDS101();
 	CloseRS232();
 	return ret;
@@ -221,8 +223,8 @@ char SendRS232Fill(char slot)
 char SendDTD232Fill(char slot)
 {
 	char	ret;
-	OpenDTD();
 	SetupDS101Mode(slot, TX_DTD232);
+	OpenDTD(1);
 	ret = ProcessDS101();
 	CloseDTD();
 	return ret;
@@ -231,8 +233,8 @@ char SendDTD232Fill(char slot)
 char SendRS485Fill(char slot)
 {
 	char	ret;
-	OpenRS485();
 	SetupDS101Mode(slot, TX_RS485);
+	OpenRS485(1);
 	ret = ProcessDS101();
 	CloseRS485();
 	return ret;

@@ -554,7 +554,16 @@ void main()
 				  	break;
 				}
 
-        		// If Pin_D is -5V - that is Type 4 or RS-232 Type 5
+        		// If Pin_E is -5V - that is RS-485 Type 5
+				result = CheckFillRS485Type5();
+				if( (result != ST_TIMEOUT) && (result != NONE) )
+				{
+					fill_type = result;
+					SetNextState(FILL_RX_RS485);
+			    	break;
+				}
+
+        		// If Pin_C is -5V - that is RS-232 Type 5
  				result = CheckFillRS232Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
@@ -563,7 +572,7 @@ void main()
 				  	break;
 				}
 
-        		// If Pin_C is -5V - that is DTD-232 Type 5
+        		// If Pin_D is -5V - that is DTD-232 Type 5
 				result = CheckFillDTD232Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
 				{
@@ -572,13 +581,6 @@ void main()
 			    	break;
 				}
 				
-				result = CheckFillRS485Type5();
-				if( (result != ST_TIMEOUT) && (result != NONE) )
-				{
-					fill_type = result;
-					SetNextState(FILL_RX_RS485);
-			    	break;
-				}
         		break;
      
 			case FILL_RX_PC:  

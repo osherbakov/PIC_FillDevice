@@ -172,7 +172,7 @@ char CheckFillRS485Type5()
 	WPUB_Data_P = 1;
 	DelayMs(10);
 
-	return ( Data_P != Data_N ) ? MODE5 : -1;
+	return ( (Data_P == HIGH) && (Data_N == LOW) ) ? MODE5 : -1;
 }	
 
 

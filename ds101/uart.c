@@ -16,12 +16,15 @@
 #define TIMER_DS101_CTRL 	( (1<<2) | 0)   // ENA, 1:1
 
 
-void OpenRS232()
+void OpenRS232(char Master)
 {
   	close_eusart();
 	TRIS_RxPC = INPUT;
 	TRIS_TxPC = OUTPUT;
   	TxPC  = 0;  // Set up the stop bit
+  	if(Master) {
+		DelayMs(1000);		// Keep pins that way to detect condition
+    }	
 }
 
 void CloseRS232()
@@ -106,12 +109,15 @@ void TxRS232Char(char data)
 
 
 
-void OpenDTD()
+void OpenDTD(char Master)
 {
   	close_eusart();
 	TRIS_RxDTD = INPUT;
 	TRIS_TxDTD = OUTPUT;
   	TxDTD  = 0;  // Set up the stop bit
+  	if(Master) {
+		DelayMs(1000);		// Keep pins that way to detect condition
+    }	
 }
 
 void CloseDTD()
@@ -194,18 +200,27 @@ void TxDTDChar(char data)
 	}
 } 
 
-void OpenRS485()
+void OpenRS485(char Master)
 {
-	TRIS_Data_N = INPUT;
-  	WPUB_Data_N = 1;
 	ANSEL_Data_N = 0;
+	WPUB_Data_N = 1;
 
-	TRIS_Data_P = INPUT;
-  	WPUB_Data_P = 1;
 	ANSEL_Data_P = 0;
+	WPUB_Data_P = 1;
 
   	OSCTUNEbits.PLLEN = 1;    	// *4 PLL (64MHZ)
-	DelayMs(4 * 20);			// Wait for PLL to become stable
+	DelayMs(4 * 10);			// Wait for PLL to become stable
+
+	if(Master) {
+		TRIS_Data_N = OUTPUT;
+		TRIS_Data_P = OUTPUT;
+		Data_P 			= HIGH;
+		Data_N 			= LOW;
+		DelayMs(4 * 1000);		// Keep pins that way to detect condition
+	}else {
+		TRIS_Data_N = INPUT;
+		TRIS_Data_P = INPUT;
+	}		
 }
 
 void CloseRS485()
@@ -219,7 +234,7 @@ void CloseRS485()
 	ANSEL_Data_P = 0;
 
   	OSCTUNEbits.PLLEN = 0;    	// No PLL (16MHZ)
-	DelayMs(20);				// Wait for the clock to become stable
+	DelayMs(10);				// Wait for the clock to become stable
 }
 
 // DS-101 64000bps Differential Manchester/Bi-phase coding
