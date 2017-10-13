@@ -29,6 +29,8 @@ int RxRS232Data(char *p_data)
   	char ch;
   	int  n_chars;
 
+TRIS_PIN_E = OUTPUT;
+
   	set_timeout(RX_TIMEOUT1_RS);
     hdlc_state = ST_IDLE;
 
@@ -50,9 +52,11 @@ int RxRS232Data(char *p_data)
           }else if(ch == ESCAPE) {
              hdlc_state = ST_ESCAPE;
           }else{
+PIN_E = 1;
             *p_data++ = ch;
 			n_chars++;
             hdlc_state = ST_DATA;
+PIN_E = 0;
           }
           break;
         case ST_DATA:
@@ -63,14 +67,18 @@ int RxRS232Data(char *p_data)
           }else if(ch == ESCAPE){
             hdlc_state = ST_ESCAPE;
           }else{
+PIN_E = 1;
             *p_data++ = ch;
 			n_chars++;
+PIN_E = 0;
           }
           break;
         case ST_ESCAPE:
+PIN_E = 1;
           *p_data++ = ch ^ INV_BIT;
 		  n_chars++;
           hdlc_state = ST_DATA;
+PIN_E = 0;
           break;
       }
     }

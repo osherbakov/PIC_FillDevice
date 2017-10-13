@@ -15,8 +15,7 @@ char Key_buff[512];
 enum MASTER_STATE
 {
   MS_IDLE = 0,
-	MS_SEND_SNRM1,
-	MS_SEND_SNRM2,
+	MS_SEND_SNRM,
 	MS_AXID_EXCH,
 	MS_REQ_DISC,
 	MS_RECONNECT,
@@ -29,9 +28,10 @@ enum MASTER_STATE
 };
 
 
-#define TX_WAIT   (2)    // 2 Seconds
+#define TX_RETRIES   (10)    // 
 
 static char master_state;
+static char retry_count;
 
 static unsigned long short base_address;
 static unsigned char block_counter;   // Counter for blocks sent
@@ -46,6 +46,7 @@ void MasterStart(char slot)
 	NS = 0;
 	PF = 1;
 	frame_len = 0;
+	retry_count = 0;
 	master_state = MS_IDLE;	
 	CurrentAddress = BROADCAST;
   	CurrentNumber = MASTER_NUMBER;
@@ -82,21 +83,20 @@ void MasterProcessIdle()
 			NR = 0;
 			NS = 0;
 			PF = 1;
+			retry_count = 0;
 			frame_len = 0;
 
 			TxUFrame(SNRM);		// Request connection
-			master_state = MS_SEND_SNRM1;
+			master_state = MS_SEND_SNRM;
 			break;
 
-		case MS_SEND_SNRM1:
+		case MS_SEND_SNRM:
 			TxUFrame(SNRM);		// Request connection
-			master_state = MS_SEND_SNRM2;
+			if(++retry_count > TX_RETRIES) {
+				master_state = MS_TIMEOUT;
+			}
 			break;
 
-		case MS_SEND_SNRM2:
-			master_state = MS_TIMEOUT;
-			break;
-    
     	case MS_DONE:
     	case MS_TIMEOUT:
       		// Stay in this state
@@ -212,8 +212,7 @@ void MasterProcessUFrame(unsigned char Cmd)
 	{
 		switch(master_state)
 		{
-			case MS_SEND_SNRM1:
-			case MS_SEND_SNRM2:
+			case MS_SEND_SNRM:
 				TxAXID(1);	// On connect ask for AXID
 				master_state = MS_AXID_EXCH;
 				break;

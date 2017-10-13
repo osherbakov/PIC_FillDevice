@@ -9,8 +9,6 @@
 #define TIMER_DTD_EDGE 		( (TIMER_DTD/2) )
 #define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
 
-// #define TIMER_DS101 		( ((XTAL_FREQ * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
-// #define TIMER_DS101			(62)
 #define TIMER_DS101 		( ((64L * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 
 #define TIMER_DS101_CTRL 	( (1<<2) | 0)   // ENA, 1:1
@@ -23,7 +21,7 @@ void OpenRS232(char Master)
 	TRIS_TxPC = OUTPUT;
   	TxPC  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(2000);		// Keep pins that way for the slave to detect condition
+		DelayMs(1000);		// Keep pins that way for the slave to detect condition
     }	
 }
 
@@ -40,9 +38,10 @@ void CloseRS232()
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
+static 	byte bitcount, data;
+
 int RxRS232Char()
 {
-	byte bitcount, data;
 	byte prev;
 	int  result;
 
@@ -55,8 +54,8 @@ int RxRS232Char()
       	
 	result = -1;
   	
-	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0;
+//	prev = INTCONbits.GIE;
+// 	INTCONbits.GIE = 0;
 
   	while( is_not_timeout() )
 	{
@@ -77,7 +76,7 @@ int RxRS232Char()
 			break;
 		}
 	}
-	INTCONbits.GIE = prev;
+//	INTCONbits.GIE = prev;
 
 	return result;
 }
@@ -85,7 +84,6 @@ int RxRS232Char()
 
 void TxRS232Char(char data)
 {
-	byte 	bitcount;
 	data = ~data;  			// Invert sysmbol
 
 	TRIS_TxPC = OUTPUT;
@@ -116,13 +114,12 @@ void OpenDTD(char Master)
 	TRIS_TxDTD = OUTPUT;
   	TxDTD  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(2000);		// Keep pins that way for the slave to detect condition
+		DelayMs(1000);		// Keep pins that way for the slave to detect condition
     }	
 }
 
 void CloseDTD()
 {
-  	close_eusart();
 	TRIS_RxDTD = INPUT;
 	TRIS_TxDTD = INPUT;
 }
@@ -135,7 +132,6 @@ void CloseDTD()
 //  >=0 - if symbol was detected 
 int RxDTDChar()
 {
-	byte 	bitcount, data;
 	byte 	prev;
 	int		result;
 
@@ -177,8 +173,6 @@ int RxDTDChar()
 
 void TxDTDChar(char data)
 {
-	byte 	bitcount;
-
 	data = ~data;  			// Invert sysmbol
 	
 	TRIS_TxDTD = OUTPUT;
@@ -216,10 +210,10 @@ void OpenRS485(char Master)
 		TRIS_Data_P = OUTPUT;
 		Data_P 			= HIGH;
 		Data_N 			= LOW;
-		DelayMs(2000);			// Keep pins that way for the slave to detect condition
-		DelayMs(2000);			// Keep pins that way for the slave to detect condition
-		DelayMs(2000);			// Keep pins that way for the slave to detect condition
-		DelayMs(2000);			// Keep pins that way for the slave to detect condition
+		DelayMs(1000);			// Keep pins that way for the slave to detect condition
+		DelayMs(1000);			// Keep pins that way for the slave to detect condition
+		DelayMs(1000);			// Keep pins that way for the slave to detect condition
+		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 	}else {
 		TRIS_Data_N = INPUT;
 		TRIS_Data_P = INPUT;

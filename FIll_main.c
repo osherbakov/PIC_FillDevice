@@ -229,13 +229,16 @@ void main()
   	PinsToDefault();	
 
 	SetNextState(INIT);
-	DelayMs(200);
+	DelayMs(100);
 	
 	// Initialize current state of the buttons, switches, etc
 	prev_power_pos = get_power_state();
 	prev_button_pos = get_button_state();
 	prev_switch_pos = get_switch_state();
 
+	// Special case on the startup:
+	// If the button is pressed on power-on, then ENABLE RS232 and RS485 (DS-101) fills
+	// Additionally, show the key status - Solid light for OK, No light for EMPTY
 	allow_type45_fill = FALSE;
 	if(prev_button_pos == DOWN_POS)	
 	{
@@ -266,12 +269,16 @@ void main()
 	  	// Check the switch position - did it change? Only do it when button is not pressed
 	  	//
 		switch_pos = get_switch_state();
-		if( (button_pos == UP_POS) && switch_pos && (switch_pos != prev_switch_pos))
+		if( switch_pos && (switch_pos != prev_switch_pos))
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
 			prev_switch_pos = switch_pos; // Save new state
-			SetNextState(INIT);
+			if(button_pos == UP_POS)  {
+				SetNextState(INIT);
+			}else {
+  				SetNextState(CHECK_KEY);
+			}
 		}
 
 	  	//
@@ -410,28 +417,6 @@ void main()
 			//------------------------------------------------------------
       		// DS-101 Tx Type 5 Fills (RS-232 and DTD, RS485)			
 			//------------------------------------------------------------
-			case FILL_TX_RS232:
-				result = SendRS232Fill(switch_pos);
-				// On the timeout - switch to next mode
-				if( (result == ST_TIMEOUT) || (result == NONE) ) 
-				{
-					SetNextState(FILL_TX_DTD232);	
-				}else{
-					TestFillResult(result);
-				}
-				break;	
-
-			case FILL_TX_DTD232:
-				result = SendDTD232Fill(switch_pos);
-				// On the timeout - switch to next mode
-				if( (result == ST_TIMEOUT) || (result == NONE) ) 
-				{
-					SetNextState(FILL_TX_RS485);	
-				}else{
-					TestFillResult(result);
-				}
-				break;	
-
 			case FILL_TX_RS485:
 				result = SendRS485Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -443,6 +428,29 @@ void main()
 				}
 				break;
 
+			case FILL_TX_RS232:
+				result = SendRS232Fill(switch_pos);
+				// On the timeout - switch to next mode
+				if( (result == ST_TIMEOUT) || (result == NONE) ) 
+				{
+					SetNextState(FILL_TX_RS485);	
+				}else{
+					TestFillResult(result);
+				}
+				break;	
+
+/*		Disable DTD mode temporarily until we figure out how to detect it
+			case FILL_TX_DTD232:
+				result = SendDTD232Fill(switch_pos);
+				// On the timeout - switch to next mode
+				if( (result == ST_TIMEOUT) || (result == NONE) ) 
+				{
+					SetNextState(FILL_TX_RS485);	
+				}else{
+					TestFillResult(result);
+				}
+				break;	
+*/
 			//------------------------------------------------------------
       		// MBITR Type 4 fill
 			//------------------------------------------------------------
@@ -476,7 +484,7 @@ void main()
         			// Only RS-232 and RS-485 fills are allowed 
 					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
-  					SetNextState(FILL_RX_RS232_WAIT);
+  					SetNextState(FILL_RX_RS232);
 				}else {
 				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
           			set_pin_a_as_power();         	// Set +5V on Pin A
@@ -543,6 +551,7 @@ void main()
 
 			//
       		// Wait for serial RS-232 or DS-101 fills				
+      		// Check for each type in turn				
 			//
       		case FILL_RX_RS232_WAIT:
       			// Check if is is a DES keys fill from the PC (Type 4)
@@ -571,7 +580,7 @@ void main()
 					SetNextState(FILL_RX_RS232);
 				  	break;
 				}
-
+/*		Disable DTD mode temporarily until we figure out how to detect it
         		// If Pin_D is -5V - that is DTD-232 Type 5
 				result = CheckFillDTD232Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
@@ -580,7 +589,7 @@ void main()
 					SetNextState(FILL_RX_DTD232);
 			    	break;
 				}
-				
+*/				
         		break;
      
 			case FILL_RX_PC:  
@@ -654,7 +663,10 @@ void main()
 				}
 				break;
 
+			
+			// Stay in those states until power down or change the switch
 			case CHECK_KEY_OK:
+			case CHECK_KEY_ERR:
 			case CHECK_KEY_EMPTY:
 				break;
 
