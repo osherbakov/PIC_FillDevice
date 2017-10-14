@@ -4,9 +4,9 @@
 #include "Fill.h"
 #include "serial.h"
 
-#define TIMER_DTD 			( ( (XTAL_FREQ * 1000000L) / (4L * 16L * DTD_BAUDRATE)) - 1 )
+#define TIMER_DTD 			(((XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
 #define TIMER_DTD_START 	( -(TIMER_DTD/2) )
-#define TIMER_DTD_EDGE 		( (TIMER_DTD/2) )
+
 #define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
 
 #define TIMER_DS101 		( ((64L * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
@@ -21,7 +21,7 @@ void OpenRS232(char Master)
 	TRIS_TxPC = OUTPUT;
   	TxPC  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(1000);		// Keep pins that way for the slave to detect condition
+		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
 }
 
@@ -38,11 +38,13 @@ void CloseRS232()
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
+//
+// We DO NOT disable interrupts here due to slow (2400Baud) speed
+//
 static 	byte bitcount, data;
 
 int RxRS232Char()
 {
-	byte prev;
 	int  result;
 
 	TRIS_RxPC = INPUT;
@@ -54,9 +56,6 @@ int RxRS232Char()
       	
 	result = -1;
   	
-//	prev = INTCONbits.GIE;
-// 	INTCONbits.GIE = 0;
-
   	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
@@ -76,7 +75,6 @@ int RxRS232Char()
 			break;
 		}
 	}
-//	INTCONbits.GIE = prev;
 
 	return result;
 }
@@ -114,7 +112,7 @@ void OpenDTD(char Master)
 	TRIS_TxDTD = OUTPUT;
   	TxDTD  = 0;  // Set up the stop bit
   	if(Master) {
-		DelayMs(1000);		// Keep pins that way for the slave to detect condition
+		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
 }
 
@@ -130,9 +128,11 @@ void CloseDTD()
 // Returns:
 //  -1  - if no symbol within timeout
 //  >=0 - if symbol was detected 
+//
+// We DO NOT disable interrupts here due to slow (2400Baud) speed
+//
 int RxDTDChar()
 {
-	byte 	prev;
 	int		result;
 
 	TRIS_RxDTD = INPUT;
@@ -142,9 +142,6 @@ int RxDTDChar()
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
       	
-	prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0;
-
 	result = -1;
   	while( is_not_timeout() )
 	{
@@ -165,8 +162,6 @@ int RxDTDChar()
 			break;
 		}
 	}
-  	INTCONbits.GIE = prev;
-
 	return result;
 }
 
@@ -208,10 +203,8 @@ void OpenRS485(char Master)
 	if(Master) {
 		TRIS_Data_N = OUTPUT;
 		TRIS_Data_P = OUTPUT;
-		Data_P 			= HIGH;
-		Data_N 			= LOW;
-		DelayMs(1000);			// Keep pins that way for the slave to detect condition
-		DelayMs(1000);			// Keep pins that way for the slave to detect condition
+		Data_P 		= HIGH;
+		Data_N 		= LOW;
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 	}else {
@@ -257,8 +250,6 @@ typedef enum {
 #define EIGTH_PERIOD_CNTR   (PERIOD_CNTR/8)
 #define SAMPLE_CNTR 		(HALF_PERIOD_CNTR + EIGTH_PERIOD_CNTR)	// PERIOD_CNTR * 0.625 ( 0.5 + 0.125)
 
-#define	FLAG				(0x7E)
-
 #define 	Timer_Period	(PR6)
 #define 	Timer_Counter	(TMR6)
 #define 	Timer_Ctrl		(T6CON)
@@ -275,12 +266,15 @@ static		unsigned char		bit_count;
 static		unsigned char		stuff_count;
 static		unsigned char		rcvd_byte;
 
+static		unsigned char		timeout_cntr;
 static		unsigned char		flag_detected;
 	
 static		unsigned char		rcvd_Sample;		// The current Sample at 0.75T
 static		unsigned char		prev_Sample;		// The Sample at the 0.0T
 
 static		byte 				prevIRQ;
+
+#define		TIMEOUT_CNT			(15)
 
 int RxRS485Data(char *pData)
 {
@@ -312,6 +306,7 @@ int RxRS485Data(char *pData)
 			rcvd_byte 		= 0;
 			stuff_count 	= 0;
 			flag_detected 	= 0;
+			timeout_cntr	= 0;
 
 			prev_Sample = rcvd_Sample = PIN_IN;
 	
@@ -328,7 +323,13 @@ int RxRS485Data(char *pData)
 			prev_Sample = PIN_IN;
 
 			if(PIR1bits.TMR1IF) {
-				st = TIMEOUT;
+				if(timeout_cntr++ >= TIMEOUT_CNT) {
+					st = TIMEOUT;
+				}else {				// Extend the BIG Timeout
+				  	TMR1H = 0;
+				  	TMR1L = 0;				// Reset the timer
+					PIR1bits.TMR1IF = 0;	// Clear Flag
+				}	
 			}else {
 			  	TMR1H = 0;
 			  	TMR1L = 0;				// Reset the timer

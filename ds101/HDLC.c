@@ -29,9 +29,7 @@ int RxRS232Data(char *p_data)
   	char ch;
   	int  n_chars;
 
-TRIS_PIN_E = OUTPUT;
-
-  	set_timeout(RX_TIMEOUT1_RS);
+  	set_timeout(500);
     hdlc_state = ST_IDLE;
 
     while(1)
@@ -41,7 +39,7 @@ TRIS_PIN_E = OUTPUT;
       { 
         return -1;   
       }
-  	  set_timeout(RX_TIMEOUT2_RS);
+  	  set_timeout(100);
        
       ch = (char) symbol;   
       switch(hdlc_state)
@@ -52,33 +50,25 @@ TRIS_PIN_E = OUTPUT;
           }else if(ch == ESCAPE) {
              hdlc_state = ST_ESCAPE;
           }else{
-PIN_E = 1;
             *p_data++ = ch;
 			n_chars++;
             hdlc_state = ST_DATA;
-PIN_E = 0;
           }
           break;
         case ST_DATA:
           if(ch == FLAG){
-            hdlc_state = ST_IDLE;
-	    	// Get at least 2 chars
-            return  n_chars;
+            return  n_chars >= 4 ?  n_chars : 0;
           }else if(ch == ESCAPE){
             hdlc_state = ST_ESCAPE;
           }else{
-PIN_E = 1;
             *p_data++ = ch;
 			n_chars++;
-PIN_E = 0;
           }
           break;
         case ST_ESCAPE:
-PIN_E = 1;
-          *p_data++ = ch ^ INV_BIT;
+          *p_data++ = ch;
 		  n_chars++;
           hdlc_state = ST_DATA;
-PIN_E = 0;
           break;
       }
     }
@@ -105,7 +95,7 @@ void TxRS232Data(char *p_data, int n_chars)
     	if( (ch == FLAG) || (ch == ESCAPE) )
     	{
       		WriteCharDS101(ESCAPE);
-			WriteCharDS101(ch ^ INV_BIT);
+			WriteCharDS101(ch);
     	}else {
     		WriteCharDS101(ch);
 		}

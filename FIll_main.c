@@ -203,7 +203,8 @@ static void  PinsToDefault(void)
 	disable_tx_hqii();
 	close_eusart();
 	set_pin_f_as_io();
-	set_pin_a_as_power(); // Remove ground from pin A
+	// set_pin_a_as_power(); // Remove ground from pin A
+	set_pin_a_as_gnd();		//  Set GND on Pin A
 	TRIS_PIN_B = INPUT;
 	TRIS_PIN_C = INPUT;
 	TRIS_PIN_D = INPUT;
