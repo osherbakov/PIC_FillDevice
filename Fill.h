@@ -113,7 +113,6 @@ extern char StorePCFill(byte stored_slot, byte fill_type);
 extern char WaitReqSendDS102Fill(byte stored_slot, byte fill_type);
 extern char WaitReqSendMBITRFill(byte stored_slot);
 extern char WaitReqSendPCFill(byte stored_slot); // Any slot can be sent (dumped)
-extern char ReadMemSendPCFill(byte stored_slot);
 extern char WaitReqSendTODFill(void);
 
 // Funcrtion to send fill immediately

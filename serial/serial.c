@@ -13,7 +13,6 @@ static byte KEY_FILL[] 		= "/FILL<n>";	// Fill the key N
 static byte KEY_DUMP[] 		= "/DUMP<n>";	// Dump the key N
 static byte TIME_CMD[] 		= "/TIME=";		// Fill/Dump Time
 static byte DATE_CMD[] 		= "/DATE=";		// Fill/Dump Time
-static byte MEM_READ[] 		= "/READ<n>";	// Read the key N
 static byte KEY_CMD[] 		= "/KEY<n>";	// Read/Write the key N
 
 /****************************************************************/
@@ -172,7 +171,7 @@ char CheckFillRS485Type5()
 	WPUB_Data_P = 1;
 	DelayMs(10);
 
-	return ( (Data_P == HIGH) && (Data_N == LOW) ) ? MODE5 : -1;
+	return ( Data_P != Data_N ) ? MODE5 : ST_TIMEOUT;
 }	
 
 
@@ -262,12 +261,6 @@ void PCInterface()
 	    	// The last char in /DUMPN is the slot number
 	    	slot = p_data[5] & 0x0F;
 	  		WaitReqSendPCFill(slot);
-			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
-	  	}else if(is_equal( p_data, MEM_READ, 5))
-	  	{
-	    	// The last char in /READN is the slot number
-	    	slot = p_data[5] & 0x0F;
-	  		ReadMemSendPCFill(slot);
 			rx_eusart_async(p_data, 6, INF_TIMEOUT);  // Restart collecting data
 	  	}else if(is_equal( p_data, TIME_CMD, 5) || is_equal(p_data, DATE_CMD, 5))
 	  	{

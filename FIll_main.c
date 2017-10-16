@@ -340,10 +340,10 @@ void main()
 					// Check for the bootloader activity
 					if( is_bootloader_active() )
 				  	{
-  				  		set_led_state(0, 100);	// Turn off LED
+  				  		set_led_off();			// Turn off LED
     					INTCONbits.GIE = 0;		// Disable interrupts
     					INTCONbits.PEIE = 0;
-   				  		BootloadMode();       // Go to bootloader
+   				  		BootloadMode();       	// Go to bootloader
 				  	}else
 				  	{
 					  	SetNextState(PC_CONN);// Switch to the PC connection mode
@@ -485,7 +485,7 @@ void main()
         			// Only RS-232 and RS-485 fills are allowed 
 					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
-  					SetNextState(FILL_RX_RS232);
+  					SetNextState(FILL_RX_RS232_WAIT);
 				}else {
 				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
           			set_pin_a_as_power();         	// Set +5V on Pin A
@@ -669,6 +669,8 @@ void main()
 			case CHECK_KEY_OK:
 			case CHECK_KEY_ERR:
 			case CHECK_KEY_EMPTY:
+		    	PinsToDefault();
+        		current_state = WAIT_BTN_PRESS;
 				break;
 
 			//********************************************

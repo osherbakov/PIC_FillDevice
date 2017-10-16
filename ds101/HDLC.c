@@ -8,7 +8,7 @@
 #include <Fill.h>
 
 
-#define TX_DELAY_MS	(50)
+#define TX_DELAY_MS	(20)
 
 typedef enum
 {
@@ -31,6 +31,7 @@ int RxRS232Data(char *p_data)
 
   	set_timeout(500);
     hdlc_state = ST_IDLE;
+	n_chars = 0;
 
     while(1)
     {
@@ -57,7 +58,7 @@ int RxRS232Data(char *p_data)
           break;
         case ST_DATA:
           if(ch == FLAG){
-            return  n_chars >= 4 ?  n_chars : 0;
+            return  (n_chars >= 4) ?  n_chars : 0;
           }else if(ch == ESCAPE){
             hdlc_state = ST_ESCAPE;
           }else{

@@ -76,24 +76,3 @@ char WaitReqSendPCFill(byte stored_slot)
 	return wait_result;	
 }
 
-
-char ReadMemSendPCFill(byte stored_slot)
-{
-	unsigned int bytes, byte_cnt;
-  	unsigned short long base_address;	
-
-	base_address = get_eeprom_address(stored_slot & 0x0F);
-	
-	bytes = get_eeprom_address(1);  // That's how we calculate the size 
-	while(bytes)	
-	{
-		byte_cnt = MIN(bytes, FILL_MAX_SIZE);
-		array_read(base_address, &data_cell[0], byte_cnt);
-		tx_eusart(&data_cell[0], byte_cnt);
-    	flush_eusart();
-    	// Adjust counters and pointers
-		base_address += byte_cnt;
-		bytes -= byte_cnt;
-	}
-	return ST_OK;
-}

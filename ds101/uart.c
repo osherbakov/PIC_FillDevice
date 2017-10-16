@@ -476,7 +476,7 @@ int RxRS485Data(char *pData)
 }	
 
 
-#define		NUM_INITIAL_FLAGS	(10)
+#define		NUM_INITIAL_FLAGS	(5)
 #define		NUM_FINAL_FLAGS		(1)
 
 static		unsigned char		tx_byte;

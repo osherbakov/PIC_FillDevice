@@ -128,10 +128,11 @@ void SetupDS101Mode(char slot, char mode )
 
 char ProcessDS101(void)
 {
-  int  nSymb;
-  char *p_data;
   unsigned char Address;
   unsigned char Command;
+  
+  int  	nSymb;
+  char 	*p_data;
 
   StartProcess(KeySlot);
 
@@ -141,7 +142,8 @@ char ProcessDS101(void)
 
     p_data = &RxTx_buff[0];
     nSymb = RxDS101Data(p_data);
-    if((nSymb >= 4) && CRC16chk(p_data, nSymb))
+	
+    if( (nSymb >= 4) && CRC16chk(p_data, nSymb))
     {
 		nSymb -= 2;		// FCC/CRC at the end was checked and consumed
         // Extract all possible info from the incoming packet
