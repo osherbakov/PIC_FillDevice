@@ -4,8 +4,8 @@
 #define NMEA_BAUDRATE 			(4800)
 #define BRREG_GPS 				(((XTAL_FREQ * 1000000L)/(4L * 16L * NMEA_BAUDRATE)) - 1)
 
-#define GPS_DETECT_TIMEOUT_MS	(4000)  	// 3sec to detect
-#define HQ_DETECT_TIMEOUT_MS 	(4000)  	// 3sec to detect
+#define GPS_DETECT_TIMEOUT_MS	(4000)  	// 4sec to detect
+#define HQ_DETECT_TIMEOUT_MS 	(4000)  	// 4sec to detect
 
 #define HQ_BIT_TIME_US			(600)  // 600us for one bit.
 #define HQII_TIMER 				((( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16) - 1 )

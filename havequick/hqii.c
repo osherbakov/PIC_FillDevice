@@ -280,8 +280,7 @@ static char GetHQTime(void)
 				// All data collected - return
 				if(byte_count >= MIN_DATA_FRAME_SIZE)
 				{
-					ExtractHQDate();
-					return 0;
+					return ST_OK;
 				}
 				bit_count = 0;
 				data_byte = 0;
@@ -289,7 +288,7 @@ static char GetHQTime(void)
 			break;
 		}
 	}
-	return -1;
+	return ST_TIMEOUT;
 }
 
 char ReceiveHQTime(void )
@@ -298,9 +297,13 @@ char ReceiveHQTime(void )
 	// Config pin as input
 	TRIS_HQ_PIN = INPUT;
 
+
   	//	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
-	if( GetHQTime() )	return ST_TIMEOUT;
+	if( GetHQTime() != ST_OK)	return ST_TIMEOUT;
+	ExtractHQDate();
+
+  	set_led_off();		// Set LED off
 	
 	//  2. Find the next time when we will have HQ stream
 	CalculateNextSecond();
@@ -315,6 +318,7 @@ char ReceiveHQTime(void )
 	while(!HQ_PIN){};		
 
   	//  4. Finally, set up the RTC clock on the rising edge
+	//	the RTC chain is reset on ACK after writing to seconds register.
 	CLOCK_LOW();
 	DATA_HI();	
 	DelayI2C();
@@ -323,22 +327,23 @@ char ReceiveHQTime(void )
 
 	SetRTCDataPart2();
 	
-	INTCONbits.RBIF = 0;	// Clear bit
+	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
 	
+  	set_led_on();		// Set LED on
+
 	//  5. Get the HQ time again and compare with the current RTC
-	if( GetHQTime() )	
-	  return ST_ERR;
+	if( GetHQTime() )	return ST_ERR;
+	ExtractHQDate();
 	  
 	GetRTCData();
 	return ( 
-	  	(HQ_Hours == rtc_date.Hours) &&
+	  		(HQ_Hours == rtc_date.Hours) &&
 			(HQ_Minutes == rtc_date.Minutes) &&
-			  (HQ_Seconds == rtc_date.Seconds) && 
-	  		  	(HQ_JulianDayH == rtc_date.JulianDayH) && 
-	    		  (HQ_JulianDayL == rtc_date.JulianDayL) && 
-	    		    (HQ_Year == rtc_date.Year) &&
-	    		      (0x20 == rtc_date.Century)
-			          	) ? ST_DONE : ST_ERR;
+		  	(HQ_Seconds == rtc_date.Seconds) && 
+  		  		(HQ_JulianDayH == rtc_date.JulianDayH) && 
+    			(HQ_JulianDayL == rtc_date.JulianDayL) && 
+	    		(HQ_Year == rtc_date.Year) 
+	   		) ? ST_DONE : ST_ERR;
 }
 

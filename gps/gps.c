@@ -21,11 +21,6 @@ enum {
 	DONE
 } GPS_PARSER_STATE;
 
-enum {
-	GPRMC = 0,
-	GPGGA
-} SENTENCE_TYPE;
-
 static byte gps_state;
 static byte counter;
 static unsigned short long gps_time;
@@ -40,8 +35,9 @@ static byte  symb_buffer[6];	// Buffer to keep the symbols
 
 byte is_equal(byte *p1, byte *p2, byte n)
 {
-	while(n-- )
-	if( toupper(*p1++) != toupper(*p2++)) return 0;
+	while(n-- ) {
+		if( toupper(*p1++) != toupper(*p2++)) return 0;
+	}	
 	return 1;
 }
 
@@ -70,11 +66,11 @@ static void process_gps_symbol(byte new_symbol)
 	case INIT:
 		if(new_symbol == '$')
 		{
-			gps_state = SENTENCE;
 			gps_date = 0;	
 			gps_time = 0;
 			counter = 0;
 			running_checksum = 0;
+			gps_state = SENTENCE;
 		}
 		break;
 	case SENTENCE:
@@ -162,7 +158,6 @@ static char GetGPSTime(void)
 	{
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
-  			set_led_on();
 			// Get and process received symbol
 			process_gps_symbol(RCREG1);
 			// overruns? clear it
@@ -190,7 +185,7 @@ static char FindRisingEdge(void)
 		if(!GPS_1PPS) break;
 	}
 	while(is_not_timeout()){	
-		if(GPS_1PPS) return 0;
+		if(GPS_1PPS) return ST_OK;
 	}
 	return ST_TIMEOUT;
 }
@@ -203,13 +198,16 @@ char ReceiveGPSTime()
 	// Config the 1PPS pin as input
 	TRIS_GPS_1PPS = INPUT;
 
+
 	//	1. Find the 1PPS rising edge
-	if(FindRisingEdge()) return ST_TIMEOUT;
+	if(FindRisingEdge() != ST_OK) return ST_TIMEOUT;
 
   	set_led_off();		// Set LED off
-					  
+				  
 	//  2. Start collecting GPS time/date
-	if( GetGPSTime() ) return ST_TIMEOUT;
+	if( GetGPSTime() != ST_OK) return ST_TIMEOUT;
+
+  	set_led_on();		// Set LED on
 
 	//  3. Calculate the next current time.
 	CalculateNextSecond();
@@ -236,19 +234,24 @@ char ReceiveGPSTime()
 
 	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
+
+  	set_led_off();		// Set LED off
   
 //  6. Get the GPS time again and compare with the current RTC
-	if( GetGPSTime() )	return ST_ERR;
+	if( GetGPSTime() != ST_OK)	return ST_ERR;
 	  
 	GetRTCData();
+	
 	p_time = (byte *) &gps_time;
 	p_date = (byte *) &gps_date;
+
+  	set_led_on();		// Set LED on
 
 	return ( 
 		(*p_date++ == rtc_date.Year) &&
   		(*p_date++ == rtc_date.Month) &&
-	    	(*p_date++ == rtc_date.Day) &&
+    	(*p_date++ == rtc_date.Day) &&
       		(*p_time++ == rtc_date.Seconds) &&
-        		(*p_time++ == rtc_date.Minutes) &&
-          		(*p_time++ == rtc_date.Hours)  ) ? ST_DONE : ST_ERR;
+        	(*p_time++ == rtc_date.Minutes) &&
+          	(*p_time++ == rtc_date.Hours)  ) ? ST_DONE : ST_ERR;
 }

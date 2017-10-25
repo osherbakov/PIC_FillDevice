@@ -9,11 +9,13 @@
 static unsigned int month_day[] =  {0, 31, 59, 90,120,151,181,212,243,273,304,334,365};
 static unsigned char week_day[] =  {0,  3,  3,  6,  1,  4,  6,  2,  5,  0,  3,  5,  0};
 
+static unsigned int julianday;
+static unsigned char month, year;
+static unsigned char weekday, day, day10;
+static unsigned int julianday, curr_days, prev_days;
+
 void CalculateWeekDay()
 {
-	unsigned int julianday;
-  	unsigned char month, year;
-	unsigned char weekday, day10;
 	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
 	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
 	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
@@ -45,9 +47,6 @@ void CalculateWeekDay()
 
 void CalculateMonthAndDay()
 {
-	unsigned int julianday, curr_days, prev_days;
-  	unsigned char month, day, year;
-  
   	julianday = rtc_date.JulianDayH * 100 + 
           (rtc_date.JulianDayL >> 4) * 10 + 
             (rtc_date.JulianDayL & 0x0F);
@@ -77,9 +76,6 @@ void CalculateMonthAndDay()
 
 void CalculateJulianDay()
 {
-	unsigned int julianday;
-  	unsigned char month, year;
-	unsigned char weekday, day10;
 	julianday = (rtc_date.Day >> 4) * 10 + (rtc_date.Day & 0x0F);
 	month = (rtc_date.Month >> 4) * 10 + (rtc_date.Month & 0x0F);
 	year = (rtc_date.Year >> 4) * 10 + (rtc_date.Year & 0x0F);
@@ -142,6 +138,7 @@ void CalculateNextSecond()
 			{
 				// Skip the incrementing - bad time (once a day)
 				rtc_date.Valid = 0;
+				return;
 			}else
 			{
 				hour += 1;
@@ -167,8 +164,6 @@ void CalculateNextSecond()
 
 void GetRTCData()
 {
-	unsigned int 	day;
-	unsigned char	day10;
 	// Initialize the pointer to 0
 	SWStartI2C();
 	SWWriteI2C(RTC_I2C_ADDRESS | I2C_WRITE);
