@@ -187,11 +187,16 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	PIE1bits.TX1IE = 0;	 // Disable TX Interrupts
 	RCSTA1bits.SPEN = 0; // Disable EUSART
+
+	// Set up the baud rate
 	SPBRGH1 = 0x00;
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
 	rx_idx = 0;
+	rx_idx_max = sizeof(SerialBuffer) - 1;
+	rx_data = (volatile byte *) &SerialBuffer[0];
+
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx

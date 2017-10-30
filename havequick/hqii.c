@@ -227,6 +227,7 @@ static char GetHQTime(void)
 	current_pin = HQ_PIN;
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
+  	set_led_off();		// Set LED off
 
 	while(is_not_timeout() )
 	{
@@ -253,6 +254,7 @@ static char GetHQTime(void)
 				bit_count = 1;
 				byte_count = 0;
 				RHQD_State = SYNC;
+  				set_led_on();		// Set LED on
 			}
 			break;
 
@@ -301,18 +303,16 @@ char ReceiveHQTime(void )
   	//	1. Find the HQ stream rising edge and
 	//  	Start collecting HQ time/date
 	if( GetHQTime() != ST_OK)	return ST_TIMEOUT;
-	ExtractHQDate();
 
-  	set_led_off();		// Set LED off
-	
 	//  2. Find the next time when we will have HQ stream
+	ExtractHQDate();
 	CalculateNextSecond();
 
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
 	SetRTCDataPart1();
 	
-  	//	3. Find the next HQ stream rising edge
+  	//	3. Find the next HQ stream rising edge with interrupts disabled
+	prev = INTCONbits.GIE;
+	INTCONbits.GIE = 0;		// Disable interrupts
 	while ( WaitTimer(0xF0) >= 0 ) {};	// Wait until IDLE
 	while(HQ_PIN) {};		// look for the rising edge
 	while(!HQ_PIN){};		
@@ -330,10 +330,8 @@ char ReceiveHQTime(void )
 	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
 	
-  	set_led_on();		// Set LED on
-
 	//  5. Get the HQ time again and compare with the current RTC
-	if( GetHQTime() )	return ST_ERR;
+	if( GetHQTime() != ST_OK)	return ST_ERR;
 	ExtractHQDate();
 	  
 	GetRTCData();

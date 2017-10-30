@@ -73,7 +73,7 @@ void high_isr (void)
 	byte TL, TH;
 	//--------------------------------------------------------------------------
 	// Is this a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
-	if( INTCONbits.RBIF)
+	if(INTCONbits.RBIF)
 	{
     	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
     	// The HIGH->LOW transition indicates the start of the second
@@ -96,8 +96,7 @@ void high_isr (void)
 			}
       		// Increment big timeout counter
       		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
-		}else
-		{
+		}else{
   			// On LOW -> HIGH transition - 500ms - start collecting data
 			// Check for HQ status and prepare everything for the next falling edge
 			if( hq_enabled )
@@ -185,7 +184,7 @@ void high_isr (void)
 	//--------------------------------------------------------------------------
 	// Is it a EUSART RX interrupt ?
 	// Maintain a circular buffer pointed by rx_data
-	if(PIR1bits.RC1IF)
+	if(PIE1bits.RC1IE && PIR1bits.RC1IF)
 	{
 		if(rx_idx > rx_idx_max)
 		{
@@ -209,7 +208,7 @@ void high_isr (void)
   	// If there are bytes to send - get the symbol from the 
   	//  buffer pointed by tx_data and decrement the counter
   	// If that was the last symbol - disable interrupts.
-	if(PIR1bits.TX1IF)
+	if(PIE1bits.TX1IE && PIR1bits.TX1IF)
 	{
 		if( tx_count )	// not the last byte
 		{

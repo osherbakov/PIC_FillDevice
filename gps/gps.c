@@ -11,7 +11,7 @@
 enum {
 	INIT = 0,
 	SENTENCE,
-	TIME_SEC,
+	TIME,
 	TIME_MSEC,
 	VALID,
 	DELIMITERS,
@@ -26,12 +26,12 @@ static byte counter;
 static unsigned short long gps_time;
 static unsigned short long gps_date;
 static char running_checksum, saved_checksum, sent_checksum;
+static byte *p;			// Pointer to get LSB and MSB of the 24-bit word
 
-static unsigned char polarity = DATA_POLARITY ^ DATA_POLARITY_RX;
+#define DATA_POLARITY_GPS	(DATA_POLARITY_RX)	// GPS is connected without Level Shifter
 
-
-static byte RMS_SNT[] = "GPRMC,";
-static byte  symb_buffer[6];	// Buffer to keep the symbols
+static byte 	RMS_SNT[] = "GPRMC,";
+static byte  	symb_buffer[6];			// Buffer to keep the symbols
 
 byte is_equal(byte *p1, byte *p2, byte n)
 {
@@ -43,8 +43,6 @@ byte is_equal(byte *p1, byte *p2, byte n)
 
 static void  ExtractGPSDate(void)
 {
-	byte *p;	// Pointer to get LSB and MSB of the 24-bit word
-
 	p = (byte *) &gps_time;
 	rtc_date.Seconds	= *p++;
 	rtc_date.Minutes	= *p++;
@@ -73,18 +71,20 @@ static void process_gps_symbol(byte new_symbol)
 			gps_state = SENTENCE;
 		}
 		break;
+
 	case SENTENCE:
 		symb_buffer[counter++] = new_symbol;
 		if(counter >= 6)
 		{
 			if(is_equal(symb_buffer, RMS_SNT, 6)){
-				gps_state = TIME_SEC;
+				gps_state = TIME;
 			}else{
 				gps_state = INIT;
 			}
 		}
 		break;
-	case TIME_SEC:
+
+	case TIME:
 		if(new_symbol == '.'){
 			gps_state = TIME_MSEC;
 		}else if(new_symbol == ','){
@@ -142,16 +142,26 @@ static void process_gps_symbol(byte new_symbol)
 		}
 		break;
 	}
+
+	// Calculate running checksum on every incoming symbol
 	if((new_symbol != '$') && (new_symbol != '*')) {
 		running_checksum ^= new_symbol;
 	}
 }
 
+static unsigned char ch;
+static unsigned char *p_date;
+static unsigned char *p_time;
+
 static char GetGPSTime(void)
 {
+//	char	symbol_detected = 0;
+
+  	set_led_off();		// Set LED off
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
+
 	// Configure the EUSART module
-  	open_eusart(BRREG_GPS, polarity);	
+  	open_eusart(BRREG_GPS, DATA_POLARITY_GPS);	
   		
 	gps_state = INIT;
 	while(is_not_timeout())
@@ -159,28 +169,41 @@ static char GetGPSTime(void)
 		if(PIR1bits.RC1IF)	// Data is avaiable
 		{
 			// Get and process received symbol
-			process_gps_symbol(RCREG1);
+			ch = RCREG1;
 			// overruns? clear it
 			if(RCSTA1 & 0x06){
 				RCSTA1bits.CREN = 0;
 				RCSTA1bits.CREN = 1;
+			}else { // ... or process the symbol
+				process_gps_symbol(ch);
 			}
-			// All data collected - fill RTC struct
+			// All data collected - report success
 			if(gps_state == DONE){
         		close_eusart();
-				ExtractGPSDate();
 				return ST_OK;
 			}
+			// If symbol is here - restart timeout and show activity on LED
+//			if(!symbol_detected) {
+				// Restart timeout
+//				set_timeout(GPS_DETECT_TIMEOUT_MS);  
+//		  		set_led_on();		// Set LED on
+//				symbol_detected = 1;
+//			}
 		}
 	}
   	close_eusart();
- 	polarity ^= DATA_POLARITY_RX;
 	return ST_TIMEOUT;
 }
 
 static char FindRisingEdge(void)
 {
+	// Config the 1PPS pin as input
+	ANSEL_GPS_1PPS = 0;
+	TRIS_GPS_1PPS = INPUT;
+	GPS_1PPS = 0;	
+
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
+
 	while(is_not_timeout()){	
 		if(!GPS_1PPS) break;
 	}
@@ -192,36 +215,48 @@ static char FindRisingEdge(void)
 
 char ReceiveGPSTime()
 {
-	char	prev;
-	byte 	*p_date;
-	byte 	*p_time;
-	// Config the 1PPS pin as input
-	TRIS_GPS_1PPS = INPUT;
-
+	unsigned char prev;
 
 	//	1. Find the 1PPS rising edge
 	if(FindRisingEdge() != ST_OK) return ST_TIMEOUT;
 
-  	set_led_off();		// Set LED off
-				  
-	//  2. Start collecting GPS time/date
+	//  2. Start collecting GPS time/date - once you've got it - there is no turning back!!!
 	if( GetGPSTime() != ST_OK) return ST_TIMEOUT;
 
-  	set_led_on();		// Set LED on
+	//  3. Calculate the next current time to see if the timimg is consistent.
+	ExtractGPSDate();		// Convert GPS_Date and GPS_time to RTC params
+	CalculateNextSecond();	// Result will be in rtc_date structure
 
-	//  3. Calculate the next current time.
-	CalculateNextSecond();
+	//  4. Get the GPS time again and compare with calculated next second
+	if( GetGPSTime() != ST_OK)	return ST_ERR;
 	
+	p_time = (unsigned char *) &gps_time;
+	p_date = (unsigned char *) &gps_date;
+	
+	// If the time is incorrect - try again
+	if( (*p_date++ != rtc_date.Year) ||
+  		(*p_date++ != rtc_date.Month) ||
+    	(*p_date++ != rtc_date.Day) ||
+      		(*p_time++ != rtc_date.Seconds) ||
+        	(*p_time++ != rtc_date.Minutes) ||
+          	(*p_time++ != rtc_date.Hours)  ) return ST_ERR;
+	
+	//  5. Time is consistent - prepare everything for the next 1PPS pulse 
+	ExtractGPSDate();
+	CalculateNextSecond();
+	if(rtc_date.Valid == 0) return ST_TIMEOUT;
+
+	//	6. Find the 1PPS rising edge with interrupts disabled
 	prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts
-	SetRTCDataPart1();
 
-//	4. Find the 1PPS rising edge
+	SetRTCDataPart1();		// Prepare for the RTC Clock set
+
 	while(GPS_1PPS);	// wait for LOW
 	while(!GPS_1PPS);	// wait for HIGH
 
-//  5. Finally, set up the RTC clock - according to the spec,
-//	the RTC chain is reset on ACK after writing to seconds register.
+	//  7. Finally, set up the RTC clock - according to the spec,
+	//	the RTC chain is reset on ACK after writing to seconds register.
 	CLOCK_LOW();
 	DATA_HI();	
 	DelayI2C();
@@ -230,22 +265,15 @@ char ReceiveGPSTime()
 
 	SetRTCDataPart2();
 	
- 	TMR2 = 0;
-
 	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
 
-  	set_led_off();		// Set LED off
-  
-//  6. Get the GPS time again and compare with the current RTC
+	//  8. Get the GPS time again and compare with the current RTC
 	if( GetGPSTime() != ST_OK)	return ST_ERR;
-	  
 	GetRTCData();
-	
-	p_time = (byte *) &gps_time;
-	p_date = (byte *) &gps_date;
 
-  	set_led_on();		// Set LED on
+	p_time = (unsigned char *) &gps_time;
+	p_date = (unsigned char *) &gps_date;
 
 	return ( 
 		(*p_date++ == rtc_date.Year) &&

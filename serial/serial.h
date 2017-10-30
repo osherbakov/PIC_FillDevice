@@ -4,6 +4,7 @@
 #include "string.h"
 
 #define DTD_BAUDRATE  	(2400L)
+#define NMEA_BAUDRATE 	(4800L)
 #define PC_BAUDRATE  	(9600L)
 #define MBITR_BAUDRATE  (9600L)
 #define PLGR_BAUDRATE	(19200L)
@@ -18,6 +19,7 @@
 #define BRREG_MBITR ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * MBITR_BAUDRATE)) - 1 )
 #define BRREG_PC 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PC_BAUDRATE)) - 1 )
 #define BRREG_PLGR 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PLGR_BAUDRATE)) - 1 )
+#define BRREG_GPS 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * NMEA_BAUDRATE)) - 1)
 
 // For MBITR we implement the Software USART - use TIMER6 as the bit timer
 #define TIMER_MBITR 		( ( (XTAL_FREQ * 1000000L) / ( 4L * 16L * MBITR_BAUDRATE)) - 1 )

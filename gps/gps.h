@@ -1,9 +1,6 @@
 #ifndef	__GPS_H_
 #define __GPS_H_
 
-#define NMEA_BAUDRATE 			(4800)
-#define BRREG_GPS 				(((XTAL_FREQ * 1000000L)/(4L * 16L * NMEA_BAUDRATE)) - 1)
-
 #define GPS_DETECT_TIMEOUT_MS	(4000)  	// 4sec to detect
 #define HQ_DETECT_TIMEOUT_MS 	(4000)  	// 4sec to detect
 

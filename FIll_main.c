@@ -52,9 +52,9 @@ static enum
 
 static unsigned int idle_counter;
 
-byte 	current_state;
-byte 	button_pos;
-byte 	prev_button_pos;
+static byte 	current_state;
+static byte 	button_pos;
+static byte 	prev_button_pos;
 
 //
 // Test if the button was depressed and released
@@ -99,7 +99,7 @@ static void SetNextState(char nextState)
 			break;
 
 		case FILL_TX_MBITR:
-			set_led_state(10, 150);		// "Connect Serial" blink pattern	
+			set_led_state(10, 200);		// "Connect Serial" blink pattern	
 			break;
 
 		case FILL_TX :
@@ -110,7 +110,7 @@ static void SetNextState(char nextState)
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(10, 150);		// "Connect Serial" blink pattern
+			set_led_state(10, 200);		// "Connect Serial" blink pattern
 			break;
 
 		case FILL_TX_RS232:
@@ -150,7 +150,7 @@ static void SetNextState(char nextState)
 			break;
 	
 		case ERROR:
-			set_led_state(20, 10);		// "Fill error" blink pattern
+			set_led_state(10, 10);		// "Fill error" blink pattern
 			break;
 
 		case DONE:
@@ -176,12 +176,12 @@ static void SetNextState(char nextState)
 }
 
 // Test the resutlt of the fill and set next state.
-//   if result is 0 - go back to INIT state
-//		result = 1 - error happened - set error blink 
+//   if result is ST_OK - go back to INIT state
+//		result = ST_ERR- error happened - set error blink 
 //				and wait for the button press in ERROR state
-//		result = 2 - loaded sucessfully - set "Key Valid" blink 
+//		result = ST_DONE - loaded sucessfully - set "Key Valid" blink 
 //				and wait for the button press in DONE state
-//		result = -1 - timeout, continue working
+//		result = ST_TIMEOUT - timeout, continue working
 static void TestFillResult(char result)
 {
 	if(result == ST_OK)					// OK return value
@@ -274,13 +274,13 @@ void main()
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
-			prev_switch_pos = switch_pos; // Save new state
 			if(button_pos == UP_POS)  {
 				SetNextState(INIT);
 			}else {
   				SetNextState(CHECK_KEY);
 			}
 		}
+		prev_switch_pos = switch_pos; // Save new state
 
 	  	//
 	  	// Check the power position - did it change?
@@ -290,13 +290,13 @@ void main()
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
-			prev_power_pos = power_pos; // Save new state
 			// Reset the state only when switch goes into the ZERO, but not back.
 			if( power_pos == ZERO_POS )
 			{
 				SetNextState(INIT);
 			}
 		}
+		prev_power_pos = power_pos; // Save new state
 		
 		switch(current_state)
 		{
@@ -634,19 +634,23 @@ void main()
 			//********************************************
 			//-----------HQII TX and RX--------------	
 			case HQ_TX:
-				enable_tx_hqii();				// Enable HQ output
+				if(!hq_enabled ) {
+					enable_tx_hqii();				// Enable HQ output
+				}
 				break;
 
 			case HQ_GPS_RX:
-				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
 				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveGPSTime());
 				}
+/*  Temporarily disable the HQ Extraction time until optimization
+				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
 				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveHQTime());
 				}
+*/				
 				break;
 			//-----------HQII TX and RX--------------	
 			//********************************************
