@@ -146,12 +146,14 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   while( is_not_timeout() &&  (byte_count < count) )
   {
 		// Check for the last fill for Mode2 and 3
+		// It is indicated by Pin F going HIGH
 		if( (fill_type != MODE1) && (pin_F() == HIGH) )
 		{
   			byte_count = 0;
 			break;	// Fill device had deasserted PIN F - exit
 		}
 
+		// Monitor the Data Clock - PIN_E
     	NewState = pin_E(); 
 	    if( PreviousState != NewState  )
 	    {
@@ -281,13 +283,12 @@ char CheckFillType23Connected()
 	return (pin_F() == LOW);
 }	
 
-// PIN_B should stay LOW during Type1 Fill 
+// PIN_B should stay HIGH during Type1 Fill 
 // .. or not....
 // Need to figure out that later, how to detect the presence of the KYK-13 or KOI-18 fill device
 char CheckFillType1Connected()
 {
-	return 1;
-//	return (pin_B() == LOW);
+	return (pin_B() == HIGH);
 }	
 
 static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
@@ -314,7 +315,7 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 
       		if( (byte_cnt == 0) || (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
 		  	if( (byte_cnt == MODE2_3_CELL_SIZE) && 
-		      cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
+		      		cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
 		  	if(num_tries >= TYPE23_RETRIES) return 0;  // Number of tries exceeded - return Error
 
       		// Try to get the data couple more times
@@ -331,12 +332,23 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 		{
 			break;	// No data provided on the first fill - exit
 		}
+
+		// Special case - the time fill as the first cell
+	  	if( (records == 0) && 
+				(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) && 
+					(data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) &&
+		      			cm_check(&data_cell[0], MODE2_3_CELL_SIZE))  // Size is OK and CRC is OK
+		{
+			return ST_TIMEOUT;
+		}
+
 		// Any data present - save it in EEPROM
 		if(byte_cnt)
 		{
 			array_write(base_address, &data_cell[0], byte_cnt);
 			base_address += byte_cnt;
 		}
+
 		// Block of data received - save size and request next
 		if(byte_cnt < FILL_MAX_SIZE)
 		{
@@ -367,9 +379,23 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 	// The first byte of the each slot has the number of the records (0 - 255)
 	// The second byte - fill type
 	// The first byte of the record has the number of bytes that should be sent out
-	// so each record has no more than 255 bytes as well
+	// so each record has no more than 256 bytes as well (0 is treated as 256)
 	// Empty slot has first byte as 0x00
 	records = GetDS102Fill(base_address, required_fill);
+
+	// Special case - the time fill
+	if( records == ST_TIMEOUT) {
+		ExtractTODData();
+   		CalculateWeekDay();
+		CalculateNextSecond();
+		if(rtc_date.Valid) {
+			SetRTCData();
+			return ST_DONE;
+		}else {
+			return ST_ERR;
+		}
+	}
+
  	// All records were received - put final info into EEPROM
 	// Mark the slot as valid slot containig data
 	if( records > 0)
@@ -378,7 +404,7 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 		byte_write(saved_base_address + 1, required_fill);
 		result = ST_DONE;
 	}
-  return result;
+  	return result;
 }
 
 void SetType123PinsRx()

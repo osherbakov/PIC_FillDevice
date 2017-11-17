@@ -365,41 +365,28 @@ char CheckType123Equipment(byte fill_type)
 char WaitReqSendTODFill()
 {
   	byte num_retries;
-  	char pos;	// Cell position (1..MAX_TYPE_3_POS)
 	char wait_result = ST_TIMEOUT;
 
   	// On timeout return and check the switches
-  	if( WaitDS102Req(MODE3, REQ_FIRST)  != ST_OK ) return ST_TIMEOUT;  
+  	if( WaitDS102Req(MODE3, REQ_FIRST) != ST_OK ) return ST_TIMEOUT;  
   
-	for(pos = 1 ; pos <= NUM_TYPE3_CELLS; pos++)
+	num_retries = 0;
+	while(1)		// Loop on retries
 	{
-		num_retries = 0;
-		while(1)		// Loop on retries
-		{
-			set_led_off();
-			if(pos == TOD_CELL_NUMBER)	// Cell 13 is the TOD cell position
-			{
-				FillTODData();
-				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-				SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
-			}else
-			{
-				cm_append(nofill_cell, MODE2_3_CELL_SIZE);
-				SendDS102Cell(nofill_cell, MODE2_3_CELL_SIZE);
-			}
-			set_led_on();
-			wait_result = WaitDS102Req(MODE3, (pos == NUM_TYPE3_CELLS) ? REQ_LAST : REQ_NEXT);
-			if( (wait_result != ST_ERR) || (num_retries >= TYPE23_RETRIES)) break;
-	 	  	num_retries++;
-		}
-   		// If all records were sent - ignore timeout
-  		if(pos == NUM_TYPE3_CELLS)
-		{
-			wait_result = ST_DONE;
-			break;
-		}
-   		if(wait_result != ST_OK) break;
-	 }
+		set_led_off();
+		FillTODData();
+		cm_append(TOD_cell, MODE2_3_CELL_SIZE);
+		SendDS102Cell(TOD_cell, MODE2_3_CELL_SIZE);
+		set_led_on();
+		wait_result = WaitDS102Req(MODE3, REQ_LAST);
+		if( (wait_result != ST_ERR) || (num_retries >= TYPE23_RETRIES)) break;
+ 	  	num_retries++;
+	}
+	// If all records were sent - ignore timeout
+	if(wait_result != ST_ERR)
+	{
+		wait_result = ST_DONE;
+	}
 
   	EndFill();
   	ReleaseBus();
