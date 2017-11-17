@@ -314,7 +314,7 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 
       		if( (byte_cnt == 0) || (fill_type == MODE1) ) break;   // No data or Mode 1 - no checks
 		  	if( (byte_cnt == MODE2_3_CELL_SIZE) && 
-		      cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
+		      		cm_check(&data_cell[0], MODE2_3_CELL_SIZE)) break;  // Size is OK and CRC is OK
 		  	if(num_tries >= TYPE23_RETRIES) return 0;  // Number of tries exceeded - return Error
 
       		// Try to get the data couple more times
@@ -331,6 +331,19 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 		{
 			break;	// No data provided on the first fill - exit
 		}
+		// Special case - the time fill as the first cell from the DAGR
+	  	if( (records == 0) && 
+				(fill_type == MODE3) && (byte_cnt == MODE2_3_CELL_SIZE) && 
+					(data_cell[0] == TOD_TAG_0) && (data_cell[1] == TOD_TAG_1) )  // Time cell
+		{
+			ExtractTODData();
+	   		CalculateWeekDay();
+			CalculateNextSecond();
+			if(rtc_date.Valid) {
+				SetRTCData();
+			}
+		}
+
 		// Any data present - save it in EEPROM
 		if(byte_cnt)
 		{

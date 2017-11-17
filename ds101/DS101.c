@@ -9,8 +9,8 @@
 #include "controls.h"
 
 
-char master_name[14] = "DTD 2243";
-char slave_name[14] = "PRC152 radio";
+char master_name[15] = 	"T3COMMS       ";
+char slave_name[15] = 	"KOV 21 0015415";
 
 #pragma udata big_buffer   // Select large section
 unsigned char  RxTx_buff[512];
