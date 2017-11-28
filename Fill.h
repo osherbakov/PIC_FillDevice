@@ -39,7 +39,7 @@ typedef enum
 #define digitalWrite(pin, value) pin = value
 #define pinMode(pin, mode) TRIS_##pin = mode
 
-#define FILL_MAX_SIZE (64)
+#define FILL_MAX_SIZE (250)
 #define MODE2_3_CELL_SIZE (16)
 
 #define TYPE23_RETRIES (4)
