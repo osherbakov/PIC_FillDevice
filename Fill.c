@@ -41,7 +41,7 @@ void GetCurrentDayTime()
   *p_buffer++ = '0' + (rtc_date.Seconds >> 4);
   *p_buffer++ = '0' + (rtc_date.Seconds & 0x0F);
   *p_buffer++ = '.';
-  *p_buffer++ = '0';
+  *p_buffer++ = '0' + (ms_10/10);
   
   *p_buffer++ = 'Z';
   *p_buffer++ = ' ';
@@ -119,7 +119,7 @@ void  FillTODData()
 	TOD_cell[8] = rtc_date.Hours;
 	TOD_cell[9] = rtc_date.Minutes;
 	TOD_cell[10] = rtc_date.Seconds;
-	TOD_cell[11] = 0;
+	TOD_cell[11] = (ms_10/10) << 4;
 	TOD_cell[12] = 0;
 	TOD_cell[13] = 0;
 	TOD_cell[14] = 0;
@@ -136,6 +136,7 @@ void  ExtractTODData()
 	rtc_date.Hours		= data_cell[8];
 	rtc_date.Minutes	= data_cell[9];
 	rtc_date.Seconds	= data_cell[10];
+	rtc_date.MilliSeconds10	= (data_cell[11] >> 4) * 10;
 	CalculateWeekDay();
 }
 

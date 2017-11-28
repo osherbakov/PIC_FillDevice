@@ -152,6 +152,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 			break;	// Fill device had deasserted PIN F - exit
 		}
 
+		// The PIN_E is the clock
     	NewState = pin_E(); 
 	    if( PreviousState != NewState  )
 	    {
@@ -195,12 +196,12 @@ static char SendBadFillAck(void)
 
 
 // Detect if there is Type 1 Fill device connected
-// It is detected by LOW on PIN B, or maybe not...
-// Needs more investigation
+// It is detected by HIGH on PIN B (in KOI-18 it is hard-wired to a pin A)
+// Needs more investigation, because it in Type2,3 fills PIN_B is also held HIGH
 char CheckFillType1()
 {
 	return 0;
-//	return (pin_B() == LOW);
+//	return (pin_B() == HIGH);
 }	
 
 typedef enum {
@@ -281,13 +282,12 @@ char CheckFillType23Connected()
 	return (pin_F() == LOW);
 }	
 
-// PIN_B should stay LOW during Type1 Fill 
-// .. or not....
+// PIN_B should stay HIGH during Type1 Fill 
 // Need to figure out that later, how to detect the presence of the KYK-13 or KOI-18 fill device
 char CheckFillType1Connected()
 {
-	return 1;
-//	return (pin_B() == LOW);
+	return (pin_B() == HIGH);
+//	return 1;
 }	
 
 static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
@@ -340,6 +340,7 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 	   		CalculateWeekDay();
 			CalculateNextSecond();
 			if(rtc_date.Valid) {
+				DelayMs((100 - rtc_date.MilliSeconds10) * 10);
 				SetRTCData();
 			}
 		}

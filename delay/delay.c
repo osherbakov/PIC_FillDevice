@@ -21,6 +21,8 @@ Delay1K(unsigned int cnt)
 
 volatile signed int timeout_counter;
 volatile char timeout_flag;
+volatile char ms_10;
+
 
 void set_timeout(int timeout_ms)
 {
@@ -34,6 +36,7 @@ void set_timeout(int timeout_ms)
 char is_timeout(void)
 {
 	if((INTCONbits.GIE == 0) && PIR1bits.TMR2IF) {
+		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;
 		PIR1bits.TMR2IF = 0;	// Clear overflow flag
@@ -44,6 +47,7 @@ char is_timeout(void)
 char is_not_timeout(void)
 {
 	if((INTCONbits.GIE == 0) && PIR1bits.TMR2IF) {
+		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;
 		PIR1bits.TMR2IF = 0;	// Clear overflow flag

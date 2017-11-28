@@ -7,6 +7,7 @@ extern void	Delay1K(unsigned int cnt);
 extern volatile unsigned int seconds_counter;
 extern volatile signed int timeout_counter;
 extern volatile char timeout_flag;
+extern volatile char ms_10;
 
 extern void set_timeout(int a);
 extern char is_timeout(void);

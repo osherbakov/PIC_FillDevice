@@ -96,6 +96,7 @@ void high_isr (void)
 			}
       		// Increment big timeout counter
       		seconds_counter++;  // Advance the seconds counter (used for big timeouts)
+			ms_10 = 0;
 		}else{
   			// On LOW -> HIGH transition - 500ms - start collecting data
 			// Check for HQ status and prepare everything for the next falling edge
@@ -166,6 +167,7 @@ void high_isr (void)
 	// Is it TIMER2 interrupt? (10 ms)
 	if(PIR1bits.TMR2IF)	
 	{
+		ms_10++;
 		if(!timeout_flag) {
 			timeout_counter -= 10;
 			if(timeout_counter <= 0) timeout_flag = 1;
