@@ -265,7 +265,6 @@ char ReceiveGPSTime()
 
 	SetRTCDataPart2();
 	
-	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
 
 	//  8. Get the GPS time again and compare with the current RTC

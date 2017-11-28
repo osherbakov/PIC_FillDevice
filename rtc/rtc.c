@@ -2,6 +2,7 @@
 #include "rtc.h"
 #include "i2c_sw.h"
 #include "clock.h"
+#include "delay.h"
 
 #define RTC_I2C_ADDRESS			(0xD0)
 #define RTC_I2C_CONTROL_REG		(0x0E)
@@ -212,9 +213,14 @@ void GetRTCData()
 
 void SetRTCData()
 {
+	char prev = INTCONbits.GIE;
+	INTCONbits.GIE = 0;		// Disable interrupts
+
 	SetRTCDataPart1();
 	SWAckI2C(READ);
 	SetRTCDataPart2();
+	
+	INTCONbits.GIE = prev;		// Enable interrupts
 }
 
 void SetRTCDataPart1()
@@ -255,6 +261,9 @@ void SetRTCDataPart2()
 	SWAckI2C(READ);
 
 	SWStopI2C();
+	
+	ms_10 = 0;
+	INTCONbits.RBIF = 0;		// Clear bit
 }
 
 

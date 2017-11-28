@@ -327,7 +327,6 @@ char ReceiveHQTime(void )
 
 	SetRTCDataPart2();
 	
-	INTCONbits.RBIF = 0;		// Clear bit
 	INTCONbits.GIE = prev;		// Enable interrupts
 	
 	//  5. Get the HQ time again and compare with the current RTC
