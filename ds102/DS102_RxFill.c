@@ -344,8 +344,9 @@ static byte GetDS102Fill(unsigned short long base_address, byte fill_type)
 	   		CalculateWeekDay();
 			CalculateNextSecond();
 			if(rtc_date.Valid) {
-				if(rtc_date.MilliSeconds10 >= 100) rtc_date.MilliSeconds10 = 0;
-				DelayMs((100 - rtc_date.MilliSeconds10) * 10);
+				// The 16 bytes of Time cell @ 8bps + extra overhead = 20ms or 2*10ms ticks
+				if(rtc_date.MilliSeconds10 >= 90) rtc_date.MilliSeconds10 = 90;
+				DelayMs((90 - rtc_date.MilliSeconds10) * 10);
 				SetRTCData();
 			}
 		}
