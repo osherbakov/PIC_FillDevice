@@ -210,6 +210,13 @@ static void  PinsToDefault(void)
 	TRIS_PIN_D = INPUT;
 	TRIS_PIN_E = INPUT;
 	TRIS_PIN_F = INPUT;
+	PIN_B	   = 1;
+	PIN_C	   = 1;
+	PIN_D	   = 1;
+	PIN_E	   = 1;
+	PIN_F	   = 1;
+  	WPUB_PIN_B = 1;
+  	WPUB_PIN_E = 1;
 }
 
 static void bump_idle_counter(void)
@@ -434,13 +441,12 @@ void main()
 				// On the timeout - switch to next mode
 				if( (result == ST_TIMEOUT) || (result == NONE) ) 
 				{
-					SetNextState(FILL_TX_RS485);	
+					SetNextState(FILL_TX_DTD232);	
 				}else{
 					TestFillResult(result);
 				}
 				break;	
 
-/*		Disable DTD mode temporarily until we figure out how to detect it
 			case FILL_TX_DTD232:
 				result = SendDTD232Fill(switch_pos);
 				// On the timeout - switch to next mode
@@ -451,7 +457,6 @@ void main()
 					TestFillResult(result);
 				}
 				break;	
-*/
 			//------------------------------------------------------------
       		// MBITR Type 4 fill
 			//------------------------------------------------------------
@@ -485,12 +490,25 @@ void main()
         			// Only RS-232 and RS-485 fills are allowed 
 					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
+          			// Set all pins as inputs and try to detect the type of the device connected
+					PIN_B	   = 1;
+					PIN_C	   = 1;
+					PIN_D	   = 1;
+					PIN_E	   = 1;
+				  	TRIS_PIN_B = INPUT;
+	  				TRIS_PIN_C = INPUT;
+				  	TRIS_PIN_D = INPUT;
+	  				TRIS_PIN_E = INPUT;
+  					WPUB_PIN_B = 1;
+  					WPUB_PIN_E = 1;
+					DelayMs(100);
   					SetNextState(FILL_RX_RS232_WAIT);
 				}else {
 				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
           			set_pin_a_as_power();         	// Set +5V on Pin A
           			set_pin_f_as_io();
   			  		SetType123PinsRx();
+					DelayMs(100);
  					SetNextState(FILL_RX_DS102_WAIT);
  				}		
 				break;
@@ -549,7 +567,10 @@ void main()
 			case FILL_RX_DS102: // Do actual DS-102 fill
 				TestFillResult(StoreDS102Fill(switch_pos, fill_type));
 				break;
-
+			//
+			// DS-102 Fill is Done
+			//
+			
 			//
       		// Wait for serial RS-232 or DS-101 fills				
       		// Check for each type in turn				
@@ -581,7 +602,7 @@ void main()
 					SetNextState(FILL_RX_RS232);
 				  	break;
 				}
-/*		Disable DTD mode temporarily until we figure out how to detect it
+				
         		// If Pin_D is -5V - that is DTD-232 Type 5
 				result = CheckFillDTD232Type5();
 				if( (result != ST_TIMEOUT) && (result != NONE) )
@@ -590,7 +611,6 @@ void main()
 					SetNextState(FILL_RX_DTD232);
 			    	break;
 				}
-*/				
         		break;
      
 			case FILL_RX_PC:  
