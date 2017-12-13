@@ -11,9 +11,9 @@
 #define MIN_DATA_FRAME_SIZE	(112/8)		// 112 bits of actual timing data
 
 
-#define TIMER_300MS_PERIOD ( ((XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16)
-#define TIMER_DELAY_EDGE ( TIMER_300MS_PERIOD + (TIMER_300MS_PERIOD / 2 ) - 4)
-#define TIMER_WAIT_EDGE ( TIMER_300MS_PERIOD - 4 )
+#define TIMER_300US_PERIOD ( ((XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16)
+#define TIMER_DELAY_EDGE ( TIMER_300US_PERIOD + (TIMER_300US_PERIOD / 2 ) - 4)
+#define TIMER_WAIT_EDGE ( TIMER_300US_PERIOD - 4 )
 
 // The table to translate the BCS digit into the 
 // Hamming code to send all timing data
@@ -159,15 +159,16 @@ static unsigned int sync_word;	// The syncronization word
 static byte data_byte;
 
 static char hq_pin;
+static char ret_value;
+static char curr_bit;
 
-
-// WaitEdge 
+// WaitEdge - returns immediately when the Edge is detected, or after timeout
 //  returns 0 - if LOW->HIGH ("0") is detected
 //  returns 1 - if HIGH->LOW ("1") was detected
 //  returns -1 - if the timeout occured
 static char WaitEdge(unsigned char timeout)
 {
-	char ret_value = current_pin;
+	ret_value = current_pin;
 	PR6 = timeout;	
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;
@@ -183,14 +184,12 @@ static char WaitEdge(unsigned char timeout)
 	return -1;
 }
 
-// WaitTimer 
-//  returns 0 - if LOW->HIGH ("0") is detected
-//  returns 1 - if HIGH->LOW ("1") was detected
-//  returns 2 - if 2 edges were detected while waiting for the timeout
-//  returns -1 - if the timeout occured and no edges detected
+// WaitTimer - return ONLY after the timeout expired, returning the number of edges that happened within that timeout..
+//  returns number of edges detected
+//  returns 0 - if the timeout occured and no edges detected
 static char WaitTimer(unsigned char timeout)
 {
-	char ret_value = -1;
+	ret_value = 0;
 	PR6 = timeout;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;
@@ -199,51 +198,49 @@ static char WaitTimer(unsigned char timeout)
 		hq_pin = HQ_PIN;
 		if(hq_pin != current_pin)
 		{
-			// There was one edge already
-			ret_value = (ret_value >= 0) ? 2 : current_pin;
+			ret_value++;
 			current_pin = hq_pin;
 		} 
 	}
 	return ret_value;
 }
 
-// The state is skewed a little - We expect all "1" to be a SYNC pattern
-enum 
+typedef enum 
 {
 	INIT,
 	IDLE,
 	IDLE_1,
 	SYNC,
 	DATA
-} MCODE_STATES;
+} HQ_STATES;
 
-byte RHQD_State;
+static HQ_STATES State;
 
 static char GetHQTime(void)
 {
 	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 
-	RHQD_State = INIT;
-	current_pin = HQ_PIN;
-
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
   	set_led_off();		// Set LED off
 
+	current_pin = HQ_PIN;
+
+	State = INIT;
 	while(is_not_timeout() )
 	{
-		switch(RHQD_State)
+		switch(State)
 		{
-		case INIT:	// Wait for LOW state for at least 3 clock periods
-			if( WaitTimer(3 * TIMER_WAIT_EDGE) < 0 )
+		case INIT:	// Wait for no activity on the line and HQ_PIN == LOW for at least 3 clock periods
+			if( (WaitTimer(3 * TIMER_WAIT_EDGE) == 0) && (current_pin == LOW))
 			{
-				RHQD_State = IDLE;
+				State = IDLE;
 			}
 			break;
 	
 		case IDLE:
 			if( WaitEdge(TIMER_DELAY_EDGE) == 0)
 			{
-				RHQD_State = IDLE_1;
+				State = IDLE_1;
 			}
 			break;
 
@@ -253,28 +250,29 @@ static char GetHQTime(void)
 				sync_word = 0x0001;
 				bit_count = 1;
 				byte_count = 0;
-				RHQD_State = SYNC;
+				State = SYNC;
   				set_led_on();		// Set LED on
 			}
 			break;
 
 		case SYNC:
 			WaitTimer(TIMER_DELAY_EDGE);
-			sync_word = (sync_word << 1) | WaitEdge(TIMER_WAIT_EDGE);
+			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
+			sync_word = (sync_word << 1) | curr_bit;
 			bit_count++;
 			if(sync_word == SYNC_PATTERN)
 			{
-				// Sanity check - bit_count should be 400 % 256 = 0x90
 				hq_data[byte_count++] = sync_word >> 8;
 				hq_data[byte_count++] = sync_word;
 				bit_count = 0;
 				data_byte = 0;
-				RHQD_State = DATA;
+				State = DATA;
 			}
 			break;
 		case DATA:
 			WaitTimer(TIMER_DELAY_EDGE);
-			data_byte = (data_byte << 1) | WaitEdge(TIMER_WAIT_EDGE);
+			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
+			data_byte = (data_byte << 1) | curr_bit;
 			bit_count++;
 			if(bit_count >= 8)
 			{
@@ -308,12 +306,12 @@ char ReceiveHQTime(void )
 	ExtractHQDate();
 	CalculateNextSecond();
 
-	SetRTCDataPart1();
-	
-  	//	3. Find the next HQ stream rising edge with interrupts disabled
 	prev = INTCONbits.GIE;
 	INTCONbits.GIE = 0;		// Disable interrupts
-	while ( WaitTimer(0xF0) >= 0 ) {};	// Wait until IDLE
+	SetRTCDataPart1();
+
+  	//	3. Find the next HQ stream rising edge with interrupts disabled
+	while ( WaitTimer(0xF0) != 0 ) {};	// Wait until IDLE
 	while(HQ_PIN) {};		// look for the rising edge
 	while(!HQ_PIN){};		
 

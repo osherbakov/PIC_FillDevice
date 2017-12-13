@@ -155,10 +155,8 @@ static unsigned char *p_time;
 
 static char GetGPSTime(void)
 {
-//	char	symbol_detected = 0;
-
-  	set_led_off();		// Set LED off
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
+  	set_led_off();		// Set LED off
 
 	// Configure the EUSART module
   	open_eusart(BRREG_GPS, DATA_POLARITY_GPS);	
@@ -182,13 +180,6 @@ static char GetGPSTime(void)
         		close_eusart();
 				return ST_OK;
 			}
-			// If symbol is here - restart timeout and show activity on LED
-//			if(!symbol_detected) {
-				// Restart timeout
-//				set_timeout(GPS_DETECT_TIMEOUT_MS);  
-//		  		set_led_on();		// Set LED on
-//				symbol_detected = 1;
-//			}
 		}
 	}
   	close_eusart();

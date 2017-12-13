@@ -361,6 +361,18 @@ void main()
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
+          			// Set all pins as inputs
+					PIN_B	   = 1;
+					PIN_C	   = 1;
+					PIN_D	   = 1;
+					PIN_E	   = 1;
+				  	TRIS_PIN_B = INPUT;
+	  				TRIS_PIN_C = INPUT;
+				  	TRIS_PIN_D = INPUT;
+	  				TRIS_PIN_E = INPUT;
+  					WPUB_PIN_B = 1;
+  					WPUB_PIN_E = 1;
+					DelayMs(100);
           			SetNextState(HQ_GPS_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ Transmit
 				{
@@ -664,13 +676,11 @@ void main()
 				{
 					TestFillResult(ReceiveGPSTime());
 				}
-/*  Temporarily disable the HQ Extraction time until optimization
 				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
 				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveHQTime());
 				}
-*/				
 				break;
 			//-----------HQII TX and RX--------------	
 			//********************************************
