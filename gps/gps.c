@@ -69,6 +69,7 @@ static void process_gps_symbol(byte new_symbol)
 			counter = 0;
 			running_checksum = 0;
 			gps_state = SENTENCE;
+			set_led_on();		// Set LED on - GPS sequence was detected
 		}
 		break;
 
@@ -178,6 +179,7 @@ static char GetGPSTime(void)
 			// All data collected - report success
 			if(gps_state == DONE){
         		close_eusart();
+  				set_led_off();		// Set LED off
 				return ST_OK;
 			}
 		}

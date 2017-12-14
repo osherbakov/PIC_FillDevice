@@ -280,6 +280,7 @@ static char GetHQTime(void)
 				// All data collected - return
 				if(byte_count >= MIN_DATA_FRAME_SIZE)
 				{
+  					set_led_off();		// Set LED off
 					return ST_OK;
 				}
 				bit_count = 0;
