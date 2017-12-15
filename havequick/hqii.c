@@ -185,8 +185,8 @@ static char WaitEdge(unsigned char timeout)
 }
 
 // WaitTimer - return ONLY after the timeout expired, returning the number of edges that happened within that timeout..
-//  returns number of edges detected
-//  returns 0 - if the timeout occured and no edges detected
+//  returns number of edges detected within a specified timeout
+//  returns 0 - if no edges detected during that timeout
 static char WaitTimer(unsigned char timeout)
 {
 	ret_value = 0;
@@ -250,51 +250,57 @@ static char GetHQTime(void)
 				sync_word = 0x0001;
 				bit_count = 1;
 				byte_count = 0;
-				State = SYNC;
   				set_led_on();		// Set LED on
+				State = SYNC;
+				WaitTimer(TIMER_DELAY_EDGE);
 			}
 			break;
 
 		case SYNC:
-			WaitTimer(TIMER_DELAY_EDGE);
 			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
-			sync_word = (sync_word << 1) | curr_bit;
-			bit_count++;
-			if(sync_word == SYNC_PATTERN)
-			{
-				hq_data[byte_count++] = sync_word >> 8;
-				hq_data[byte_count++] = sync_word;
-				bit_count = 0;
-				data_byte = 0;
-				State = DATA;
+			if(curr_bit >= 0) {
+				sync_word = (sync_word << 1) | curr_bit;
+				bit_count++;
+				if(sync_word == SYNC_PATTERN)
+				{
+					hq_data[byte_count++] = sync_word >> 8;
+					hq_data[byte_count++] = sync_word;
+					bit_count = 0;
+					data_byte = 0;
+					State = DATA;
+				}
+				WaitTimer(TIMER_DELAY_EDGE);
 			}
 			break;
 		case DATA:
-			WaitTimer(TIMER_DELAY_EDGE);
 			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
-			data_byte = (data_byte << 1) | curr_bit;
-			bit_count++;
-			if(bit_count >= 8)
-			{
-				hq_data[byte_count++] = data_byte;
-				// All data collected - return
-				if(byte_count >= MIN_DATA_FRAME_SIZE)
+			if(curr_bit >= 0) {
+				data_byte = (data_byte << 1) | curr_bit;
+				bit_count++;
+				if(bit_count >= 8)
 				{
-  					set_led_off();		// Set LED off
-					return ST_OK;
+					hq_data[byte_count++] = data_byte;
+					// All data collected - return
+					if(byte_count >= MIN_DATA_FRAME_SIZE)
+					{
+						set_led_off();		// Set LED off
+						return ST_OK;
+					}
+					bit_count = 0;
+					data_byte = 0;
 				}
-				bit_count = 0;
-				data_byte = 0;
+				WaitTimer(TIMER_DELAY_EDGE);
  			}
 			break;
 		}
 	}
+	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
+static	char prev;
 char ReceiveHQTime(void )
 {
-	char prev;
 	// Config pin as input
 	TRIS_HQ_PIN = INPUT;
 

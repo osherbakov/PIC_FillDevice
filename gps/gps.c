@@ -185,6 +185,7 @@ static char GetGPSTime(void)
 		}
 	}
   	close_eusart();
+	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
@@ -206,10 +207,9 @@ static char FindRisingEdge(void)
 	return ST_TIMEOUT;
 }
 
+static  char prev;
 char ReceiveGPSTime()
 {
-	unsigned char prev;
-
 	//	1. Find the 1PPS rising edge
 	if(FindRisingEdge() != ST_OK) return ST_TIMEOUT;
 
