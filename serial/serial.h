@@ -7,18 +7,18 @@
 #define NMEA_BAUDRATE 	(4800L)
 #define PC_BAUDRATE  	(9600L)
 #define MBITR_BAUDRATE  (9600L)
-#define PLGR_BAUDRATE	(19200L)
+#define DAGR_BAUDRATE	(9600L)
 #define DS101_BAUDRATE	(64000L)
 
 #define DATA_POLARITY_RX 	(0x20)
 #define DATA_POLARITY_TX 	(0x10)
-#define DATA_POLARITY  		(0x30)		// Appropriate Data polarity for RS-232 connected without Level Shifter.
+#define DATA_POLARITY_RXTX	(DATA_POLARITY_RX | DATA_POLARITY_TX)	// Appropriate Data polarity for RS-232 connected without Level Shifter.
 
 // Values for the Baud Rate Control registers
 #define BRREG_DTD 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
 #define BRREG_MBITR ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * MBITR_BAUDRATE)) - 1 )
 #define BRREG_PC 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PC_BAUDRATE)) - 1 )
-#define BRREG_PLGR 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PLGR_BAUDRATE)) - 1 )
+#define BRREG_DAGR 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * DAGR_BAUDRATE)) - 1 )
 #define BRREG_GPS 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * NMEA_BAUDRATE)) - 1)
 
 // For MBITR we implement the Software USART - use TIMER6 as the bit timer

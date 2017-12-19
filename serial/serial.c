@@ -90,7 +90,7 @@ char CheckFillType4()
 	  	if(RxPC == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_MBITR, DATA_POLARITY);
+	  		open_eusart(BRREG_MBITR, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}else if(rx_idx >= 4)
@@ -129,7 +129,7 @@ char CheckFillRS232Type5()
 	  	if(RxPC == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_PC, DATA_POLARITY);
+	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}else if( (rx_idx >= 2) && 
@@ -238,7 +238,7 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( RCSTA1bits.SPEN == 0)
 	{
-		open_eusart(BRREG_PC, DATA_POLARITY);
+		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
  		rx_eusart_async(p_data, 6, INF_TIMEOUT);
 	}
 	
