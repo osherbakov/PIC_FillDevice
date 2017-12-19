@@ -9,7 +9,7 @@
 #include "spi_eeprom.h"
 
 #pragma udata big_buffer   // Select large section
-char Key_buff[512];
+char Key_buff[256];
 #pragma udata
 
 enum MASTER_STATE
