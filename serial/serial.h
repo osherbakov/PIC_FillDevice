@@ -46,11 +46,18 @@ extern void PCInterface(void);
 extern void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity);
 extern void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout);
 extern byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout);
+extern byte rx_eusart_count(void);
+extern void rx_eusart_reset(void);
+extern int 	rx_eusart_symbol(void);
 extern byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout);
+extern byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout);
+
 extern void tx_eusart_async(const unsigned char *p_data, byte ncount);
+
 extern void flush_eusart(void);
 extern void close_eusart(void);
 
+extern void open_mbitr(void);
 extern byte rx_mbitr(unsigned char *p_data, byte ncount);
 extern void tx_mbitr(const unsigned char *p_data, byte ncount);
 extern void close_mbitr(void);

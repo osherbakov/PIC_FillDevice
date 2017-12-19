@@ -71,6 +71,7 @@ extern byte	 data_cell[];
 extern byte	 TOD_cell[];
 
 extern byte  ASCIIToHex(byte Symbol);
+extern byte is_equal(byte *p1, const byte *p2, byte n);
 
 // Functions to deal with TOD (Time-of-Day) data
 extern void  FillTODData(void);
@@ -112,7 +113,6 @@ extern char StorePCFill(byte stored_slot, byte fill_type);
 // Functions to wait for the request and send fill
 extern char WaitReqSendDS102Fill(byte stored_slot, byte fill_type);
 extern char WaitReqSendMBITRFill(byte stored_slot);
-extern char WaitReqSendPCFill(byte stored_slot); // Any slot can be sent (dumped)
 extern char WaitReqSendTODFill(void);
 
 // Funcrtion to send fill immediately

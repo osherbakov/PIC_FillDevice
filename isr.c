@@ -70,7 +70,6 @@ void interrupt_at_high_vector(void)
 // TIMER0 for fine tuning of the PIC internal processor clock
 void high_isr (void)
 {
-	byte TL, TH;
 	//--------------------------------------------------------------------------
 	// Is this a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
 	if(INTCONbits.RBIF)
@@ -108,15 +107,6 @@ void high_isr (void)
 				TRIS_HQ_PIN = OUTPUT;
 				HQ_PIN = 0;
 			}
-	        // Get statistics for the clock adjustment
-       // Turn it off for a while
-//	      	TL = TMR0L;	// Read LSB first to latch the data
-//	     	TH = TMR0H;
-//	        TMR0H = 0;  // Reset the counter - MSB first
-//	        TMR0L = 0;
-//	        curr_lsb = ((unsigned int)TH << 8) | (unsigned int)TL;
-//	        UpdateClockData();
-//	        ProcessClockData();			
 		}
 		INTCONbits.RBIF = 0;
 	}
@@ -185,17 +175,19 @@ void high_isr (void)
 
 	//--------------------------------------------------------------------------
 	// Is it a EUSART RX interrupt ?
-	// Maintain a circular buffer pointed by rx_data
 	if(PIE1bits.RC1IE && PIR1bits.RC1IF)
 	{
+		// Maintain a circular buffer pointed by rx_data
 		if(rx_idx_in > rx_idx_max)
 		{
+			// Copy all data to free space for the new character
 			for( rx_idx_in = 0; rx_idx_in < rx_idx_max; rx_idx_in++)
 			{
 				rx_data[rx_idx_in] = rx_data[rx_idx_in+1];
 			}
+			if(rx_idx_out > 0) rx_idx_out--;	// Adjust OUT index
 		}
-		rx_data[rx_idx_in++] = RCREG1;
+		rx_data[rx_idx_in++] = RCREG1;	// Save the last received symbol
 		// overruns? clear it
 		if(RCSTA1 & 0x06)
 		{
@@ -223,14 +215,6 @@ void high_isr (void)
 		}
 		// No need to clear the Interrupt Flag
 	}
-  
-  	// Check for the clock correction timer0
-//  	if(INTCONbits.TMR0IF)
-//  	{
-//    	curr_msb++; 
-//    	INTCONbits.TMR0IF = 0;  // Clear interrupt
-//  	}
-
 }
 
 

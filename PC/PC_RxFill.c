@@ -9,21 +9,165 @@
 #include "controls.h"
 
 
-static byte key_ack;
+static const byte key_ack = KEY_ACK;
+/****************************************************************/
+// Those are commands and responses that MBITR receives and sends
+// When programmed from the PC
+/****************************************************************/
+// Command to request a serial number
+static const byte SN_REQ[]		= {0x2F, 0x39, 0x38, 0x0D}; // "/98\n"	
+static const byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
+ 0x31, 0x32, 0x33, 0x34, 0x35, 0x0D, 					// "12345\n"
+ 0x4F, 0x4B, 0x0D, 0x00 };								// "OK\n"
+
+// The pattern of 2400 baud 0x7E flags as seen from 9600 baud view
+static const byte HDLC_FLAGS1[] = {0x80, 0x78};
+static const byte HDLC_FLAGS2[] = {0x78, 0x78};
+static const byte HDLC_FLAGS3[] = {0x78, 0xF8};
+
+// Command to request the radio capabilities
+static byte OPT_REQ[] 		= {0x2F, 0x38, 0x34, 0x0D};	// "/84\n" ;
+
+// Capabilities options
+static const byte OPT_BASIC[]  		= "Basic ";
+static const byte OPT_RETRAN[] 		= "Retransmit ";
+static const byte OPT_SINC1[]  		= "Sincgar ";
+static const byte OPT_SINC2[] 		= "SincFH2 ";
+static const byte OPT_HQ2[] 		= "HqII ";
+static const byte OPT_ANDVT[] 		= "Andvt ";
+static const byte OPT_DES[] 		= "Des ";
+static const byte OPT_AES[] 		= "Aes ";
+static const byte OPT_LDRM[] 		= "LDRM ";
+static const byte OPT_OPT_X[] 		= "Option X ";
+static const byte OPT_MELP[] 		= "Andvt MELP ";
+static const byte OPT_DIGITAL[] 	= "Clear Digital ";
+static const byte OPT_GPS[] 		= "Enhanced GPS ";
+static const byte OPT_END[] 		= {0x0D, 0x00};
+
+static const byte OPT_ENABLED[] 	= "Radio Option Enabled";
+static const byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
+
+// The list of all options enabled in the radio
+static const byte *OPTS[] = 
+{
+	OPT_BASIC, OPT_RETRAN, OPT_SINC1, OPT_SINC2, OPT_HQ2, OPT_ANDVT,
+	OPT_DES, OPT_AES, OPT_LDRM, OPT_OPT_X, OPT_MELP, OPT_DIGITAL, OPT_GPS
+};
+
+static unsigned char SerialBuffer[6];
+
+static void send_options(void)
+{
+	byte idx;
+	// Go thru the list of all options and send them out.
+	//  Each option is terminated by 0x0D 0x00 sequence
+	for( idx = 0; idx < NUM_ELEMS(OPTS); idx++)
+	{
+		tx_eusart_str(OPTS[idx]);
+		tx_eusart_str(OPT_ENABLED);
+		tx_eusart_buff(OPT_END);
+	}
+	// Terminate everything with "OK\n"
+	tx_eusart_buff(OK_RESP);
+   	flush_eusart();
+}
+
+//
+//		Functions to check for RS-232 MBITR Type 4, PC and DTD Type 5 fills
+//
+// Check serial port if there is a request to send DES keys
+char CheckFillType4()
+{
+	if( !RCSTA1bits.SPEN)
+	{
+		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
+	  	if(RxPC == LOW)
+	  	{
+	      // Coming in first time - enable eusart and setup buffer
+	  		open_eusart(BRREG_MBITR, DATA_POLARITY_RXTX);
+	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
+	  	}	
+	}else if(rx_eusart_count() >= 4)
+	{
+    // Four characters are collected - check if it is 
+    //  /98 - serial number request, or
+    //  /84 - the capabilities request
+		if( is_equal(SerialBuffer, SN_REQ, 4) )
+		{
+			rx_eusart_reset(); // Data consumed
+  			// SN request - send a fake SN = 123456
+			tx_eusart_buff(SN_RESP);
+			flush_eusart();
+			set_timeout(RX_TIMEOUT1_PC);	// Restart timeout
+		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
+		{
+			rx_eusart_reset(); // Data consumed
+			// Options request - send all options
+			send_options();
+			flush_eusart();
+			return MODE4;
+		}
+	}
+	return ST_TIMEOUT;
+}
+
+
+
+// Check if there is the request from the PC to send DS-101/RS-232 keys
+char CheckFillRS232Type5()
+{
+  	// Coming in first time - enable eusart and setup buffer
+	if( !RCSTA1bits.SPEN )
+	{
+		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
+	  	if(RxPC == LOW)
+	  	{
+	      // Coming in first time - enable eusart and setup buffer
+	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
+	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
+	  	}	
+	}else if( (rx_idx_in >= 2) && 
+			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
+			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
+			  	  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
+	{
+		 close_eusart();
+		 return MODE5;
+	}
+	return ST_TIMEOUT;
+}	
+
+// Check if there is the request from the DTD to send DS-101/RS-232 keys
+char CheckFillDTD232Type5()
+{
+	if( !RCSTA1bits.SPEN )
+	{
+	  	if(RxDTD == LOW)
+	  	{
+	  		 close_eusart();
+	  		 return MODE5;
+	  	}	
+  	} 	
+	return ST_TIMEOUT;
+}	
+
+// The Type5 RS485 fill is detected when PIN_P is different from PIN_N
+char CheckFillRS485Type5()
+{
+	TRIS_Data_N	= INPUT;
+	TRIS_Data_P	= INPUT;
+	WPUB_Data_N = 1;
+	WPUB_Data_P = 1;
+	DelayMs(10);
+
+	return ( Data_P != Data_N ) ? MODE5 : ST_TIMEOUT;
+}	
+
 
 // ACK the received key from PC
 char SendPCAck(byte ack_type)
 {
-	key_ack = KEY_ACK;
 	tx_eusart_async(&key_ack, 1);			// ACK the previous packet
-	flush_eusart();
-}
-
-// NACK the received key from PC
-char SendPCNak(byte ack_type)
-{
-	key_ack = KEY_NAK;
-	tx_eusart_async(&key_ack, 1);			// NAK the previous packet
 	flush_eusart();
 }
 

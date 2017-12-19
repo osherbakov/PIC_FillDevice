@@ -7,15 +7,12 @@
 #include "Fill.h"
 #include "controls.h"
 
-static char WaitMBITRReq(byte req_type);
-
+static 	byte char_received;
+static	byte char_to_expect;
 static const byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 
 static char WaitMBITRReq(byte req_type)
 {
-	byte char_received;
-	byte char_to_expect;
-
 	// This is the DES key load - send serial number request
 	char_received = 0;
 	if( req_type == REQ_FIRST )
@@ -44,6 +41,7 @@ char WaitReqSendMBITRFill(byte stored_slot)
 
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
+	open_mbitr();
 	if( WaitMBITRReq(REQ_FIRST) < 0 ) return -1;
 
 	wait_result = ST_OK;
@@ -78,6 +76,7 @@ char WaitReqSendMBITRFill(byte stored_slot)
     	if(wait_result) 
 			break;
 	}	
+	close_mbitr();
 	return wait_result;
 }
 
@@ -86,6 +85,23 @@ char WaitReqSendMBITRFill(byte stored_slot)
 //
 // Soft UART to communicate with MBITR
 //
+
+void open_mbitr(void)
+{
+	TRIS_RxMBITR = INPUT;
+	TRIS_TxMBITR = OUTPUT;
+	ANSEL_RxMBITR	= 0;
+	ANSEL_TxMBITR	= 0;
+	TxMBITR	= STOP;
+	DelayMs(50);
+}
+
+void close_mbitr(void)
+{
+	TRIS_RxMBITR = INPUT;
+	TRIS_TxMBITR = INPUT;
+}
+	
 byte rx_mbitr(unsigned char *p_data, byte ncount)
 {
 	byte bitcount, data;

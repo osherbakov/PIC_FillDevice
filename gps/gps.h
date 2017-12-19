@@ -9,8 +9,6 @@
 #define HQII_TIMER 				((( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16) - 1 )
 #define HQII_TIMER_CTRL 		( (1<<2) | 2)	// 16:1 pre, on
 
-extern byte is_equal(byte *p1, const byte *p2, byte n);
-
 // GPS and HQII functions
 extern char ReceiveDAGRTime(void);
 extern char ReceiveGPSTime(void);

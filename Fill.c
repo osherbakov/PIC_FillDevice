@@ -267,11 +267,12 @@ void SetCurrentDayTime()
     	CalculateWeekDay();
 		SetRTCData();
 		tx_eusart_str(TimeOKMsg);
+		flush_eusart();
 	}else
 	{
 		tx_eusart_str(TimeErrorMsg);
+		flush_eusart();
 	}	
-	flush_eusart();
 }
 
 byte  ASCIIToHex(byte Symbol)
