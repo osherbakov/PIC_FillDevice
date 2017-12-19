@@ -21,6 +21,9 @@ enum {
 	DONE
 } GPS_PARSER_STATE;
 
+
+#define DATA_POLARITY_GPS	(DATA_POLARITY_RX)	// GPS is connected without Level Shifter
+
 static byte gps_state;
 static byte counter;
 static unsigned short long gps_time;
@@ -28,12 +31,10 @@ static unsigned short long gps_date;
 static char running_checksum, saved_checksum, sent_checksum;
 static byte *p;			// Pointer to get LSB and MSB of the 24-bit word
 
-#define DATA_POLARITY_GPS	(DATA_POLARITY_RX)	// GPS is connected without Level Shifter
-
-static byte 	RMS_SNT[] = "GPRMC,";
+static const byte 	RMS_SNT[] = "GPRMC,";
 static byte  	symb_buffer[6];			// Buffer to keep the symbols
 
-byte is_equal(byte *p1, byte *p2, byte n)
+byte is_equal(byte *p1, const byte *p2, byte n)
 {
 	while(n-- ) {
 		if( toupper(*p1++) != toupper(*p2++)) return 0;

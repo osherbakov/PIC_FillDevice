@@ -9,7 +9,7 @@
 
 static char WaitMBITRReq(byte req_type);
 
-byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
+static const byte CHECK_MBITR[4] = {0x2F, 0x39, 0x38, 0x0D };	// "/98<cr>"
 
 static char WaitMBITRReq(byte req_type)
 {
@@ -125,7 +125,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 
 
-void tx_mbitr(byte *p_data, byte ncount)
+void tx_mbitr(const byte *p_data, byte ncount)
 {
 	byte 	bitcount;
 	byte 	data;

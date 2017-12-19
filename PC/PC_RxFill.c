@@ -15,14 +15,16 @@ static byte key_ack;
 char SendPCAck(byte ack_type)
 {
 	key_ack = KEY_ACK;
-	tx_eusart(&key_ack, 1);			// ACK the previous packet
+	tx_eusart_async(&key_ack, 1);			// ACK the previous packet
+	flush_eusart();
 }
 
 // NACK the received key from PC
 char SendPCNak(byte ack_type)
 {
 	key_ack = KEY_NAK;
-	tx_eusart(&key_ack, 1);			// NAK the previous packet
+	tx_eusart_async(&key_ack, 1);			// NAK the previous packet
+	flush_eusart();
 }
 
 static byte GetPCFill(unsigned short long base_address)

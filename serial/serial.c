@@ -9,51 +9,51 @@
 // The command from the PC to fill the key or to dump it
 // The byte after the command specifies the key number and type
 //  /FILL<0x34> means fill key 4 of type 3
-static byte KEY_FILL[] 		= "/FILL<n>";	// Fill the key N
-static byte KEY_DUMP[] 		= "/DUMP<n>";	// Dump the key N
-static byte TIME_CMD[] 		= "/TIME=";		// Fill/Dump Time
-static byte DATE_CMD[] 		= "/DATE=";		// Fill/Dump Time
-static byte KEY_CMD[] 		= "/KEY<n>";	// Read/Write the key N
+static const byte KEY_FILL[] 		= "/FILL<n>";	// Fill the key N
+static const byte KEY_DUMP[] 		= "/DUMP<n>";	// Dump the key N
+static const byte TIME_CMD[] 		= "/TIME=";		// Fill/Dump Time
+static const byte DATE_CMD[] 		= "/DATE=";		// Fill/Dump Time
+static const byte KEY_CMD[] 		= "/KEY<n>";	// Read/Write the key N
 
 /****************************************************************/
 // Those are commands and responses that MBITR receives and sends
 // When programmed from the PC
 /****************************************************************/
 // Command to request a serial number
-static byte SN_REQ[]		= {0x2F, 0x39, 0x38, 0x0D}; // "/98\n"	
-static byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
+static const byte SN_REQ[]		= {0x2F, 0x39, 0x38, 0x0D}; // "/98\n"	
+static const byte SN_RESP[]		= {0x53, 0x4E, 0x20, 0x3D, 0x20, 0x00, // "SN = "
  0x31, 0x32, 0x33, 0x34, 0x35, 0x0D, 					// "12345\n"
  0x4F, 0x4B, 0x0D, 0x00 };								// "OK\n"
 
 // The pattern of 2400 baud 0x7E flags as seen from 9600 baud view
-static byte HDLC_FLAGS1[] = {0x80, 0x78};
-static byte HDLC_FLAGS2[] = {0x78, 0x78};
-static byte HDLC_FLAGS3[] = {0x78, 0xF8};
+static const byte HDLC_FLAGS1[] = {0x80, 0x78};
+static const byte HDLC_FLAGS2[] = {0x78, 0x78};
+static const byte HDLC_FLAGS3[] = {0x78, 0xF8};
 
 // Command to request the radio capabilities
 static byte OPT_REQ[] 		= {0x2F, 0x38, 0x34, 0x0D};	// "/84\n" ;
 
 // Capabilities options
-static byte OPT_BASIC[]  	= "Basic ";
-static byte OPT_RETRAN[] 	= "Retransmit ";
-static byte OPT_SINC1[]  	= "Sincgar ";
-static byte OPT_SINC2[] 	= "SincFH2 ";
-static byte OPT_HQ2[] 		= "HqII ";
-static byte OPT_ANDVT[] 	= "Andvt ";
-static byte OPT_DES[] 		= "Des ";
-static byte OPT_AES[] 		= "Aes ";
-static byte OPT_LDRM[] 		= "LDRM ";
-static byte OPT_OPT_X[] 	= "Option X ";
-static byte OPT_MELP[] 		= "Andvt MELP ";
-static byte OPT_DIGITAL[] 	= "Clear Digital ";
-static byte OPT_GPS[] 		= "Enhanced GPS ";
-static byte OPT_END[] 		= {0x0D, 0x00};
+static const byte OPT_BASIC[]  		= "Basic ";
+static const byte OPT_RETRAN[] 		= "Retransmit ";
+static const byte OPT_SINC1[]  		= "Sincgar ";
+static const byte OPT_SINC2[] 		= "SincFH2 ";
+static const byte OPT_HQ2[] 		= "HqII ";
+static const byte OPT_ANDVT[] 		= "Andvt ";
+static const byte OPT_DES[] 		= "Des ";
+static const byte OPT_AES[] 		= "Aes ";
+static const byte OPT_LDRM[] 		= "LDRM ";
+static const byte OPT_OPT_X[] 		= "Option X ";
+static const byte OPT_MELP[] 		= "Andvt MELP ";
+static const byte OPT_DIGITAL[] 	= "Clear Digital ";
+static const byte OPT_GPS[] 		= "Enhanced GPS ";
+static const byte OPT_END[] 		= {0x0D, 0x00};
 
-static byte OPT_ENABLED[] 	= "Radio Option Enabled";
-static byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
+static const byte OPT_ENABLED[] 	= "Radio Option Enabled";
+static const byte OK_RESP[] 		= {0x4F, 0x4B, 0x0D};		// "OK\n"
 
 // The list of all options enabled in the radio
-static byte *OPTS[] = 
+static const byte *OPTS[] = 
 {
 	OPT_BASIC, OPT_RETRAN, OPT_SINC1, OPT_SINC2, OPT_HQ2, OPT_ANDVT,
 	OPT_DES, OPT_AES, OPT_LDRM, OPT_OPT_X, OPT_MELP, OPT_DIGITAL, OPT_GPS
@@ -93,21 +93,21 @@ char CheckFillType4()
 	  		open_eusart(BRREG_MBITR, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
-	}else if(rx_idx >= 4)
+	}else if(rx_idx_in >= 4)
 	{
     // Four characters are collected - check if it is 
     //  /98 - serial number request, or
     //  /84 - the capabilities request
 		if( is_equal(SerialBuffer, SN_REQ, 4) )
 		{
-			rx_idx = 0; // Data consumed
+			rx_idx_in = 0; // Data consumed
   			// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
 			flush_eusart();
 			set_timeout(RX_TIMEOUT1_PC);	// Restart timeout
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
-			rx_idx = 0; // Data consumed
+			rx_idx_in = 0; // Data consumed
 			// Options request - send all options
 			send_options();
 			flush_eusart();
@@ -132,10 +132,10 @@ char CheckFillRS232Type5()
 	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
-	}else if( (rx_idx >= 2) && 
+	}else if( (rx_idx_in >= 2) && 
 			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
 			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
-			  	  is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
+			  	  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )
 	{
 		 close_eusart();
 		 return MODE5;
@@ -188,9 +188,10 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
-	rx_idx = 0;
-	rx_idx_max = sizeof(SerialBuffer) - 1;
+	rx_idx_in = 0;
+	rx_idx_out = 0;
 	rx_data = (volatile byte *) &SerialBuffer[0];
+	rx_idx_max = sizeof(SerialBuffer) - 1;
 
 	tx_count = 0;
 	
@@ -205,7 +206,12 @@ void close_eusart()
 	PIE1bits.TX1IE = 0;		// Disable TX Interrupts
 	TXSTA = 0x00; 	      	// Disable Tx	
 	RCSTA = 0x00;			// Disable EUSART
-	rx_idx = 0;
+
+	rx_idx_in = 0;
+	rx_idx_out = 0;
+	rx_data = (volatile byte *) &SerialBuffer[0];
+	rx_idx_max = sizeof(SerialBuffer) - 1;
+
 	tx_count = 0;
 }
 
@@ -222,7 +228,7 @@ void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeo
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 	RCSTA1bits.CREN = 0; // Disable Rx
 	rx_data = (volatile byte *) p_rx_data;
-	rx_idx = 0;
+	rx_idx_in = 0;
 	rx_idx_max = max_size - 1;
 	set_timeout(timeout);
 	RCSTA1bits.CREN = 1; // Enable Rx
@@ -243,7 +249,7 @@ void PCInterface()
 	}
 	
 	// Wait to receive 6 characters
-	if(rx_idx >= 6) 
+	if(rx_idx_in >= 6) 
 	{
 	  	byte  	slot;
 		byte 	type;
@@ -354,13 +360,13 @@ volatile byte *tx_data; // Pointer to the current output data
 volatile byte tx_count; // currect output counter
 
 volatile byte *rx_data;   // Pointer to the current receive data
-volatile byte rx_idx;     // Number of characters received
+volatile byte rx_idx_in;  // Index of characters received
+volatile byte rx_idx_out; // Index of characters consumed
 volatile byte rx_idx_max; // Max index in the buffer
 
 
-void tx_eusart(unsigned char *p_data, byte ncount)
+void tx_eusart_async(const unsigned char *p_data, byte ncount)
 {
-  	flush_eusart();
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated

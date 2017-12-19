@@ -15,16 +15,16 @@ byte	  data_cell[FILL_MAX_SIZE];
 // Time cell
 byte    TOD_cell[MODE2_3_CELL_SIZE];
 
-static byte month_names[] 	= "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
-static byte weekday_names[] = "XXXMONTUEWEDTHUFRISATSUN";
-static byte HexToASCII[] 	= "0123456789ABCDEF";
-static byte TimeErrorMsg[] 	= "Error in Time/Date format\n\0";
-static byte TimeOKMsg[] 	= "Time/Date is set\n\0";
-static byte TimeGetMsg[] 	= "/Time=\0";
-static byte KeyErrorMsg[] 	= "Error in Key Data format\n\0";
-static byte KeyOKMsg[] 		= "Key is set\n\0";
-static byte KeyErasedMsg[] 	= "Key is erased\n\0";
-static byte KeyGetMsg[] 	= "/Key\0";
+static const byte month_names[] 	= "XXXJANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
+static const byte weekday_names[] 	= "XXXMONTUEWEDTHUFRISATSUN";
+static const byte HexToASCII[] 		= "0123456789ABCDEF";
+static const byte TimeErrorMsg[] 	= "Error in Time/Date format\n\0";
+static const byte TimeOKMsg[] 		= "Time/Date is set\n\0";
+static const byte TimeGetMsg[] 		= "/Time=\0";
+static const byte KeyErrorMsg[] 	= "Error in Key Data format\n\0";
+static const byte KeyOKMsg[] 		= "Key is set\n\0";
+static const byte KeyErasedMsg[] 	= "Key is erased\n\0";
+static const byte KeyGetMsg[] 		= "/Key\0";
 
 void GetCurrentDayTime()
 {
@@ -303,7 +303,7 @@ void GetPCKey(byte slot)
 	tmp[0] = HexToASCII[slot];
 	tmp[1] = '=';
 	tmp[2] = '\n';
-	tx_eusart(&tmp[0], 3);
+	tx_eusart_async(&tmp[0], 3);
 	flush_eusart();
 
   	base_address = get_eeprom_address(slot);
@@ -313,7 +313,7 @@ void GetPCKey(byte slot)
 		tmp[0] = HexToASCII[(fillType>>4) & 0x0F];
 		tmp[1] = HexToASCII[fillType & 0x0F];
 		tmp[2] = '\n';
-		tx_eusart(&tmp[0], 3);
+		tx_eusart_async(&tmp[0], 3);
    		flush_eusart();
 	}
 
@@ -325,17 +325,17 @@ void GetPCKey(byte slot)
 			tmp[0] = ' ';
 			tmp[1] = HexToASCII[(Data>>4) & 0x0F];
 			tmp[2] = HexToASCII[Data & 0x0F];
-			tx_eusart(&tmp[0], 3);
+			tx_eusart_async(&tmp[0], 3);
     		flush_eusart();
 			numBytes--;
 		}	
 		tmp[0] = '\n';
-		tx_eusart(&tmp[0], 1);
+		tx_eusart_async(&tmp[0], 1);
     	flush_eusart();
 		numRecords --;
 	}	
 	tmp[0] = '\n';
-	tx_eusart(&tmp[0], 1);
+	tx_eusart_async(&tmp[0], 1);
    	flush_eusart();
 }	
 

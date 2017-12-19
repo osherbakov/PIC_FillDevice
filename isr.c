@@ -188,14 +188,14 @@ void high_isr (void)
 	// Maintain a circular buffer pointed by rx_data
 	if(PIE1bits.RC1IE && PIR1bits.RC1IF)
 	{
-		if(rx_idx > rx_idx_max)
+		if(rx_idx_in > rx_idx_max)
 		{
-			for( rx_idx = 0; rx_idx < rx_idx_max; rx_idx++)
+			for( rx_idx_in = 0; rx_idx_in < rx_idx_max; rx_idx_in++)
 			{
-				rx_data[rx_idx] = rx_data[rx_idx+1];
+				rx_data[rx_idx_in] = rx_data[rx_idx_in+1];
 			}
 		}
-		rx_data[rx_idx++] = RCREG1;
+		rx_data[rx_idx_in++] = RCREG1;
 		// overruns? clear it
 		if(RCSTA1 & 0x06)
 		{

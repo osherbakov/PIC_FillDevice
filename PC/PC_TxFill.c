@@ -8,11 +8,11 @@
 #include "controls.h"
 
 
+static	byte char_received;
+static	byte char_to_expect;
+
 static char WaitPCReq(byte req_type)
 {
-	byte char_received;
-	byte char_to_expect;
-	
 	if(req_type == REQ_LAST) return ST_OK;
 
 	char_to_expect = KEY_ACK; 
@@ -51,11 +51,11 @@ char WaitReqSendPCFill(byte stored_slot)
 			{
 				FillTODData();
 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-		  		tx_eusart(TOD_cell, MODE2_3_CELL_SIZE);
+		  		tx_eusart_async(TOD_cell, MODE2_3_CELL_SIZE);
 	    		flush_eusart();
 			}else
 			{
-				tx_eusart(&data_cell[0], byte_cnt);
+				tx_eusart_async(&data_cell[0], byte_cnt);
 	    		flush_eusart();
 			}
 			bytes -= byte_cnt;

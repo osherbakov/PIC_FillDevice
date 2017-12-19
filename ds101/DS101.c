@@ -9,11 +9,11 @@
 #include "controls.h"
 
 
-char master_name[15] = 	"T3COMMS       ";
-char slave_name[15] = 	"KOV 21 0015415";
+static char const master_name[15] 	= 	"T3COMMS       ";
+static char const slave_name[15] 	= 	"KOV 21 0015415";
 
 #pragma udata big_buffer   // Select large section
-unsigned char  RxTx_buff[512];
+static unsigned char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
 unsigned char CurrentAddress;

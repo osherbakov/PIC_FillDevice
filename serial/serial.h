@@ -37,7 +37,8 @@
 extern volatile byte *tx_data;    // Pointer to the data to be sent out
 extern volatile byte tx_count;    // Running number of bytes sent
 extern volatile byte *rx_data;	  // Pointer to the start of the buffer
-extern volatile byte rx_idx;	    // Number of symbols collected
+extern volatile byte rx_idx_in;	  // Index of the next IN byte received from the Serial Port
+extern volatile byte rx_idx_out;  // Index of the next OUT byte taken from the Serial Port Buffer
 extern volatile byte rx_idx_max;  // Last byte index
 
 extern void PCInterface(void);
@@ -46,15 +47,15 @@ extern void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 extern void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout);
 extern byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout);
 extern byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout);
-extern void tx_eusart(unsigned char *p_data, byte ncount);
+extern void tx_eusart_async(const unsigned char *p_data, byte ncount);
 extern void flush_eusart(void);
 extern void close_eusart(void);
 
 extern byte rx_mbitr(unsigned char *p_data, byte ncount);
-extern void tx_mbitr(unsigned char *p_data, byte ncount);
+extern void tx_mbitr(const unsigned char *p_data, byte ncount);
 extern void close_mbitr(void);
 
-#define tx_eusart_str(a) 	tx_eusart((a), strlen((char *)a))
-#define tx_eusart_buff(a) 	tx_eusart((a), NUM_ELEMS(a))
+#define tx_eusart_str(a) 	tx_eusart_async((a), strlen((char *)a))
+#define tx_eusart_buff(a) 	tx_eusart_async((a), NUM_ELEMS(a))
 
 #endif	// __SERIAL_H__

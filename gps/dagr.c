@@ -50,9 +50,9 @@ static byte tx_buffer[256];
 #define	STATUS_MSG			(5040)
 #define	TIME_TRANSFER_MSG	(5101)
 
-#define	RDY					(0x8000)
+#define	RRDY				(0x8000)
+#define	REQD				(0x1000)
 #define	RCVD				(0x0800)
-#define	REQ					(0x1000)
 #define	ACKD				(0x0200)
 #define	CONNECT				(0x0040)
 

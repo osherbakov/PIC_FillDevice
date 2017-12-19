@@ -17,7 +17,7 @@
 
 // The table to translate the BCS digit into the 
 // Hamming code to send all timing data
-unsigned char hamming_table[] = 
+static const unsigned char hamming_table[] = 
 {
 	0b00000000,		// 0  - 0x00
 	0b11100001,		// 1  - 0xE1
@@ -42,7 +42,7 @@ unsigned char HQ_Year;
 #define SYNC_PATTERN		(0x11e9)
 #define DEFAULT_FOM			(0x3)
 
-const unsigned char oneBits[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+static const unsigned char oneBits[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 unsigned char CountOnes(unsigned char x)
 {
     unsigned char result;
