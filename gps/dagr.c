@@ -101,7 +101,7 @@ static	void CalculateWord(byte symb)
 					 valid_packet = 0;	// Start searching for the packet again
 				}else {
 					is_header = 0;
-					word_counter = 0;
+					word_counter = -1;	// It will be incremented later on
 					checksum = 0;
 					// Check if this is a "header-only" message
 					if(num_words == 0) valid_data = 1;
@@ -146,15 +146,22 @@ static void FindMessageStart(byte new_symbol)
 		byte_counter = 0;
 		word_counter = 0;
 		num_words = 0;
-		checksum = 0;
+		checksum = 0x81FF;
 		is_header = 1;
 		valid_data = 0;
-	}else {
-		prev_symbol = new_symbol;
-	}	
+	}
+	prev_symbol = new_symbol;
 }	
 
-static void process_dagr_symbol(byte new_symbol)
+void process_dagr_init(void)
+{
+	valid_packet = 0;
+	valid_data = 0;
+	prev_symbol = 0;
+	dagr_state = INIT;
+}	
+
+void process_dagr_symbol(byte new_symbol)
 {
 	if(dagr_state == INIT) {
 		valid_packet = 0;
@@ -177,7 +184,7 @@ static void process_dagr_symbol(byte new_symbol)
 
 	CalculateWord(new_symbol);
 	if(valid_data == 0) return;
-	
+
 	switch(dagr_state)
 	{
 	case INIT:	
@@ -213,6 +220,7 @@ static void process_dagr_symbol(byte new_symbol)
 	default:
 		break;
 	}
+	valid_packet = 0;
 }
 
 static unsigned char ch;

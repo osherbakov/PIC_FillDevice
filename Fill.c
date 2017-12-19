@@ -8,7 +8,9 @@
 #include <ctype.h>
 
 // Generic cell that can keep all the data
+#pragma udata big_buffer   // Select large section
 byte	  data_cell[FILL_MAX_SIZE];
+#pragma udata               // Return to normal section
 
 // Time cell
 byte    TOD_cell[MODE2_3_CELL_SIZE];
