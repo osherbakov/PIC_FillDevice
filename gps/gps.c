@@ -69,7 +69,7 @@ static void process_gps_symbol(byte new_symbol)
 			counter = 0;
 			running_checksum = 0;
 			gps_state = SENTENCE;
-			set_led_on();		// Set LED on - GPS sequence was detected
+			set_led_off();		// Set LED off - GPS sequence start was detected
 		}
 		break;
 
@@ -78,6 +78,7 @@ static void process_gps_symbol(byte new_symbol)
 		if(counter >= 6)
 		{
 			if(is_equal(symb_buffer, RMS_SNT, 6)){
+				set_led_on();		// Set LED on - GPS RMS sequence was detected
 				gps_state = TIME;
 			}else{
 				gps_state = INIT;
@@ -156,11 +157,9 @@ static unsigned char *p_time;
 
 static char GetGPSTime(void)
 {
-	set_timeout(GPS_DETECT_TIMEOUT_MS);  
-  	set_led_off();		// Set LED off
-
 	// Configure the EUSART module
   	open_eusart(BRREG_GPS, DATA_POLARITY_GPS);	
+	set_timeout(GPS_DETECT_TIMEOUT_MS);  
   		
 	gps_state = INIT;
 	while(is_not_timeout())
@@ -185,7 +184,6 @@ static char GetGPSTime(void)
 		}
 	}
   	close_eusart();
-	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 

@@ -221,7 +221,6 @@ static char GetHQTime(void)
 	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
-  	set_led_off();		// Set LED off
 
 	current_pin = HQ_PIN;
 
@@ -238,14 +237,15 @@ static char GetHQTime(void)
 			break;
 	
 		case IDLE:
-			if( WaitEdge(TIMER_DELAY_EDGE) == 0)
+			if( WaitEdge(TIMER_DELAY_EDGE) == 0)	// LOW->HIGH transition detected
 			{
+  				set_led_off();		// Set LED off
 				State = IDLE_1;
 			}
 			break;
 
 		case IDLE_1:
-			if( WaitEdge(TIMER_DELAY_EDGE) == 1 )
+			if( WaitEdge(TIMER_DELAY_EDGE) == 1 )	// HIGH->LOW transition detected
 			{
 				sync_word = 0x0001;
 				bit_count = 1;
@@ -294,7 +294,6 @@ static char GetHQTime(void)
 			break;
 		}
 	}
-	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
