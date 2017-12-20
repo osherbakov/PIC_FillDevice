@@ -57,8 +57,8 @@ extern byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int time
 extern byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout);
 
 extern void tx_eusart_async(const unsigned char *p_data, byte ncount);
+extern void tx_eusart_flush(void);
 
-extern void flush_eusart(void);
 extern void close_eusart(void);
 
 extern void open_mbitr(void);

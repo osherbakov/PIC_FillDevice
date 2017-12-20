@@ -69,7 +69,7 @@ static void send_options(void)
 	}
 	// Terminate everything with "OK\n"
 	tx_eusart_buff(OK_RESP);
-   	flush_eusart();
+   	tx_eusart_flush();
 }
 
 //
@@ -97,14 +97,13 @@ char CheckFillType4()
 			rx_eusart_reset(); // Data consumed
   			// SN request - send a fake SN = 123456
 			tx_eusart_buff(SN_RESP);
-			flush_eusart();
+			tx_eusart_flush();
 			set_timeout(RX_TIMEOUT1_PC);	// Restart timeout
 		}else if(is_equal(SerialBuffer, OPT_REQ, 4))
 		{
 			rx_eusart_reset(); // Data consumed
 			// Options request - send all options
 			send_options();
-			flush_eusart();
 			return MODE4;
 		}
 	}
@@ -168,7 +167,7 @@ char CheckFillRS485Type5()
 char SendPCAck(byte ack_type)
 {
 	tx_eusart_async(&key_ack, 1);			// ACK the previous packet
-	flush_eusart();
+	tx_eusart_flush();
 }
 
 static byte GetPCFill(unsigned short long base_address)

@@ -32,7 +32,7 @@ void GetCurrentDayTime()
   byte	*p_buffer = &data_cell[0]; 
   
 	tx_eusart_str(TimeGetMsg);
-	flush_eusart();
+	tx_eusart_flush();
 
   GetRTCData();
   
@@ -78,7 +78,7 @@ void GetCurrentDayTime()
   *p_buffer++ = '\n';
   *p_buffer++ = 0x00;
    tx_eusart_str(&data_cell[0]);
-   flush_eusart();
+   tx_eusart_flush();
 }  
 
 char ClearFill(byte stored_slot)
@@ -267,11 +267,11 @@ void SetCurrentDayTime()
     	CalculateWeekDay();
 		SetRTCData();
 		tx_eusart_str(TimeOKMsg);
-		flush_eusart();
+		tx_eusart_flush();
 	}else
 	{
 		tx_eusart_str(TimeErrorMsg);
-		flush_eusart();
+		tx_eusart_flush();
 	}	
 }
 
@@ -301,11 +301,12 @@ void GetPCKey(byte slot)
 	slot = ASCIIToHex(slot);
 
 	tx_eusart_str(KeyGetMsg);
+	tx_eusart_flush();
 	tmp[0] = HexToASCII[slot];
 	tmp[1] = '=';
 	tmp[2] = '\n';
 	tx_eusart_async(&tmp[0], 3);
-	flush_eusart();
+	tx_eusart_flush();
 
   	base_address = get_eeprom_address(slot);
 	numRecords = byte_read(base_address++); if(numRecords == 0xFF) numRecords = 0;
@@ -315,7 +316,7 @@ void GetPCKey(byte slot)
 		tmp[1] = HexToASCII[fillType & 0x0F];
 		tmp[2] = '\n';
 		tx_eusart_async(&tmp[0], 3);
-   		flush_eusart();
+   		tx_eusart_flush();
 	}
 
 	while(numRecords > 0)
@@ -327,17 +328,17 @@ void GetPCKey(byte slot)
 			tmp[1] = HexToASCII[(Data>>4) & 0x0F];
 			tmp[2] = HexToASCII[Data & 0x0F];
 			tx_eusart_async(&tmp[0], 3);
-    		flush_eusart();
+    		tx_eusart_flush();
 			numBytes--;
 		}	
 		tmp[0] = '\n';
 		tx_eusart_async(&tmp[0], 1);
-    	flush_eusart();
+    	tx_eusart_flush();
 		numRecords --;
 	}	
 	tmp[0] = '\n';
 	tx_eusart_async(&tmp[0], 1);
-   	flush_eusart();
+   	tx_eusart_flush();
 }	
 
 void SetPCKey(byte slot)
@@ -406,14 +407,14 @@ void SetPCKey(byte slot)
 	KeyErr:
 	{
 		tx_eusart_str(KeyErrorMsg);
-   		flush_eusart();
+   		tx_eusart_flush();
 		return;
 	}
 	KeyErase:
 	{
 		byte_write(base_address, 0);
 		tx_eusart_str(KeyErasedMsg);
-   		flush_eusart();
+   		tx_eusart_flush();
 		return;
 	}
 	KeyOK:
@@ -421,7 +422,7 @@ void SetPCKey(byte slot)
 		byte_write(base_address++, numRecords);
 		byte_write(base_address++, fillType);
 		tx_eusart_str(KeyOKMsg);
-   		flush_eusart();
+   		tx_eusart_flush();
 		return;
 	}
 }	

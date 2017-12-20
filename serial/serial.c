@@ -7,7 +7,6 @@
 #include "rtc.h"
 
 
-static unsigned char SerialBuffer[6];
 
 void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 {
@@ -27,10 +26,13 @@ void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 	SPBRG1 = baudrate_reg ;
 	BAUDCON1 = rxtx_polarity;
 
+	// Set up the Rx portion
 	rx_idx_in = rx_idx_out = 0;
-	rx_data = (volatile byte *) &SerialBuffer[0];
-	rx_idx_max = sizeof(SerialBuffer) - 1;
+	rx_data = (volatile byte *) &RxTx_buff[0];
+	rx_idx_max = sizeof(RxTx_buff) - 1;
 
+	// Set up the Tx portion
+	tx_data = (volatile byte *) &RxTx_buff[0];
 	tx_count = 0;
 	
 	RCSTA1bits.CREN = 1; // Enable Rx
@@ -45,19 +47,14 @@ void close_eusart()
 	TXSTA = 0x00; 	      	// Disable Tx	
 	RCSTA = 0x00;			// Disable EUSART
 
+	// Set up the Rx portion
 	rx_idx_in = rx_idx_out = 0;
-	rx_data = (volatile byte *) &SerialBuffer[0];
-	rx_idx_max = sizeof(SerialBuffer) - 1;
+	rx_data = (volatile byte *) &RxTx_buff[0];
+	rx_idx_max = sizeof(RxTx_buff) - 1;
 
+	// Set up the Tx portion
+	tx_data = (volatile byte *) &RxTx_buff[0];
 	tx_count = 0;
-}
-
-void flush_eusart()
-{
-  	if(	PIE1bits.TX1IE )	// If Tx is enabled - wait until all chars are sent out
-  	{
-		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
-	}
 }
 
 void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout)
@@ -83,6 +80,7 @@ byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
   	byte	symbol;
   	byte  nrcvd = 0;
+	RCSTA1bits.CREN = 1; // Enable Rx
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
   	set_timeout(timeout);
@@ -110,6 +108,7 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
   	byte	symbol;
   	byte  	nrcvd = 0;
+	RCSTA1bits.CREN = 1; // Enable Rx
 	PIE1bits.RC1IE = 0;	 // Disable RX interrupt
 
   	set_timeout(timeout);
@@ -178,7 +177,7 @@ int rx_eusart_symbol(void)
 	INTCONbits.GIE = 0;		// Disable interrupts
 	
 	if (rx_idx_in > rx_idx_out) {
-		result = rx_data[rx_idx_out++];
+		result = ((int)rx_data[rx_idx_out++]) & 0x00FF;
 	}
 	// Check for the all symbols taken and adjust the indices
 	if(rx_idx_in == rx_idx_out){rx_idx_in = rx_idx_out = 0; }
@@ -209,8 +208,18 @@ byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout)
 
 void tx_eusart_async(const unsigned char *p_data, byte ncount)
 {
+	tx_eusart_flush();	// Make sure that the old data is fully flushed and sent...
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
+ 	TXSTA1bits.TXEN = 1; // Enable Tx	
 	PIE1bits.TX1IE = 1;	// Interrupt will be generated
+}
+
+void tx_eusart_flush()
+{
+  	if(	PIE1bits.TX1IE )	// If Tx is enabled - wait until all chars are sent out
+  	{
+		while( tx_count || !TXSTA1bits.TRMT ) {};	// Wait to finish previous Tx
+	}
 }
 

@@ -13,7 +13,7 @@ static char const master_name[15] 	= 	"T3COMMS       ";
 static char const slave_name[15] 	= 	"KOV 21 0015415";
 
 #pragma udata big_buffer   // Select large section
-static unsigned char  RxTx_buff[512];
+unsigned char  RxTx_buff[512];
 #pragma udata               // Return to normal section
 
 unsigned char CurrentAddress;
@@ -70,9 +70,9 @@ void TxIFrame(char *p_data, int n_chars)
     TxDS101Data(p_buff, n_chars + 2);
 }
 
+static char AXID_buff[21];
 void TxAXID(char mode)
 {
-	char AXID_buff[21];
 	int idx; 
 
 	AXID_buff[0] = 0x00;  

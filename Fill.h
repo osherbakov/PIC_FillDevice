@@ -62,6 +62,11 @@ typedef enum
 #define  RX_TIMEOUT2_RS	  	(100)  	// 100ms - timeout after that
 #define  INF_TIMEOUT		(30*1000) // The biggest timeout we can get
 
+
+// The one big buffer used by every application
+extern unsigned char  RxTx_buff[512];
+
+
 // The proper delays to generate 8kHz
 // Correction factor for the timing
 #define _bitPeriod (1000000L / 2000)
