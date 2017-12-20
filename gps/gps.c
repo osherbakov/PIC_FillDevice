@@ -156,10 +156,23 @@ static unsigned char ch;
 static unsigned char *p_date;
 static unsigned char *p_time;
 
+static unsigned char baudrate_idx = 0;
+static unsigned char baudrates[] = 
+{ 
+	BRREG_GPS,
+	BRREG_GPS1,
+	BRREG_GPS2
+};	
+	
+
 static char GetGPSTime(void)
 {
 	// Configure the EUSART module
-  	open_eusart(BRREG_GPS, DATA_POLARITY_GPS);	
+  	open_eusart(baudrates[baudrate_idx], DATA_POLARITY_GPS);
+  	// Try the next baudrate
+  	baudrate_idx++;
+  	if(baudrate_idx >= NUM_ELEMS(baudrates)) baudrate_idx = 0; 
+  	
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
   		
 	gps_state = INIT;

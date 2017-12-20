@@ -126,7 +126,7 @@ char CheckFillRS232Type5()
 	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
-	}else if( (rx_idx_in >= 2) && 
+	}else if( (rx_eusart_count() >= 2) && 	// The pattern of 2400 baud 0x7E flags as seen from 9600 baud view
 			  (is_equal(SerialBuffer, HDLC_FLAGS1, 2) ||
 			 	  is_equal(SerialBuffer, HDLC_FLAGS2, 2) ||
 			  	  	is_equal(SerialBuffer, HDLC_FLAGS3, 2) ) )

@@ -28,7 +28,7 @@ void PCInterface()
 	}
 	
 	// Wait to receive 6 characters
-	if(rx_idx_in >= 6) 
+	if(rx_eusart_count() >= 6) 
 	{
 	  	byte  	slot;
 		byte 	type;

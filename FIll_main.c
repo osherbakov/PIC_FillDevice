@@ -203,8 +203,11 @@ static void  PinsToDefault(void)
 	disable_tx_hqii();
 	close_eusart();
 	set_pin_f_as_io();
-	// set_pin_a_as_power(); // Remove ground from pin A
 	set_pin_a_as_gnd();		//  Set GND on Pin A
+	ANSEL_PIN_B = 0;
+	ANSEL_PIN_C = 0;
+	ANSEL_PIN_D = 0;
+	ANSEL_PIN_E = 0;
 	TRIS_PIN_B = INPUT;
 	TRIS_PIN_C = INPUT;
 	TRIS_PIN_D = INPUT;
@@ -362,6 +365,10 @@ void main()
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
           			// Set all pins as inputs
+					ANSEL_PIN_B = 0;
+					ANSEL_PIN_C = 0;
+					ANSEL_PIN_D = 0;
+					ANSEL_PIN_E = 0;
 					PIN_B	   = 1;
 					PIN_C	   = 1;
 					PIN_D	   = 1;
@@ -370,6 +377,7 @@ void main()
 	  				TRIS_PIN_C = INPUT;
 				  	TRIS_PIN_D = INPUT;
 	  				TRIS_PIN_E = INPUT;
+
   					WPUB_PIN_B = 1;
   					WPUB_PIN_E = 1;
 					DelayMs(100);
