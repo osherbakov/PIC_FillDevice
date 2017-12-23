@@ -313,17 +313,15 @@ void process_dagr_symbol(byte new_symbol)
 	{
 	case INIT:
 		process_dagr_init(I_SCAN_BUFF_BOX);
-tx_eusart_async((byte *)"0", 1);
 		break;
 
 	case I_SCAN_BUFF_BOX:
 		if((command == BUFF_BOX_STATUS) && (flags & REQD)){
-			SendDAGRACK(command, (RCVD | ACKD) );						// Flag = 0x8A00
+  			set_led_off();													// Set LED off
+			SendDAGRACK(command, (RCVD | ACKD) );							// Flag = 0x8A00
 			SendDAGRCmd(LOCK_KBD_COMMAND, REQD, &DisableKbdCmd[0], 0x1F); 	// Flag = 0x9000
-			dagr_state = I_RESET_SETUP;
-  			set_led_off();						// Set LED off
 			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
-tx_eusart_async((byte *)"1", 1);
+			dagr_state = I_RESET_SETUP;
 		}
 		break;
 
@@ -335,8 +333,8 @@ tx_eusart_async((byte *)"1", 1);
 			SendDAGRCmd(SETUP_COMMAND, (REQD), &SetupDAGRCmd[0], 0x17 );	// Flag = 0x9000
 			SendDAGRCmd(STATUS_MSG, (REQD | CONN), 0, 0 );					// Flag = 0x9040
 			SendDAGRCmd(LOCK_KBD_COMMAND, (REQD), &EnableKbdCmd[0], 0x16); 	// Flag = 0x9000
+			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
 			dagr_state = I_ENABLE_KBD;
-tx_eusart_async((byte *)"2", 1);
 		}
 		break;
 
@@ -347,27 +345,41 @@ tx_eusart_async((byte *)"2", 1);
 		if((command == STATUS_MSG) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		if((command == LOCK_KBD_COMMAND) && (flags & REQD)) {
 			SendDAGRACK(command, (RCVD | ACKD));
-			dagr_state = I_COLLECT_TIME_TFR;  		// Check if there are 5101 Messages
 			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
-tx_eusart_async((byte *)"3", 1);
+			dagr_state = I_COLLECT_TIME_TFR;  		// Check if there are 5101 Messages
 		}
 		break;
 
 	case I_COLLECT_TIME_TFR:
 		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		if((command == TIME_TRANSFER_MSG) && (flags & RRDY)) {
-			
-			dagr_state = I_COLLECT_STATUS;			// Check if there are 5040 Messages
+		
+			// Extract the Time info from the last 3 words of the message
+			pBytes = (byte *) &dagr_time;
+			pData = data_buffer;
+
+			*pBytes++ = pData[4 * 2 + 3];			// Seconds
+			*pBytes++ = pData[4 * 2 + 0];			// Minutes
+			*pBytes++ = pData[4 * 2 + 1];			// Hours
 			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
-tx_eusart_async((byte *)"4", 1);
+			dagr_state = I_COLLECT_STATUS;			// Check if there are 5040 Messages
 		}
 		break;
 
 	case I_COLLECT_STATUS:
 		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		if((command == STATUS_MSG) && (flags & RRDY)) {
+			// Extract the Time and Date info from the last specified words of the message
+			pBytes = (byte *) &dagr_time;
+			*pBytes++ = BinToBCD(GetDAGRWord(22));		// Seconds
+			*pBytes++ = BinToBCD(GetDAGRWord(21));		// Minutes
+			*pBytes = BinToBCD(GetDAGRWord(20));		// Hours
+
+			pBytes = (byte *) &dagr_date;
+			*pBytes++ = BinToBCD(GetDAGRWord(26));		// Year
+			*pBytes++ = BinToBCD(GetDAGRWord(25));		// Month
+			*pBytes = BinToBCD(GetDAGRWord(24));		// Day
 			dagr_state = I_DONE;				// All messages are here - report success
-tx_eusart_async((byte *)"5", 1);
 		}
 		break;
 		
@@ -387,7 +399,6 @@ tx_eusart_async((byte *)"5", 1);
 			*pBytes++ = pData[4 * 2 + 0];			// Minutes
 			*pBytes++ = pData[4 * 2 + 1];			// Hours
 			dagr_state = COLLECT_TIME_DONE;
-tx_eusart_async((byte *) &dagr_time, 3);
 		}
 		break;
 
@@ -409,10 +420,7 @@ tx_eusart_async((byte *) &dagr_time, 3);
 			*pBytes++ = BinToBCD(GetDAGRWord(26));		// Year
 			*pBytes++ = BinToBCD(GetDAGRWord(25));		// Month
 			*pBytes = BinToBCD(GetDAGRWord(24));		// Day
-
 			dagr_state = COLLECT_STATUS_DONE;
-tx_eusart_async((byte *) &dagr_time, 3);
-tx_eusart_async((byte *) &dagr_date, 3);
 		}
 		break;
 

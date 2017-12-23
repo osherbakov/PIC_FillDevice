@@ -689,7 +689,6 @@ void main()
 				{
 					TestFillResult(ReceiveDAGRTime());
 				}
-#if 0
 				if( current_state == HQ_GPS_RX)
 				{
 					TestFillResult(ReceiveGPSTime());
@@ -699,7 +698,6 @@ void main()
 				{
 					TestFillResult(ReceiveHQTime());
 				}
-#endif
 				break;
 			//-----------HQII TX and RX--------------	
 			//********************************************
