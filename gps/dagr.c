@@ -169,24 +169,25 @@ static	void CalculateWord(byte symbol)
 				}	 
 			}	  
 		}else {		// Data block that follows valid Header
-			pBytes = data_buffer;
-			pBytes[word_counter++] = curr_word;
+			pWords = (unsigned int *)data_buffer;
+			pWords[word_counter] = curr_word;
 			// Here is the checksum after last word - Check for data validity
 			if( word_counter == num_words ) {
 				if(checksum == 0) {
 					valid_data = 1;
 				}	 
 				valid_start = 0;	// Start searching for the packet again
-			}		
+			}
+			word_counter++;		
 		}	
 	}
 	byte_counter++;
 }
 
-static  unsigned int CalculateDAGRChecksum(byte *pData, unsigned char nWords)
+static  unsigned int CalculateDAGRChecksum(byte *pBuffer, unsigned char nWords)
 {
 	int cs = 0;
-	pWords = (unsigned int *) pData;
+	pWords = (unsigned int *) pBuffer;
 	while(nWords--) {
 		cs += *pWords++;
 	}
@@ -266,8 +267,8 @@ static byte BinToBCD(byte data_bin) {
 static	int	GetDAGRWord(byte WordNumber)
 {
 	idx = (WordNumber - 1) * 2;	// Words in DAGR world are numbered from 1
-	pBytes = data_buffer;
-	pWords = (unsigned int *) &pBytes[idx];		
+	pData = data_buffer;
+	pWords = (unsigned int *) &pData[idx];		
 	return *pWords;
 }
 
