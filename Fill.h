@@ -64,7 +64,7 @@ typedef enum
 
 
 // The one big buffer used by every application
-extern unsigned char  RxTx_buff[512];
+extern unsigned char  RxTx_buff[FILL_MAX_SIZE];
 
 
 // The proper delays to generate 8kHz

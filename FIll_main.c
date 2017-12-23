@@ -230,12 +230,17 @@ static void bump_idle_counter(void)
   	INTCONbits.GIE = prev;
 }
 
+
+extern char TestDAGRDecode(void);
+
 void main()
 {
 	char  result;
   	byte  fill_type;
   	char  allow_type45_fill;
   
+//	TestDAGRDecode();
+
 	setup_start_io();
   	PinsToDefault();	
 
@@ -682,6 +687,11 @@ void main()
 			case HQ_GPS_RX:
 				if( current_state == HQ_GPS_RX)
 				{
+					TestFillResult(ReceiveDAGRTime());
+				}
+#if 0
+				if( current_state == HQ_GPS_RX)
+				{
 					TestFillResult(ReceiveGPSTime());
 				}
 				// State may change after call to the ReceiveGPSTime() and ReceiveHQTime()
@@ -689,6 +699,7 @@ void main()
 				{
 					TestFillResult(ReceiveHQTime());
 				}
+#endif
 				break;
 			//-----------HQII TX and RX--------------	
 			//********************************************

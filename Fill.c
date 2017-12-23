@@ -26,10 +26,11 @@ static const byte KeyOKMsg[] 		= "Key is set\n\0";
 static const byte KeyErasedMsg[] 	= "Key is erased\n\0";
 static const byte KeyGetMsg[] 		= "/Key\0";
 
+static byte	*p_buffer;		// Dedicated pointer to access large buffers
 void GetCurrentDayTime()
 {
   byte  month, weekday;
-  byte	*p_buffer = &data_cell[0]; 
+  p_buffer = data_cell; 
   
 	tx_eusart_str(TimeGetMsg);
 	tx_eusart_flush();
@@ -77,7 +78,9 @@ void GetCurrentDayTime()
   *p_buffer++ = '0' + (rtc_date.JulianDayL & 0x0F);
   *p_buffer++ = '\n';
   *p_buffer++ = 0x00;
-   tx_eusart_str(&data_cell[0]);
+	
+   p_buffer = data_cell; 
+   tx_eusart_str(p_buffer);
    tx_eusart_flush();
 }  
 
@@ -129,16 +132,17 @@ void  FillTODData()
 
 void  ExtractTODData()
 {
-	rtc_date.Century	= data_cell[2];
-	rtc_date.Year		= data_cell[3];
-	rtc_date.Month		= data_cell[4];
-	rtc_date.Day		= data_cell[5];
-	rtc_date.JulianDayH = data_cell[6];
-	rtc_date.JulianDayL = data_cell[7];
-	rtc_date.Hours		= data_cell[8];
-	rtc_date.Minutes	= data_cell[9];
-	rtc_date.Seconds	= data_cell[10];
-	rtc_date.MilliSeconds10	= (data_cell[11] >> 4) * 10;
+    p_buffer = data_cell; 
+	rtc_date.Century	= p_buffer[2];
+	rtc_date.Year		= p_buffer[3];
+	rtc_date.Month		= p_buffer[4];
+	rtc_date.Day		= p_buffer[5];
+	rtc_date.JulianDayH = p_buffer[6];
+	rtc_date.JulianDayL = p_buffer[7];
+	rtc_date.Hours		= p_buffer[8];
+	rtc_date.Minutes	= p_buffer[9];
+	rtc_date.Seconds	= p_buffer[10];
+	rtc_date.MilliSeconds10	= (p_buffer[11] >> 4) * 10;
 	CalculateWeekDay();
 }
 
@@ -255,7 +259,7 @@ static char  ExtractYear(byte *p_buff, byte n_count)
 void SetCurrentDayTime()
 {
 	byte byte_cnt;
-	byte	*p_buffer = &data_cell[0];
+	byte	*p_buffer = data_cell;
 	
 	byte_cnt = rx_eusart_line(p_buffer, FILL_MAX_SIZE, 30*1000);
   	if( (byte_cnt > 0) && 
@@ -296,26 +300,26 @@ void GetPCKey(byte slot)
 	byte	numBytes;
 	byte	fillType;
 	byte	Data;
-	byte 	*tmp = &data_cell[0];
 
+	p_buffer = data_cell;
 	slot = ASCIIToHex(slot);
 
 	tx_eusart_str(KeyGetMsg);
 	tx_eusart_flush();
-	tmp[0] = HexToASCII[slot];
-	tmp[1] = '=';
-	tmp[2] = '\n';
-	tx_eusart_async(&tmp[0], 3);
+	p_buffer[0] = HexToASCII[slot];
+	p_buffer[1] = '=';
+	p_buffer[2] = '\n';
+	tx_eusart_async(p_buffer, 3);
 	tx_eusart_flush();
 
   	base_address = get_eeprom_address(slot);
 	numRecords = byte_read(base_address++); if(numRecords == 0xFF) numRecords = 0;
 	if(numRecords > 0) {
 		fillType = byte_read(base_address++);
-		tmp[0] = HexToASCII[(fillType>>4) & 0x0F];
-		tmp[1] = HexToASCII[fillType & 0x0F];
-		tmp[2] = '\n';
-		tx_eusart_async(&tmp[0], 3);
+		p_buffer[0] = HexToASCII[(fillType>>4) & 0x0F];
+		p_buffer[1] = HexToASCII[fillType & 0x0F];
+		p_buffer[2] = '\n';
+		tx_eusart_async(p_buffer, 3);
    		tx_eusart_flush();
 	}
 
@@ -324,27 +328,27 @@ void GetPCKey(byte slot)
 		numBytes = byte_read(base_address++);
 		while(numBytes > 0) {
 			Data = byte_read(base_address++);
-			tmp[0] = ' ';
-			tmp[1] = HexToASCII[(Data>>4) & 0x0F];
-			tmp[2] = HexToASCII[Data & 0x0F];
-			tx_eusart_async(&tmp[0], 3);
+			p_buffer[0] = ' ';
+			p_buffer[1] = HexToASCII[(Data>>4) & 0x0F];
+			p_buffer[2] = HexToASCII[Data & 0x0F];
+			tx_eusart_async(p_buffer, 3);
     		tx_eusart_flush();
 			numBytes--;
 		}	
-		tmp[0] = '\n';
-		tx_eusart_async(&tmp[0], 1);
+		p_buffer[0] = '\n';
+		tx_eusart_async(p_buffer, 1);
     	tx_eusart_flush();
 		numRecords --;
 	}	
-	tmp[0] = '\n';
-	tx_eusart_async(&tmp[0], 1);
+	p_buffer[0] = '\n';
+	tx_eusart_async(p_buffer, 1);
    	tx_eusart_flush();
 }	
 
 void SetPCKey(byte slot)
 {
 	byte 					byte_cnt;
-	byte					*p_buffer = &data_cell[0];
+	byte					*p_buffer = data_cell;
 	byte					idx;
 	unsigned short long 	base_address;
 	unsigned short long 	current_address;

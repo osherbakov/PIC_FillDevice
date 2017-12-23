@@ -247,13 +247,13 @@ const char TestInput[] = {
 0x1B,0x00,0x2E,0x65,0x1B,0x00,0x25,0x91,0x19,0x20,0x1C,0xBE,0x1B,0x00,0x30,0x01,0x00,0x01,0x00,0x01
 };
 
-extern void process_dagr_init(void);
+extern void process_dagr_init(unsigned char initial_state);
 extern void process_dagr_symbol(unsigned char new_symbol);
 
 char TestDAGRDecode()
 {
 	int i;
-	process_dagr_init();
+	process_dagr_init(0);
 	for(i = 0; i < sizeof(TestInput); i++) {
 		process_dagr_symbol(TestInput[i]);
 	}	

@@ -9,7 +9,7 @@
 #include "spi_eeprom.h"
 
 #pragma udata big_buffer   // Select large section
-char Key_buff[256];
+static unsigned char Key_buff[256];
 #pragma udata
 
 enum MASTER_STATE
@@ -62,6 +62,7 @@ char GetMasterStatus()
 void TxDataBlock(void)
 {
 	unsigned int  byte_count;
+	unsigned char *pBuff = Key_buff;
 	
 	// Read the first byte of the block - it has the size
 	byte_count = ((unsigned int )byte_read(base_address++)) & 0x00FF;
@@ -69,9 +70,9 @@ void TxDataBlock(void)
 	if(byte_count == 0) byte_count = 0x0100;
 	
 	// Read the block of data
-	array_read(base_address, (unsigned char *)&Key_buff[0], byte_count);
+	array_read(base_address, pBuff, byte_count);
 	base_address += byte_count;
-  	TxIFrame(&Key_buff[0], byte_count);
+  	TxIFrame(pBuff, byte_count);
 }	
 
 void MasterProcessIdle()

@@ -12,9 +12,7 @@ enum {
 	INIT = 0,			// DAGR Init states
 	I_SCAN_BUFF_BOX,
 	I_DISABLE_KBD,
-	I_RESET_DAGR,
-	I_SETUP_DAGR,
-	I_CONNECT_MSG,
+	I_RESET_SETUP,
 	I_ENABLE_KBD,
 	I_COLLECT_STATUS,
 	I_COLLECT_TIME_TFR,
@@ -33,9 +31,9 @@ static byte word_counter;
 
 
 // The header data
-static int	command;
-static int	num_words;
-static int	flags;
+static unsigned int	command;
+static unsigned int	num_words;
+static unsigned int	flags;
 
 static unsigned short long dagr_time;
 static unsigned short long dagr_date;
@@ -60,26 +58,49 @@ static byte tx_buffer[256];
 #define	REQD				(0x1000)
 #define	RCVD				(0x0800)
 #define	ACKD				(0x0200)
-#define	CONNECT				(0x0040)
+#define	NACD				(0x0100)
+#define	CONN				(0x0040)
+#define	DISC				(0x0020)
 
-static byte DisableKbdCmd[] = {		// 0x1F words
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+static const byte DisableKbdCmd[] = {		// 0x1F words
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
-static byte EnableKbdCmd[] = {
+static const byte EnableKbdCmd[] = {		// 0x16 words
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x11,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
-static byte SetupDAGRCmd[] = {
+static const byte SetupDAGRCmd[] = {		// 0x17 words
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,	// Words 1 - 4
+	0x71,0x7E,	// Word 5 - Validity bits - 0x7E71,All ,excpt CodeType(6), MagVarType (13), NavMode(16),  
+	0x00,0x00,
+	0x00,0x00,	// Word 7 -  00  - Grid MGRS-Old
+	0x00,0x00,	// Word 8 -  00  - Distance Metric
+	0x00,0x00,	// Word 9 -  00  - Elev Metric
+	0x00,0x00,	// Word 10 - 00  - Elev Ref MSL
+	0x01,0x00,	// Word 11 - 00  - Angular deg
+	0x00,0x00,	// Word 12 - 00  - North Ref True
+	0x00,0x00,
+	0x00,0x00,
+	0x00,0x00,
+	0x00,0x00,
+	0x00,0x00,
+	0x00,0x00,
+	0x01,0x00,	// Word 19 - 01 - Error Units FOM
+	0x00,0x00,
+	0x03,0x00,	// Word 21 - 03 - Timer OFF
+	0x00,0x00,
+	0x01,0x00	// Word 23 - 01 COM1 PPS 1 PPS UTC
 };
 
-static byte ConnectDAGRCmd[] = {
-};
 
-static int curr_word;		// Current assembled word
-static int checksum;		// Running checksum
+static unsigned int curr_word;		// Current assembled word
+static unsigned int checksum;		// Running checksum
 
 static byte	valid_start;	// TRUE if proper byte sequence is detected
 static byte	valid_header;	// TRUE if valid Header with valid Checksum
@@ -87,118 +108,6 @@ static byte	valid_data;		// TRUE if valid Data with valid Checksum
 
 
 #define DATA_POLARITY_DAGR	(DATA_POLARITY_RXTX)	// PLGR/DAGR is connected without Level Shifter
-
-static 	byte 	*p;			// Pointer to get LSB or MSB of the word
-static	void CalculateWord(byte symb)
-{
-	// Place the received byte into a proper half of the word
-	p = (byte *) &curr_word;
-	if(byte_counter & 0x01) {
-		p[1] = symb;
-	}else {
-		p[0] = symb;
-	}	
-
-	// Process words differently depending on where they are - in header or data block	
-	if(byte_counter & 0x01) {
-		checksum += curr_word;
-		if(valid_header == 0) {		// Header block
-			if(word_counter == 0 ) 		{ command = curr_word; } 	// First word is command
-			else if(word_counter == 1 ) { num_words = curr_word; }	// Second - number of data words that follow
-			else if(word_counter == 2 ) { flags = curr_word; }		// Third - Flag (ACK, REQ, etc)
-			else if(word_counter == 3 ) {							// Fourth - Checksum
-				// Last word in the header - check for checksum
-				if(checksum != 0) {
-					 valid_start = 0;	// Start searching for the packet again
-				}else {
-					valid_header = 1;	// Mark as valid Header received
-					word_counter = -1;	// It will be incremented later on
-					checksum = 0;		// For Data block the Checksum initial value is 0x0000
-					// Check if this is a "header-only" message
-					if(num_words == 0) valid_data = 1;
-				}	 
-			}	  
-		}else {		// Data block that follows valid Header
-			data_buffer[word_counter] = curr_word;
-			// Here is the checksum after last word - Check for data validity
-			if( word_counter == num_words ) {
-				if(checksum != 0) {
-					valid_start = 0;	// Start searching for the packet again
-				}else {
-					valid_data = 1;
-				}	 
-			}		
-		}	
-		word_counter++;
-	}
-	byte_counter++;
-}
-
-static	int 	*pWords;
-static  void CalculateDAGRChecksum(byte *pData, unsigned char nWords)
-{
-	int	checksum = 0;
-	pWords = (int *) pData;
-	while(nWords--) {
-		checksum += *pWords++;
-	}
-	*pWords = -checksum;
-}	
-
-// Send ACK for the specified command
-static  void SendDAGRACK(int Command, int Flags)
-{
-	tx_buffer[0] = 	DEL;
-	tx_buffer[1] = 	SOH;
-	tx_buffer[2] = 	Command & 0x00FF;
-	tx_buffer[3] = 	(Command >> 8) & 0x00FF;
-	tx_buffer[4] = 	0;		// No data
-	tx_buffer[5] = 	0;		//		follows...
-	tx_buffer[6] = 	Flags & 0x00FF;
-	tx_buffer[7] = 	(Flags >> 8) & 0x00FF;
-	CalculateDAGRChecksum(&tx_buffer[0], 4)
-	tx_eusart_flush();
-	DelayMs(12);
-	tx_eusart_async(tx_buffer, 4 * 2 + 2);
-}
-
-// Send the Command 
-static  void SendDAGRCmd(int Command, int Flags, byte *pData, byte nWords)
-{
-	tx_buffer[0] = 	DEL;
-	tx_buffer[1] = 	SOH;
-	tx_buffer[2] = 	Command & 0x00FF;
-	tx_buffer[3] = 	(Command >> 8) & 0x00FF;
-	tx_buffer[4] = 	nWords;		// Number of words
-	tx_buffer[5] = 	0;			//		to follow...
-	tx_buffer[6] = 	Flags & 0x00FF;
-	tx_buffer[7] = 	(Flags >> 8) & 0x00FF;
-	CalculateDAGRChecksum(&tx_buffer[0], 4);
-	if(nWords) {
-		memcpy((void *)tx_buffer[10],(void *) pData,  nWords * 2);
-		CalculateDAGRChecksum(&tx_buffer[10], nWords);
-		nWords++;
-	}
-	tx_eusart_flush();
-	DelayMs(12);
-	tx_eusart_async(tx_buffer, 4 * 2 + 2 + nWords * 2);
-}
-	
-static void  ExtractDAGRDate(void)
-{
-	p = (byte *) &dagr_time;
-	rtc_date.Seconds	= *p++;
-	rtc_date.Minutes	= *p++;
-	rtc_date.Hours		= *p++;
-
-	p = (byte *) &dagr_date;
-	rtc_date.Century	= 0x20;
-	rtc_date.Year		= *p++;
-	rtc_date.Month		= *p++;
-	rtc_date.Day		= *p++;
-  	CalculateJulianDay();
-  	CalculateWeekDay();
-}
 
 static byte	prev_symbol;
 static void FindMessageStart(byte new_symbol)
@@ -214,24 +123,181 @@ static void FindMessageStart(byte new_symbol)
 	prev_symbol = new_symbol;
 }	
 
-void process_dagr_init(void)
+static 	byte 			*pBytes;			// Pointer to the individual bytes of the word
+static 	byte 			*pData;				// Pointer to the individual bytes of the word
+static	unsigned int 	*pWords;			// Pointer to the words
+
+static	void CalculateWord(byte symbol)
+{
+	// Make sure that the packet starts with proper sequence
+	// If no start is detected - do not proceed any further
+	if(valid_start == 0) {
+		FindMessageStart(symbol);
+		return;
+	}
+
+	// The valid start sequence was detected - now pack all received data in words and process them
+	// Place the received byte into a proper half of the word
+	pBytes = (byte *) &curr_word;
+	if(byte_counter & 0x01) {
+		pBytes[1] = symbol;
+	}else {
+		pBytes[0] = symbol;
+	}	
+
+	// Process words differently depending on where they are - in the header or in the data block	
+	if(byte_counter & 0x01) {
+		checksum += curr_word;
+		if(valid_header == 0) {		// Header block
+			word_counter++;
+			if(word_counter == 1 ) 		{ command = curr_word; } 	// First word is command
+			else if(word_counter == 2 ) { num_words = curr_word; }	// Second - number of data words that follow
+			else if(word_counter == 3 ) { flags = curr_word; }		// Third - Flag (ACK, REQ, etc)
+			else if(word_counter == 4 ) {							// Fourth - Checksum
+				// Last word in the header - check for checksum
+				if(checksum != 0) {
+					 valid_start = 0;	// Start searching for the packet again
+				}else {
+					// Check if this is a "header-only" message
+					if(!num_words )  {
+						valid_data = 1;
+						valid_start = 0;	// Start searching for the packet again
+					}
+					valid_header = 1;	// Mark as valid Header received
+					word_counter = 0;	// It will be incremented later on
+					checksum = 0;		// For Data block the Checksum initial value is 0x0000
+				}	 
+			}	  
+		}else {		// Data block that follows valid Header
+			pBytes = data_buffer;
+			pBytes[word_counter++] = curr_word;
+			// Here is the checksum after last word - Check for data validity
+			if( word_counter == num_words ) {
+				if(checksum == 0) {
+					valid_data = 1;
+				}	 
+				valid_start = 0;	// Start searching for the packet again
+			}		
+		}	
+	}
+	byte_counter++;
+}
+
+static  unsigned int CalculateDAGRChecksum(byte *pData, unsigned char nWords)
+{
+	int cs = 0;
+	pWords = (unsigned int *) pData;
+	while(nWords--) {
+		cs += *pWords++;
+	}
+	return -cs;
+}	
+
+// Send ACK for the specified command
+static  void SendDAGRACK(int Command, int Flags)
+{
+	Flags |= RRDY;
+
+	tx_eusart_flush();	// Make sure that the data is out before placing anything else in the buffer
+
+	pData = tx_buffer;
+	pData[0] = 	DEL;
+	pData[1] = 	SOH;
+	pData[2] = 	Command;
+	pData[3] = 	Command >> 8;
+	pData[4] = 	0;		// No data
+	pData[5] = 	0;		//		follows...
+	pData[6] = 	Flags;
+	pData[7] = 	Flags >> 8;
+	checksum = CalculateDAGRChecksum(pData, 4);
+	pData[8] = 	checksum;
+	pData[9] = 	checksum >> 8;
+
+	DelayMs(12);
+	tx_eusart_async(pData, 4*2 + 2);
+}
+
+// Send the Command 
+static byte idx;
+static  void SendDAGRCmd(int Command, int Flags, const byte *pCommandData, byte nWords)
+{
+	Flags |= RRDY;
+
+	tx_eusart_flush();	// Make sure that the data is out before placing anything else in the buffer
+
+	pData = tx_buffer;
+	pData[0] = 	DEL;
+	pData[1] = 	SOH;
+	pData[2] = 	Command;
+	pData[3] = 	Command >> 8;
+	pData[4] = 	nWords;		// Number of words
+	pData[5] = 	0;			//		to follow...
+	pData[6] = 	Flags;
+	pData[7] = 	Flags >> 8;
+	checksum = CalculateDAGRChecksum(pData, 4);
+	pData[8] = 	checksum;
+	pData[9] = 	checksum >> 8;
+	if(nWords) {
+		for(idx = 0; idx < nWords * 2; idx++) {
+			pData[10 + idx] = *pCommandData++;
+		}
+		checksum = CalculateDAGRChecksum(&pData[10], nWords);
+		pData[10 + nWords*2] = 	checksum;
+		pData[10 + nWords*2 + 1] = 	checksum >> 8;
+
+		nWords++;		// Extra word is the calculated checksum
+	}
+	DelayMs(12);
+	tx_eusart_async(pData, (4*2 + 2) + nWords*2);
+}
+
+
+// Function to convert HEX number in the range of 0-99 to the BCD
+static byte BinToBCD(byte data_bin) {
+	byte data_bcd = 0;
+	while(data_bin > 10) {
+		data_bcd += 0x10;
+		data_bin -= 10;
+	}
+	return (data_bcd + data_bin);
+}	
+
+// Get the specific DAGR word (DAGR Words are numbered starting from 1 !!!)
+static	int	GetDAGRWord(byte WordNumber)
+{
+	idx = (WordNumber - 1) * 2;	// Words in DAGR world are numbered from 1
+	pBytes = data_buffer;
+	pWords = (unsigned int *) &pBytes[idx];		
+	return *pWords;
+}
+
+static void  ExtractDAGRDate(void)
+{
+	pBytes = (byte *) 	&dagr_time;
+	rtc_date.Seconds	= *pBytes++;
+	rtc_date.Minutes	= *pBytes++;
+	rtc_date.Hours		= *pBytes++;
+
+	pBytes = (byte *) 	&dagr_date;
+	rtc_date.Century	= 0x20;
+	rtc_date.Year		= *pBytes++;
+	rtc_date.Month		= *pBytes++;
+	rtc_date.Day		= *pBytes++;
+  	CalculateJulianDay();
+  	CalculateWeekDay();
+}
+
+void process_dagr_init(byte initial_state)
 {
 	valid_start = 0;
 	valid_header = 0;
 	valid_data = 0;
 	prev_symbol = 0;
-	dagr_state = I_SCAN_BUFF_BOX;
+	dagr_state = initial_state;
 }	
 
 void process_dagr_symbol(byte new_symbol)
 {
-	// Make sure that the packet starts with proper sequence
-	// If no start is detected - do not proceed further
-	if(valid_start == 0) {
-		FindMessageStart(new_symbol);
-		return;
-	}
-	
 	// The valid packet start sequence was detected
 	// Process every symbol until we collect a valid message (Header+Data).
 	// In case of "header-only" message all info will be in 
@@ -244,76 +310,121 @@ void process_dagr_symbol(byte new_symbol)
 
 	switch(dagr_state)
 	{
-	case INIT:	
+	case INIT:
+		process_dagr_init(I_SCAN_BUFF_BOX);
+tx_eusart_async((byte *)"0", 1);
 		break;
 
 	case I_SCAN_BUFF_BOX:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))){
-			SendDAGRACK(BUFF_BOX_STATUS, (RRDY | RCVD | ACKD) );
-			SendDAGRCmd(LOCK_KBD_COMMAND, (RRDY | REQD), DisableKbdCmd, 0x1F);
-			dagr_state = I_DISABLE_KBD;
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)){
+			SendDAGRACK(command, (RCVD | ACKD) );						// Flag = 0x8A00
+			SendDAGRCmd(LOCK_KBD_COMMAND, REQD, &DisableKbdCmd[0], 0x1F); 	// Flag = 0x9000
+			dagr_state = I_RESET_SETUP;
+  			set_led_off();						// Set LED off
+			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
+tx_eusart_async((byte *)"1", 1);
 		}
 		break;
 
-	case I_DISABLE_KBD:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
-		if((command == LOCK_KBD_COMMAND) && (flags & (REQD | ACKD)) { 
-			SendDAGRACK(LOCK_KBD_COMMAND, (RRDY | RCVD | ACKD);
-			SendDAGRCmd(RESET_COMMAND, (RRDY | REQD),  ;
-			dagr_state = I_RESET_DAGR;
+	case I_RESET_SETUP:
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == LOCK_KBD_COMMAND) && (flags & REQD)) { 
+			SendDAGRACK(command, (RCVD | ACKD));							// Flag = 0x8A00
+			SendDAGRCmd(RESET_COMMAND, (REQD | DISC), 0, 0 );				// Flag = 0x9020
+			SendDAGRCmd(SETUP_COMMAND, (REQD), &SetupDAGRCmd[0], 0x17 );	// Flag = 0x9000
+			SendDAGRCmd(STATUS_MSG, (REQD | CONN), 0, 0 );					// Flag = 0x9040
+			SendDAGRCmd(LOCK_KBD_COMMAND, (REQD), &EnableKbdCmd[0], 0x16); 	// Flag = 0x9000
+			dagr_state = I_ENABLE_KBD;
+tx_eusart_async((byte *)"2", 1);
 		}
-		break;
-
-	case I_RESET_DAGR:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
-		break;
-
-	case I_SETUP_DAGR:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
-		break;
-		
-	case I_CONNECT_MSG:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
 		break;
 
 	case I_ENABLE_KBD:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
-		break;
-
-	case I_COLLECT_STATUS:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == RESET_COMMAND) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == SETUP_COMMAND) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == STATUS_MSG) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == LOCK_KBD_COMMAND) && (flags & REQD)) {
+			SendDAGRACK(command, (RCVD | ACKD));
+			dagr_state = I_COLLECT_TIME_TFR;  		// Check if there are 5101 Messages
+			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
+tx_eusart_async((byte *)"3", 1);
+		}
 		break;
 
 	case I_COLLECT_TIME_TFR:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == TIME_TRANSFER_MSG) && (flags & RRDY)) {
+			
+			dagr_state = I_COLLECT_STATUS;			// Check if there are 5040 Messages
+			set_timeout(DAGR_PROCESS_TIMEOUT_MS);  	// Setup new 2 Seconds timeout
+tx_eusart_async((byte *)"4", 1);
+		}
+		break;
+
+	case I_COLLECT_STATUS:
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == STATUS_MSG) && (flags & RRDY)) {
+			dagr_state = I_DONE;				// All messages are here - report success
+tx_eusart_async((byte *)"5", 1);
+		}
 		break;
 		
 	case I_DONE:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		break;
 
 	// State to get the time 1PPS tick data
 	case COLLECT_TIME_TFR:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == TIME_TRANSFER_MSG) && (flags & RRDY)) {
+			// Extract the Time info from the last 3 words of the message
+			pBytes = (byte *) &dagr_time;
+			pData = data_buffer;
+
+			*pBytes++ = pData[4 * 2 + 3];			// Seconds
+			*pBytes++ = pData[4 * 2 + 0];			// Minutes
+			*pBytes++ = pData[4 * 2 + 1];			// Hours
+			dagr_state = COLLECT_TIME_DONE;
+tx_eusart_async((byte *) &dagr_time, 3);
+		}
 		break;
+
 	case COLLECT_TIME_DONE:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		break;
 
 	// State to get the full status, including time
 	case COLLECT_STATUS:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
+		if((command == STATUS_MSG) && (flags & RRDY)) {
+			// Extract the Time and Date info from the last specified words of the message
+			pBytes = (byte *) &dagr_time;
+			*pBytes++ = BinToBCD(GetDAGRWord(22));		// Seconds
+			*pBytes++ = BinToBCD(GetDAGRWord(21));		// Minutes
+			*pBytes = BinToBCD(GetDAGRWord(20));		// Hours
+
+			pBytes = (byte *) &dagr_date;
+			*pBytes++ = BinToBCD(GetDAGRWord(26));		// Year
+			*pBytes++ = BinToBCD(GetDAGRWord(25));		// Month
+			*pBytes = BinToBCD(GetDAGRWord(24));		// Day
+
+			dagr_state = COLLECT_STATUS_DONE;
+tx_eusart_async((byte *) &dagr_time, 3);
+tx_eusart_async((byte *) &dagr_date, 3);
+		}
 		break;
 
 	case COLLECT_STATUS_DONE:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		break;
 		
 	default:
-		if((command == BUFF_BOX_STATUS) && (flags == (RRDY | REQD))) SendDAGRACK(command, (RRDY | RCVD | ACKD));
+		if((command == BUFF_BOX_STATUS) && (flags & REQD)) SendDAGRACK(command, (RCVD | ACKD));
 		break;
 	}
-	valid_start = 0;
+	valid_data = 0;		// Done processing, start a new one..
+
 }
 
 static unsigned char ch;
@@ -322,14 +433,12 @@ static unsigned char *p_time;
 
 static char SetupDAGR(void)
 {
-	set_timeout(DAGR_DETECT_TIMEOUT_MS);  
-  	set_led_off();		// Set LED off
-
 	// Configure the EUSART module
   	open_eusart(BRREG_DAGR, DATA_POLARITY_DAGR);	
 
-	process_dagr_init();
-	dagr_state = I_SCAN_BUFF_BOX;
+	rx_eusart_async(&RxTx_buff[0], FILL_MAX_SIZE, DAGR_DETECT_TIMEOUT_MS);
+
+	process_dagr_init(INIT);
 	while(is_not_timeout())
 	{
 		if(rx_eusart_count() > 0) {
@@ -344,17 +453,15 @@ static char SetupDAGR(void)
 		}
 	}
   	close_eusart();
-	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
 static char GetDAGRTime(void)
 {
 	set_timeout(DAGR_PROCESS_TIMEOUT_MS);  
-  	set_led_off();		// Set LED off
+	set_led_off();		// Set LED off
 
-	process_dagr_init();
-	dagr_state = COLLECT_TIME_TFR;
+	process_dagr_init(COLLECT_TIME_TFR);
 	while(is_not_timeout())
 	{
 		if(rx_eusart_count() > 0) {
@@ -369,17 +476,15 @@ static char GetDAGRTime(void)
 		}
 	}
   	close_eusart();
-	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
 static char GetDAGRStatus(void)
 {
 	set_timeout(DAGR_PROCESS_TIMEOUT_MS);  
-  	set_led_off();		// Set LED off
+	set_led_off();		// Set LED off
 
-	process_dagr_init();
-	dagr_state = COLLECT_STATUS;
+	process_dagr_init(COLLECT_STATUS);
 	while(is_not_timeout())
 	{
 		if(rx_eusart_count() > 0) {
@@ -394,7 +499,6 @@ static char GetDAGRStatus(void)
 		}
 	}
   	close_eusart();
-	set_led_off();		// Set LED off
 	return ST_TIMEOUT;
 }
 
