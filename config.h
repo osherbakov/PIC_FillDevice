@@ -5,8 +5,14 @@
 #define	MHZ	*1
 #define XTAL_FREQ	16MHZ
 
+#ifndef MAX
 #define MAX(a,b)  ((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef MIN
 #define MIN(a,b)  ((a) < (b) ? (a) : (b))
+#endif
+
 #define _BV(bit)  (1 << (bit))
 #define NUM_ELEMS(a) (sizeof((a))/sizeof((a)[0]))
 
@@ -38,36 +44,18 @@ typedef enum
 typedef enum
 {
 	OUTPUT = 0,
-	INPUT = 1
-} TRISTATE_MODE;
+	INPUT = 1,
+	INPUT_PULLUP = 2,
+	INPUT_PULLDOWN = 3,
+	INPUT_ANALOG = 4
+} PIN_MODE;
 
 
 // Pin definitions
 
 
-// Audio/FILL connector
-#define	PIN_B	PORTBbits.RB1
-#define	PIN_C	PORTCbits.RC6
-#define	PIN_D	PORTCbits.RC7
-#define	PIN_E	PORTBbits.RB2
-#define	PIN_F	PORTCbits.RC0
-
-#define	TRIS_PIN_B	TRISBbits.RB1
-#define	TRIS_PIN_C	TRISCbits.RC6
-#define	TRIS_PIN_D	TRISCbits.RC7
-#define	TRIS_PIN_E	TRISBbits.RB2
-#define	TRIS_PIN_F	TRISCbits.RC0
-
-#define	ANSEL_PIN_B	ANSELBbits.ANSB1
-#define	ANSEL_PIN_C	ANSELCbits.ANSC6
-#define	ANSEL_PIN_D	ANSELCbits.ANSC7
-#define	ANSEL_PIN_E	ANSELBbits.ANSB2
-
-
-#define	WPUB_PIN_B	WPUBbits.WPUB1
-#define	WPUB_PIN_E	WPUBbits.WPUB2
-
 // Key selection switch
+/* 
 #define	S1	RD0	
 #define	S2	RD1
 #define	S3	RD2
@@ -84,6 +72,7 @@ typedef enum
 #define	S14	RA5
 #define	S15 RA6
 #define	S16	RA7
+*/
 
 // Rotary switch ports - the position is indicated
 // by the grounding of the pin.
@@ -94,81 +83,49 @@ typedef enum
 #define TRIS_S9_16 	TRISA
 
 
-// LED control Ports and pins
-#define	LEDP      	PORTEbits.RE1
-#define	TRIS_LEDP	TRISEbits.RE1
-#define	LAT_LEDP	LATEbits.LATE1
-#define	ANSEL_LEDP	ANSELEbits.ANSE1
-
-
-// Zeroizing switch
-#define	ZBR			PORTEbits.RE2
-#define	TRIS_ZBR	TRISEbits.RE2
-#define	ANSEL_ZBR	ANSELEbits.ANSE2
-
-
-// Button press
-#define	BTN			PORTBbits.RB0
-#define	TRIS_BTN	TRISBbits.RB0
-#define	ANSEL_BTN	ANSELBbits.ANSB0
-#define	WPUB_BTN	WPUBbits.WPUB0
-
-// PIN_A_PWR is used to control the Pin A coonection
-#define	PIN_A_PWR		PORTCbits.RC1
-#define	TRIS_PIN_A_PWR	TRISCbits.RC1
-#define	ANSEL_PIN_A_PWR	ANSELCbits.ANSC1
-
-// PIN_F_PWR is used to control the Pin F power
-#define	PIN_F_PWR	PORTEbits.RE0
-#define	TRIS_PIN_F_PWR	TRISEbits.RE0
-#define	ANSEL_PIN_F_PWR	ANSELEbits.ANSE0
-
 // Software I2C bit-banging
-#define  DATA_LOW()   PORTBbits.RB4 = 0; TRISBbits.TRISB4 = 0 	// define macro for data pin output
-#define  DATA_HI()    TRISBbits.TRISB4 = 1                    	// define macro for data pin input
-#define  DATA_PIN()   PORTBbits.RB4     						// define macro for data pin reading
+#define  I2C_DATA_LOW()   do{PORTBbits.RB4 = 0; TRISBbits.TRISB4 = 0;}while(0) 	// define macro for data pin output
+#define  I2C_DATA_HI()    do{TRISBbits.TRISB4 = 1;}while(0)                   	// define macro for data pin input
+#define  I2C_DATA_PIN()   PORTBbits.RB4     									// define macro for data pin reading
 
-#define  CLOCK_LOW()  PORTBbits.RB3 = 0; TRISBbits.TRISB3 = 0  	// define macro for clock pin output
-#define  CLOCK_HI()   TRISBbits.TRISB3 = 1                     	// define macro for clock pin input
-#define  SCLK_PIN()   PORTBbits.RB3      						// define macro for clock pin reading
+#define  I2C_CLOCK_LOW()  do{PORTBbits.RB3 = 0; TRISBbits.TRISB3 = 0;}while(0)  // define macro for clock pin output
+#define  I2C_CLOCK_HI()   do{TRISBbits.TRISB3 = 1;}while(0)                     // define macro for clock pin input
+#define  I2C_SCLK_PIN()   PORTBbits.RB3			      							// define macro for clock pin reading
 
 // RTC 1 PULSE_PER_SEC pin
 // Will generate Interrupt On Change (IOC)
-#define  PIN_1PPS		PORTBbits.RB5		
+#define  DATA_PIN_1PPS	PORTBbits.RB5		
 #define  TRIS_1PPS		TRISBbits.RB5		
 #define  ANSEL_1PPS		ANSELBbits.ANSB5		
 #define  IOC_1PPS		IOCBbits.IOCB5
 
 
 // External SPI memory
-#define	SPI_CS			PORTCbits.RC2
-#define	SPI_SCK			PORTCbits.RC3
-#define	SPI_SDI			PORTCbits.RC4
-#define	SPI_SDO			PORTCbits.RC5
+#define	DATA_SPI_CS		PORTCbits.RC2
 #define	TRIS_SPI_CS		TRISCbits.RC2
-#define	TRIS_SPI_SCK	TRISCbits.RC3
-#define	TRIS_SPI_SDI	TRISCbits.RC4
-#define	TRIS_SPI_SDO	TRISCbits.RC5
 #define	ANSEL_SPI_CS	ANSELCbits.ANSC2
+
+#define	DATA_SPI_SCK	PORTCbits.RC3
+#define	TRIS_SPI_SCK	TRISCbits.RC3
 #define	ANSEL_SPI_SCK	ANSELCbits.ANSC3
+
+#define	DATA_SPI_SDI	PORTCbits.RC4
+#define	TRIS_SPI_SDI	TRISCbits.RC4
 #define	ANSEL_SPI_SDI	ANSELCbits.ANSC4
+
+#define	DATA_SPI_SDO	PORTCbits.RC5
+#define	TRIS_SPI_SDO	TRISCbits.RC5
 #define	ANSEL_SPI_SDO	ANSELCbits.ANSC5
 
 
 // NMEA Serial GPS Data
-#define	GPS_DATA		PIN_D
-#define	TRIS_GPS_DATA	TRIS_PIN_D
-#define	ANSEL_GPS_DATA	ANSEL_PIN_D
+#define	GPS_DATA		(PIN_D)
 
 // NMEA 1PPS GPS pulse
-#define	GPS_1PPS		PIN_E
-#define	TRIS_GPS_1PPS	TRIS_PIN_E
-#define	ANSEL_GPS_1PPS	ANSEL_PIN_E
+#define	GPS_1PPS		(PIN_E)
 
 // Have quick pin
-#define	HQ_PIN			PIN_B
-#define	TRIS_HQ_PIN		TRIS_PIN_B
-#define	ANSEL_HQ_PIN	ANSEL_PIN_B
+#define	HQ_PIN			(PIN_B)
 
 
 
@@ -178,49 +135,23 @@ typedef enum
 //  Here are assignments of the pins for MBITR
 // PIN_C - Input, PIN_D - Output
 #define	 TxMBITR		(PIN_D)
-#define	 TRIS_TxMBITR 	(TRIS_PIN_D)
-#define	 ANSEL_TxMBITR 	(ANSEL_PIN_D)
-
 #define	 RxMBITR		(PIN_C)
-#define	 TRIS_RxMBITR 	(TRIS_PIN_C)
-#define	 ANSEL_RxMBITR 	(ANSEL_PIN_C)
 
 // To communicate with PC the following pins are used:
 //  PIN_D - input, PIN_C - output
 #define	 TxPC			(PIN_C)
-#define	 TRIS_TxPC 		(TRIS_PIN_C)
-#define	 ANSEL_TxPC 	(ANSEL_PIN_C)
-
 #define	 RxPC			(PIN_D)
-#define	 TRIS_RxPC 		(TRIS_PIN_D)
-#define	 ANSEL_RxPC 	(ANSEL_PIN_D)
 
 // To communicate with another DTD the following pins are used:
 //  PIN_C - input, PIN_D - output
 #define	 TxDTD			(PIN_D)
-#define	 TRIS_TxDTD 	(TRIS_PIN_D)
-#define	 ANSEL_TxDTD 	(ANSEL_PIN_D)
-
 #define	 RxDTD			(PIN_C)
-#define	 TRIS_RxDTD 	(TRIS_PIN_C)
-#define	 ANSEL_RxDTD 	(ANSEL_PIN_C)
-
 
 
 // To communicate with DS-101 (RS-485) @ 64Kbd the following pins are used:
 //  Data+  PIN_B,  Data-  PIN_E
 #define	 Data_P			(PIN_B)
-#define	 TRIS_Data_P 	(TRIS_PIN_B)
-#define	 ANSEL_Data_P 	(ANSEL_PIN_B)
-#define	 WPUB_Data_P 	(WPUB_PIN_B)
-
 #define	 Data_N			(PIN_E)
-#define	 TRIS_Data_N 	(TRIS_PIN_E)
-#define	 ANSEL_Data_N 	(ANSEL_PIN_E)
-#define	 WPUB_Data_N 	(WPUB_PIN_E)
-
 #define	 WAKEUP			(PIN_C)
-#define	 TRIS_WAKEUP 	(TRIS_PIN_C)
-#define	 ANSEL_WAKEUP 	(ANSEL_PIN_C)
 
 #endif	// __CONFIG_H__

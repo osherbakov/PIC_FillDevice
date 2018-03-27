@@ -34,16 +34,11 @@ typedef enum
 #define SG_TIME_POS (15)	// T2 - SINCGARS time (DS-102)
 #define PC_POS 		(16)	// A - PC Connection via RS-232
 
-extern byte switch_pos;
-extern byte prev_switch_pos;
-
-extern byte power_pos;
-extern byte prev_power_pos;
 
 // Functions to get external controls states
 extern byte get_switch_state(void);	// 1-13,T1,T2,A 
-extern byte get_power_state(void);
-extern byte get_button_state(void);
+extern byte get_power_state(void);	// OFF, ON, ZERO
+extern byte get_button_state(void);	// OFF (up), ON (pressed)
 
 // Control PIN A connection - Ground or +6V
 // If pin A is GND, then all other pins are 0 - +5V
@@ -80,5 +75,11 @@ extern void disable_tx_hqii(void);
 extern void set_led_state(char on_time, char off_time);
 extern void set_led_on(void);
 extern void set_led_off(void);
+
+extern char pinRead(int pin);
+extern void pinWrite(int pin, int value);
+extern void pinMode(int pin, int mode);
+
+
 
 #endif	// __CONTROLS_H__

@@ -4,14 +4,10 @@
 #include "controls.h"
 #include "rtc.h"
 #include "serial.h"
-#include "clock.h"
 #include "gps.h"
 
 void high_isr (void);
 
-volatile unsigned char led_counter;
-volatile unsigned char led_on_time;
-volatile unsigned char led_off_time;
 volatile unsigned int seconds_counter;
 volatile RTC_date_t	rtc_date;
 
@@ -25,29 +21,6 @@ static byte hq_current_byte;
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
 #define DATA_FRAME_SIZE		(112/8)		// 112 bits (1of actual timing data
-
-//-------------------------------------------------
-//  LED support fucntions
-//------------------------------------------------
-void set_led_state(char on_time, char off_time)
-{
-	led_on_time = on_time;
-	led_off_time = off_time;
-	LEDP = led_on_time ? 1 : 0;	// Turn on/off LED
-	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
-}
-
-void set_led_on()
-{
-	led_counter = 0;
-	LEDP = 1;				// Turn on LED
-}
-
-void set_led_off()
-{
-	led_counter = 0;
-	LEDP = 0;				// Turn off LED
-}
 
 
 // At this location 0x08 there will be only jump to the ISR
@@ -167,8 +140,9 @@ void high_isr (void)
 		if(led_counter && (--led_counter == 0))
 		{
 			// Toggle the LED and it's state
-			led_counter = LAT_LEDP ? led_off_time : led_on_time;
-			LAT_LEDP = ~LAT_LEDP;
+			led_counter = LED_current_bit ? led_off_time : led_on_time;
+			LED_current_bit = ~LED_current_bit;
+			pinWrite(LEDP, LED_current_bit);
 		}
 		PIR1bits.TMR2IF = 0;	// Clear overflow flag and interrupt
 	}

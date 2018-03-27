@@ -34,14 +34,6 @@ static byte *p;			// Pointer to get LSB and MSB of the 24-bit word
 static const byte 	RMS_SNT[] = "GPRMC,";
 static byte  	symb_buffer[6];			// Buffer to keep the symbols
 
-byte is_equal(byte *p1, const byte *p2, byte n)
-{
-	while(n-- ) {
-		if( toupper(*p1++) != toupper(*p2++)) return 0;
-	}	
-	return 1;
-}
-
 static void  ExtractGPSDate(void)
 {
 	p = (byte *) &gps_time;
@@ -204,17 +196,15 @@ static char GetGPSTime(void)
 static char FindRisingEdge(void)
 {
 	// Config the 1PPS pin as input
-	ANSEL_GPS_1PPS = 0;
-	TRIS_GPS_1PPS = INPUT;
-	GPS_1PPS = 0;	
-
+	pinMode(GPS_1PPS, INPUT);
+	
 	set_timeout(GPS_DETECT_TIMEOUT_MS);  
 
 	while(is_not_timeout()){	
-		if(!GPS_1PPS) break;
+		if(!pinRead(GPS_1PPS)) break;
 	}
 	while(is_not_timeout()){	
-		if(GPS_1PPS) return ST_OK;
+		if(pinRead(GPS_1PPS)) return ST_OK;
 	}
 	return ST_TIMEOUT;
 }
@@ -257,15 +247,15 @@ char ReceiveGPSTime()
 
 	SetRTCDataPart1();		// Prepare for the RTC Clock set
 
-	while(GPS_1PPS);	// wait for LOW
-	while(!GPS_1PPS);	// wait for HIGH
+	while(pinRead(GPS_1PPS));	// wait for LOW
+	while(!pinRead(GPS_1PPS));	// wait for HIGH
 
 	//  7. Finally, set up the RTC clock - according to the spec,
 	//	the RTC chain is reset on ACK after writing to seconds register.
-	CLOCK_LOW();
-	DATA_HI();	
+	I2C_CLOCK_LOW();
+	I2C_DATA_HI();	
 	DelayI2C();
-	CLOCK_HI();
+	I2C_CLOCK_HI();
 	DelayI2C();
 
 	SetRTCDataPart2();

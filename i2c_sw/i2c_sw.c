@@ -15,11 +15,11 @@
 ********************************************************************/
 void SWStartI2C( void )
 {
-  DATA_HI();                        // release data pin to float high
+  I2C_DATA_HI();                        // release data pin to float high
   DelayI2C();                   // user may need to modify based on Fosc
-  CLOCK_HI();                       // release clock pin to float high
+  I2C_CLOCK_HI();                       // release clock pin to float high
   DelayI2C();                   // user may need to modify based on Fosc  
-  DATA_LOW();                       // set pin to output to drive low
+  I2C_DATA_LOW();                       // set pin to output to drive low
   DelayI2C();                   // user may need to modify based on Fosc
 }
 /********************************************************************
@@ -30,12 +30,12 @@ void SWStartI2C( void )
 ********************************************************************/
 void SWStopI2C( void )
 {
-  CLOCK_LOW();                      // set clock pin to output to drive low
-  DATA_LOW();                       // set data pin output to drive low
+  I2C_CLOCK_LOW();                      // set clock pin to output to drive low
+  I2C_DATA_LOW();                       // set data pin output to drive low
   DelayI2C();                   // user may need to modify based on Fosc
-  CLOCK_HI();                       // release clock pin to float high
+  I2C_CLOCK_HI();                       // release clock pin to float high
   DelayI2C();                   // user may need to modify based on Fosc
-  DATA_HI();                        // release data pin to float high
+  I2C_DATA_HI();                        // release data pin to float high
   Delay1TCY();                    // user may need to modify based on Fosc
   Delay1TCY();
 }
@@ -48,12 +48,12 @@ void SWStopI2C( void )
 ********************************************************************/
 void SWRestartI2C( void )
 {
-  CLOCK_LOW();                      // set clock pin to output to drive low
-  DATA_HI();                        // release data pin to float high
+  I2C_CLOCK_LOW();                      // set clock pin to output to drive low
+  I2C_DATA_HI();                        // release data pin to float high
   DelayI2C();                   // user may need to modify based on Fosc
-  CLOCK_HI();                       // release clock pin to float high
+  I2C_CLOCK_HI();                       // release clock pin to float high
   DelayI2C();                   // user may need to modify based on Fosc
-  DATA_LOW();                       // set data pin output to drive low
+  I2C_DATA_LOW();                       // set data pin output to drive low
   DelayI2C();                   // user may need to modify based on Fosc
 }
 
@@ -66,16 +66,16 @@ void SWRestartI2C( void )
 ********************************************************************/
 signed char SWAckI2C(char ack)
 {
-  CLOCK_LOW();                  // set clock pin to output to drive low
+  I2C_CLOCK_LOW();                  // set clock pin to output to drive low
   if ( ack ) {                	// initiate  ACK
-    DATA_HI();                  // release data line to float high 
+    I2C_DATA_HI();                  // release data line to float high 
   }else {                       // else initiate ACK condition
-    DATA_LOW();                 // make data pin output to drive low
+    I2C_DATA_LOW();                 // make data pin output to drive low
   }
   DelayI2C();                   // user may need to modify based on Fosc
-  CLOCK_HI();                  	// release clock line to float high 
+  I2C_CLOCK_HI();                  	// release clock line to float high 
   DelayI2C();                   // user may need to modify based on Fosc
-  ack = DATA_PIN();	  
+  ack = I2C_DATA_PIN();	  
   if ( ack ) {                 	// error if ack = 1, slave did not ack
     return ( STAT_NO_ACK  );  	// return with acknowledge error
   }else {
@@ -98,25 +98,25 @@ signed char SWWriteI2C( unsigned char data_out )
   I2C_BUFFER = data_out;
   BIT_COUNTER = 8;                // initialize bit counter
   
-  CLOCK_HI();						// Release the SCL line                         
+  I2C_CLOCK_HI();						// Release the SCL line                         
   do
   {
-    if ( !SCLK_PIN() )              // test if clock is low
+    if ( !I2C_SCLK_PIN() )              // test if clock is low
     {                          		// if it is then ..
 	    DelayI2C();				    // user may need to adjust timeout period
-	    if ( !SCLK_PIN() )          // if clock is still low after wait 
+	    if ( !I2C_SCLK_PIN() )          // if clock is still low after wait 
 	      return ( STAT_CLK_ERR );  // return with clock error
     }else {
-      	CLOCK_LOW();                // set clock pin output to drive low
+      	I2C_CLOCK_LOW();                // set clock pin output to drive low
       	if ( I2C_BUFFER & 0x80 )   	// if MSB set, transmit out logic 1
       	{
-       		DATA_HI();              // release data line to float high 
+       		I2C_DATA_HI();              // release data line to float high 
       	}else                      	// transmit out logic 0
       	{
-        	DATA_LOW();             // set data pin output to drive low 
+        	I2C_DATA_LOW();             // set data pin output to drive low 
       	}
      	DelayI2C();              	// user may need to modify based on Fosc
-     	CLOCK_HI();                 // release clock line to float high 
+     	I2C_CLOCK_HI();             // release clock line to float high 
      	DelayI2C();              	// user may need to modify based on Fosc
 
      	I2C_BUFFER <<= 1;
@@ -165,21 +165,21 @@ unsigned int SWReadI2C()
   BIT_COUNTER = 8;                // set bit count for byte 
   do
   {
-    CLOCK_LOW();                    // set clock pin output to drive low
-    DATA_HI();                      // release data line to float high
+    I2C_CLOCK_LOW();                    // set clock pin output to drive low
+    I2C_DATA_HI();                      // release data line to float high
     DelayI2C();                 	// user may need to modify based on Fosc
-    CLOCK_HI();                     // release clock line to float high
+    I2C_CLOCK_HI();                     // release clock line to float high
     Delay1TCY();                  	// user may need to modify based on Fosc
     Delay1TCY();
 
-    if ( !SCLK_PIN() ) {            // test for clock low
+    if ( !I2C_SCLK_PIN() ) {            // test for clock low
 	  	DelayI2C();					// user may need to adjust timeout period
-	  	if ( !SCLK_PIN() )              // if clock is still low after wait 
+	  	if ( !I2C_SCLK_PIN() )              // if clock is still low after wait 
 	    	return ( STAT_CLK_ERR);     // return with clock error
     }
 
     I2C_BUFFER <<= 1;             // shift composed byte by 1
-    if ( DATA_PIN() )               // is data line high
+    if ( I2C_DATA_PIN() )               // is data line high
      	I2C_BUFFER |= 0x01;          // set bit 0 to logic 1
   } while ( --BIT_COUNTER );      // stay until 8 bits have been acquired
 
@@ -209,14 +209,14 @@ signed char SWGetsI2C( unsigned char *rdptr,  unsigned char length )
       *rdptr++ = data;           // save off byte read
     }
 
-    CLOCK_LOW();                  // make clock pin output to drive low
+    I2C_CLOCK_LOW();                  // make clock pin output to drive low
     if ( !length ) {              // initiate NOT ACK
-      	DATA_HI();                // release data line to float high 
+      	I2C_DATA_HI();                // release data line to float high 
     }else {                       // else initiate ACK condition
-      	DATA_LOW();               // make data pin output to drive low
+      	I2C_DATA_LOW();               // make data pin output to drive low
     }
     DelayI2C();                 	// user may need to modify based on Fosc
-    CLOCK_HI();                   	// release clock line to float high 
+    I2C_CLOCK_HI();                   	// release clock line to float high 
     DelayI2C();                 	// user may need to modify based on Fosc
   }   
   return( STAT_OK);             // return with no error

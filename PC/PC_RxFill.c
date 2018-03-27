@@ -5,7 +5,6 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
-#include "clock.h"
 #include "controls.h"
 
 

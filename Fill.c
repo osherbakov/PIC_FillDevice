@@ -27,6 +27,15 @@ static const byte KeyErasedMsg[] 	= "Key is erased\n\0";
 static const byte KeyGetMsg[] 		= "/Key\0";
 
 static byte	*p_buffer;		// Dedicated pointer to access large buffers
+
+byte is_equal(byte *p1, const byte *p2, byte n)
+{
+	while(n-- ) {
+		if( toupper(*p1++) != toupper(*p2++)) return 0;
+	}	
+	return 1;
+}
+
 void GetCurrentDayTime()
 {
   byte  month, weekday;

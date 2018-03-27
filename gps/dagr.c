@@ -514,17 +514,15 @@ static char GetDAGRStatus(void)
 static char FindRisingEdge(void)
 {
 	// Config the 1PPS pin as input
-	ANSEL_GPS_1PPS = 0;
-	TRIS_GPS_1PPS = INPUT;
-	GPS_1PPS = 0;	
+	pinMode(GPS_1PPS, INPUT);
 
 	set_timeout(DAGR_PROCESS_TIMEOUT_MS);  
 
 	while(is_not_timeout()){	
-		if(!GPS_1PPS) break;
+		if(!pinRead(GPS_1PPS)) break;
 	}
 	while(is_not_timeout()){	
-		if(GPS_1PPS) return ST_OK;
+		if(pinRead(GPS_1PPS)) return ST_OK;
 	}
 	return ST_TIMEOUT;
 }
@@ -571,15 +569,15 @@ char ReceiveDAGRTime()
 
 	SetRTCDataPart1();		// Prepare for the RTC Clock set
 
-	while(GPS_1PPS);	// wait for LOW
-	while(!GPS_1PPS);	// wait for HIGH
+	while(pinRead(GPS_1PPS));	// wait for LOW
+	while(!pinRead(GPS_1PPS));	// wait for HIGH
 
 	//  8. Finally, set up the RTC clock - according to the spec,
 	//	the RTC chain is reset on ACK after writing to seconds register.
-	CLOCK_LOW();
-	DATA_HI();	
+	I2C_CLOCK_LOW();
+	I2C_DATA_HI();	
 	DelayI2C();
-	CLOCK_HI();
+	I2C_CLOCK_HI();
 	DelayI2C();
 
 	SetRTCDataPart2();

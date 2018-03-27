@@ -52,9 +52,19 @@ static enum
 
 static unsigned int idle_counter;
 
+//   Current state of the state machine
 static byte 	current_state;
+
+// Variables that keep the current and previous states for 
+// channel/slot switch and power switch positions
 static byte 	button_pos;
 static byte 	prev_button_pos;
+
+static byte 	switch_pos;
+static byte 	prev_switch_pos;
+
+static byte 	power_pos;
+static byte 	prev_power_pos;
 
 //
 // Test if the button was depressed and released
@@ -204,22 +214,11 @@ static void  PinsToDefault(void)
 	close_eusart();
 	set_pin_f_as_io();
 	set_pin_a_as_gnd();		//  Set GND on Pin A
-	ANSEL_PIN_B = 0;
-	ANSEL_PIN_C = 0;
-	ANSEL_PIN_D = 0;
-	ANSEL_PIN_E = 0;
-	TRIS_PIN_B = INPUT;
-	TRIS_PIN_C = INPUT;
-	TRIS_PIN_D = INPUT;
-	TRIS_PIN_E = INPUT;
-	TRIS_PIN_F = INPUT;
-	PIN_B	   = 1;
-	PIN_C	   = 1;
-	PIN_D	   = 1;
-	PIN_E	   = 1;
-	PIN_F	   = 1;
-  	WPUB_PIN_B = 1;
-  	WPUB_PIN_E = 1;
+	pinMode(PIN_B,INPUT);
+	pinMode(PIN_C,INPUT);
+	pinMode(PIN_D,INPUT);
+	pinMode(PIN_E,INPUT);
+	pinMode(PIN_F,INPUT);
 }
 
 static void bump_idle_counter(void)
@@ -248,15 +247,15 @@ void main()
 	DelayMs(100);
 	
 	// Initialize current state of the buttons, switches, etc
-	prev_power_pos = get_power_state();
-	prev_button_pos = get_button_state();
-	prev_switch_pos = get_switch_state();
+//	prev_power_pos = get_power_state();
+//	prev_button_pos = get_button_state();
+//	prev_switch_pos = get_switch_state();
 
 	// Special case on the startup:
 	// If the button is pressed on power-on, then ENABLE RS232 and RS485 (DS-101) fills
 	// Additionally, show the key status - Solid light for OK, No light for EMPTY
 	allow_type45_fill = FALSE;
-	if(prev_button_pos == DOWN_POS)	
+	if(get_button_state() == DOWN_POS)	
 	{
   		allow_type45_fill = TRUE;
   		SetNextState(CHECK_KEY);
@@ -369,22 +368,10 @@ void main()
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
-          			// Set all pins as inputs
-					ANSEL_PIN_B = 0;
-					ANSEL_PIN_C = 0;
-					ANSEL_PIN_D = 0;
-					ANSEL_PIN_E = 0;
-					PIN_B	   = 1;
-					PIN_C	   = 1;
-					PIN_D	   = 1;
-					PIN_E	   = 1;
-				  	TRIS_PIN_B = INPUT;
-	  				TRIS_PIN_C = INPUT;
-				  	TRIS_PIN_D = INPUT;
-	  				TRIS_PIN_E = INPUT;
-
-  					WPUB_PIN_B = 1;
-  					WPUB_PIN_E = 1;
+					pinMode(PIN_B,INPUT);
+					pinMode(PIN_C,INPUT);
+					pinMode(PIN_D,INPUT);
+					pinMode(PIN_E,INPUT);
 					DelayMs(100);
           			SetNextState(HQ_GPS_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ Transmit
@@ -516,16 +503,10 @@ void main()
 					set_pin_a_as_gnd();				//  Set GND on Pin A
           			set_pin_f_as_power();
           			// Set all pins as inputs and try to detect the type of the device connected
-					PIN_B	   = 1;
-					PIN_C	   = 1;
-					PIN_D	   = 1;
-					PIN_E	   = 1;
-				  	TRIS_PIN_B = INPUT;
-	  				TRIS_PIN_C = INPUT;
-				  	TRIS_PIN_D = INPUT;
-	  				TRIS_PIN_E = INPUT;
-  					WPUB_PIN_B = 1;
-  					WPUB_PIN_E = 1;
+					pinMode(PIN_B,INPUT);
+					pinMode(PIN_C,INPUT);
+					pinMode(PIN_D,INPUT);
+					pinMode(PIN_E,INPUT);
 					DelayMs(100);
   					SetNextState(FILL_RX_RS232_WAIT);
 				}else {

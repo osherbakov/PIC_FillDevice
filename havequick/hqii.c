@@ -174,7 +174,7 @@ static char WaitEdge(unsigned char timeout)
 	PIR5bits.TMR6IF = 0;
 	while(!PIR5bits.TMR6IF)
 	{
-		hq_pin = HQ_PIN;
+		hq_pin = pinRead(HQ_PIN);
 		if(hq_pin != current_pin)
 		{
 			current_pin = hq_pin;
@@ -195,7 +195,7 @@ static char WaitTimer(unsigned char timeout)
 	PIR5bits.TMR6IF = 0;
 	while(!PIR5bits.TMR6IF)
 	{
-		hq_pin = HQ_PIN;
+		hq_pin = pinRead(HQ_PIN);
 		if(hq_pin != current_pin)
 		{
 			ret_value++;
@@ -222,7 +222,7 @@ static char GetHQTime(void)
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
 
-	current_pin = HQ_PIN;
+	current_pin = pinRead(HQ_PIN);
 
 	State = INIT;
 	while(is_not_timeout() )
@@ -301,7 +301,7 @@ static	char prev;
 char ReceiveHQTime(void )
 {
 	// Config pin as input
-	TRIS_HQ_PIN = INPUT;
+	pinMode(HQ_PIN, INPUT);
 
 
   	//	1. Find the HQ stream rising edge and
@@ -318,15 +318,15 @@ char ReceiveHQTime(void )
 
   	//	3. Find the next HQ stream rising edge with interrupts disabled
 	while ( WaitTimer(0xF0) != 0 ) {};	// Wait until IDLE
-	while(HQ_PIN) {};		// look for the rising edge
-	while(!HQ_PIN){};		
+	while( pinRead(HQ_PIN)) {};		// look for the rising edge
+	while(!pinRead(HQ_PIN)) {};		
 
   	//  4. Finally, set up the RTC clock on the rising edge
 	//	the RTC chain is reset on ACK after writing to seconds register.
-	CLOCK_LOW();
-	DATA_HI();	
+	I2C_CLOCK_LOW();
+	I2C_DATA_HI();	
 	DelayI2C();
-	CLOCK_HI();
+	I2C_CLOCK_HI();
 	DelayI2C();
 
 	SetRTCDataPart2();

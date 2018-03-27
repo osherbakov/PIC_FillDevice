@@ -5,7 +5,6 @@
 #include "spi_eeprom.h"
 #include "serial.h"
 #include "Fill.h"
-#include "clock.h"
 #include "DS101.h"
 #include "controls.h"
 
@@ -46,8 +45,8 @@ static char GetQueryByte(void)
   
   	pinMode(PIN_B, INPUT);		
   	pinMode(PIN_E, INPUT);
-	digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
-  	digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+	pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
+  	pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
 	WPUB_PIN_B = 1;
   	WPUB_PIN_E = 1;
 
@@ -92,11 +91,11 @@ static void SendEquipmentType(void)
   
   pinMode(PIN_B, OUTPUT);		// make a pin active
   pinMode(PIN_E, OUTPUT);		// make a pin active
-  digitalWrite(PIN_E, HIGH);	// Set clock to High
+  pinWrite(PIN_E, HIGH);	// Set clock to High
   delayMicroseconds(tJ);		// Setup time for clock high
 
   // Output the data bit of the equipment code
-  digitalWrite(PIN_B, HIGH);	// Output data bit - "0" (remember -6.5V logic)
+  pinWrite(PIN_B, HIGH);	// Output data bit - "0" (remember -6.5V logic)
   delayMicroseconds(tK3);		// Satisfy Setup time tK1
 
   // Output the data
@@ -104,17 +103,17 @@ static void SendEquipmentType(void)
   {
 	// Pulse the clock
     delayMicroseconds(tT);		// Hold Clock in HIGH for tT (setup time)
-    digitalWrite(PIN_E, LOW);	// Drop Clock to LOW 
+    pinWrite(PIN_E, LOW);	// Drop Clock to LOW 
     delayMicroseconds(tT);		// Hold Clock in LOW for tT
-    digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+    pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
   delayMicroseconds(tK4);  // Wait there
   
   // Release PIN_E - the Fill device will drive it
   pinMode(PIN_E, INPUT);		// Tristate the pin
   pinMode(PIN_B, INPUT);
-  digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
-  digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+  pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
+  pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
   WPUB_PIN_B = 1;
   WPUB_PIN_E = 1;
 }
@@ -128,9 +127,9 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT);		// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
-  digitalWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
-  digitalWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
-  digitalWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
+  pinWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
+  pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
+  pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
   WPUB_PIN_E = 1;
   
 
@@ -180,17 +179,17 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 static char SendFillRequest(void)
 {
   pinMode(PIN_C, OUTPUT);		// make pin an output
-  digitalWrite(PIN_C, LOW);
+  pinWrite(PIN_C, LOW);
   delay(tD);
-  digitalWrite(PIN_C, HIGH);
+  pinWrite(PIN_C, HIGH);
 }
 
 static char SendBadFillAck(void)
 {
   pinMode(PIN_B, OUTPUT);		// make pin an output
-  digitalWrite(PIN_B, LOW);
+  pinWrite(PIN_B, LOW);
   delay(tG);
-  digitalWrite(PIN_B, HIGH);
+  pinWrite(PIN_B, HIGH);
   delay(tH);
 }
 
@@ -222,8 +221,8 @@ char CheckFillType23()
 	// Setup pins
 	pinMode(PIN_D, INPUT);		// make pin D input
 	pinMode(PIN_F, INPUT);		// make pin F input
-  	digitalWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
-  	digitalWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
+  	pinWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
+  	pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
 
   switch(t23_state)
   {
@@ -409,11 +408,11 @@ void SetType123PinsRx()
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
 
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, HIGH);
 
   WPUB_PIN_B = 1;
   WPUB_PIN_E = 1;

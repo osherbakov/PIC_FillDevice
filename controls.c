@@ -3,16 +3,59 @@
 #include "delay.h"
 #include "gps.h"
 #include "Fill.h"
-#include "clock.h"
 
 
-// Variables that keep the current and previous states for 
-// channel/slot switch and power switch positions
-byte switch_pos;
-byte prev_switch_pos;
+// Audio/FILL connector
+#define	DATA_PIN_B	PORTBbits.RB1
+#define	DATA_PIN_C	PORTCbits.RC6
+#define	DATA_PIN_D	PORTCbits.RC7
+#define	DATA_PIN_E	PORTBbits.RB2
+#define	DATA_PIN_F	PORTCbits.RC0
 
-byte power_pos;
-byte prev_power_pos;
+#define	TRIS_PIN_B	TRISBbits.RB1
+#define	TRIS_PIN_C	TRISCbits.RC6
+#define	TRIS_PIN_D	TRISCbits.RC7
+#define	TRIS_PIN_E	TRISBbits.RB2
+#define	TRIS_PIN_F	TRISCbits.RC0
+
+#define	ANSEL_PIN_B	ANSELBbits.ANSB1
+#define	ANSEL_PIN_C	ANSELCbits.ANSC6
+#define	ANSEL_PIN_D	ANSELCbits.ANSC7
+#define	ANSEL_PIN_E	ANSELBbits.ANSB2
+
+
+#define	WPUB_PIN_B	WPUBbits.WPUB1
+#define	WPUB_PIN_E	WPUBbits.WPUB2
+
+// LED control Ports and pins
+#define	DATA_LEDP  	PORTEbits.RE1
+#define	TRIS_LEDP	TRISEbits.RE1
+#define	ANSEL_LEDP	ANSELEbits.ANSE1
+
+
+// Zeroizing switch
+#define	DATA_ZBR		PORTEbits.RE2
+#define	TRIS_ZBR	TRISEbits.RE2
+#define	ANSEL_ZBR	ANSELEbits.ANSE2
+
+
+// Button press
+#define	DATA_BTN	PORTBbits.RB0
+#define	TRIS_BTN	TRISBbits.RB0
+#define	ANSEL_BTN	ANSELBbits.ANSB0
+#define	WPUB_BTN	WPUBbits.WPUB0
+
+// PIN_A_PWR is used to control the Pin A coonection
+#define	DATA_PIN_A_PWR	PORTCbits.RC1
+#define	TRIS_PIN_A_PWR	TRISCbits.RC1
+#define	ANSEL_PIN_A_PWR	ANSELCbits.ANSC1
+
+// PIN_F_PWR is used to control the Pin F power
+#define	DATA_PIN_F_PWR	PORTEbits.RE0
+#define	TRIS_PIN_F_PWR	TRISEbits.RE0
+#define	ANSEL_PIN_F_PWR	ANSELEbits.ANSE0
+
+
 //
 // Function to get the reading of the switch
 //   Returns the position number currently selected.
@@ -52,14 +95,14 @@ byte get_switch_state()
 
 byte get_power_state()
 {
-	TRIS_ZBR = INPUT;	      // Pin is Input 
-	return (ZBR)? ZERO_POS : ON_POS;
+	pinMode(ZBR, INPUT);
+	return (pinRead(ZBR)? ZERO_POS : ON_POS);
 }
 
 byte get_button_state()
 {
-    TRIS_BTN = INPUT;
-   	return (BTN) ? UP_POS : DOWN_POS;
+	pinMode(BTN, INPUT);
+   	return ( pinRead(BTN) ? UP_POS : DOWN_POS);
 }
 
 char is_bootloader_active()
@@ -78,28 +121,28 @@ char is_bootloader_active()
 
 void set_pin_a_as_gnd()
 {
-    TRIS_PIN_A_PWR = OUTPUT;
-    PIN_A_PWR = 0;
+	pinMode(PIN_A_PWR, OUTPUT);
+	pinWrite(PIN_A_PWR, 0);
 }
 
 void set_pin_a_as_power()
 {
-    TRIS_PIN_A_PWR = OUTPUT;
-    PIN_A_PWR = 1;
+	pinMode(PIN_A_PWR, OUTPUT);
+	pinWrite(PIN_A_PWR, 1);
 }
 
 void set_pin_f_as_io()
 {
-    TRIS_PIN_F = INPUT;
-    TRIS_PIN_F_PWR = OUTPUT;
-    PIN_F_PWR = 0;
+	pinMode(PIN_F, INPUT);
+	pinMode(PIN_F_PWR, OUTPUT);
+	pinWrite(PIN_F_PWR, 0);
 }
 
 void set_pin_f_as_power()
 {
-    TRIS_PIN_F = INPUT;
-    TRIS_PIN_F_PWR = OUTPUT;
-    PIN_F_PWR = 1;
+	pinMode(PIN_F, INPUT);
+	pinMode(PIN_F_PWR, OUTPUT);
+	pinWrite(PIN_F_PWR, 1);
 }
 
 void disable_tx_hqii()
@@ -119,7 +162,7 @@ void enable_tx_hqii()
 unsigned char Threshold = 0xB0;
 
 
-static char ReadPin(void)
+static char pinAnalogRead(void)
 {
 	unsigned char ADC_Value;
   	ADCON2 = 0x15;  // Left justified + 4TAD and Fosc/16
@@ -136,73 +179,149 @@ static char ReadPin(void)
 char pin_B()
 {
   char ret;
-
-  TRIS_PIN_B = 1;
-  ANSEL_PIN_B = 0;
-  ret = digitalRead(PIN_B);
+  pinMode(PIN_B, INPUT);
+  ret = pinRead(PIN_B);
   if(ret == LOW) return ret;
   // Set up it to be analog input
-  ANSEL_PIN_B = 1;
+  pinMode(PIN_B, INPUT_ANALOG);
   ADCON0 = (10 << 2) | 1;   // RB1 : Channel 10 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_B = 0;
+  ret = pinAnalogRead();
+  pinMode(PIN_B, INPUT);
   return ret;
 }
 
 char pin_C()
 {
   char ret;
-
-  TRIS_PIN_C = 1;
-  ANSEL_PIN_C = 0;
-  ret = digitalRead(PIN_C);
+  pinMode(PIN_C, INPUT);
+  ret = pinRead(PIN_C);
   if(ret == LOW) return ret;
   // Set up it to be analog input
-  ANSEL_PIN_C = 1;
+  pinMode(PIN_C, INPUT_ANALOG);
   ADCON0 = (18 << 2) | 1;   // RC6 : Channel 18 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_C = 0;
+  ret = pinAnalogRead();
+  pinMode(PIN_C, INPUT);
   return ret;
 }
 
 char pin_D()
 {
   char ret;
-
-  TRIS_PIN_D = 1;
-  ANSEL_PIN_D = 0;
-  ret = digitalRead(PIN_D);
+  pinMode(PIN_D, INPUT);
+  ret = pinRead(PIN_D);
   if(ret == LOW) return ret;
   // Set up it to be analog input
-  ANSEL_PIN_D = 1;
+  pinMode(PIN_D, INPUT_ANALOG);
   ADCON0 = (19 << 2) | 1;   // RC7 : Channel 19 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_D = 0;
+  ret = pinAnalogRead();
+  pinMode(PIN_D, INPUT);
   return ret;
 }
 
 char pin_E()
 {
   char ret;
-
-  TRIS_PIN_E = 1;
-  ANSEL_PIN_E = 0;
-  ret = digitalRead(PIN_E);
+  pinMode(PIN_E, INPUT);
+  ret = pinRead(PIN_E);
   if(ret == LOW) return ret;
   // Set up it to be analog input
-  ANSEL_PIN_E = 1;
+  pinMode(PIN_E, INPUT_ANALOG);
   ADCON0 = (8 << 2) | 1;   // Channel 8 and Enable bits
-  ret = ReadPin();
-  ANSEL_PIN_E = 0;
+  ret = pinAnalogRead();
+  pinMode(PIN_E, INPUT);
   return ret;
 }
 
 char pin_F()
 {
   char ret;
-
-  TRIS_PIN_F = 1;
-  ret = digitalRead(PIN_F);
+  pinMode(PIN_F, INPUT);
+  ret = pinRead(PIN_F);
   return ret;
 }
 
+
+//-------------------------------------------------
+//  LED support fucntions
+//------------------------------------------------
+
+volatile unsigned char led_counter;
+volatile unsigned char led_on_time;
+volatile unsigned char led_off_time;
+volatile unsigned char LED_current_bit; 
+
+void set_led_state(char on_time, char off_time)
+{
+	led_on_time = on_time;
+	led_off_time = off_time;
+	LED_current_bit = led_on_time ? HIGH : LOW;	// Turn on/off LED
+	pinWrite(LEDP, LED_current_bit);
+	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
+}
+
+void set_led_on()
+{
+	led_counter = 0;
+	LED_current_bit = HIGH;				// Turn on LED
+	pinWrite(LEDP, LED_current_bit);
+}
+
+void set_led_off()
+{
+	LED_current_bit = HIGH;				// Turn off LED
+	pinWrite(LEDP, LED_current_bit);
+}
+
+
+void pinMode(int pin, int mode)
+{
+	if(pin == PIN_B) {
+		if(mode == INPUT) {
+			ANSEL_PIN_B = 0;
+			WPUB_PIN_B = 0;
+			TRIS_PIN_B = 1;
+		}else if(mode == OUTPUT)
+		{
+			ANSEL_PIN_B = 0;
+			WPUB_PIN_B = 0;
+			TRIS_PIN_B = 0;
+		}else if(mode == INPUT_PULLUP)
+		{
+			ANSEL_PIN_B = 0;
+			WPUB_PIN_B = 1;
+			TRIS_PIN_B = 1;
+		}else if(mode == INPUT_PULLDOWN)
+		{
+			ANSEL_PIN_B = 0;
+			WPUB_PIN_B = 0;
+			TRIS_PIN_B = 1;
+		}else if(mode == INPUT_ANALOG)
+		{
+			ANSEL_PIN_B = 1;
+			WPUB_PIN_B = 0;
+			TRIS_PIN_B = 1;
+		}
+	}else if(pin == PIN_C) {
+		if(mode == INPUT) {
+			ANSEL_PIN_C = 0;
+			TRIS_PIN_C = 1;
+		}else if(mode == OUTPUT)
+		{
+			ANSEL_PIN_C = 0;
+			TRIS_PIN_C = 0;
+		}else if(mode == INPUT_PULLUP)
+		{
+			ANSEL_PIN_C = 0;
+			TRIS_PIN_C = 1;
+		}else if(mode == INPUT_PULLDOWN)
+		{
+			ANSEL_PIN_C = 0;
+			TRIS_PIN_C = 1;
+		}else if(mode == INPUT_ANALOG)
+		{
+			ANSEL_PIN_C = 1;
+			TRIS_PIN_C = 1;
+		}
+	}	
+	
+}	

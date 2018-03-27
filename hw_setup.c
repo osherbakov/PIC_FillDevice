@@ -5,7 +5,6 @@
 #include <spi.h>
 #include "i2c_sw.h"
 #include "serial.h"
-#include "clock.h"
 #include "gps.h"
 
 extern void setup_clocks();	
@@ -38,14 +37,6 @@ void setup_clocks()
 #endif
 	OSCCONbits.SCS = 0x00;	// Internal with MUX (can be PLL'd*4)
 
-	// TIMER 0 - to count OSC_CLOCK in 16-bit mode
-	// Used to adjust/sync the internal clock with RTC 1PPS clock
-//  	TMR0H = 0;  // Reset the counter
-//  	TMR0L = 0;
-//  	INTCONbits.TMR0IF =  0;   // Clear interrupt
-//  	INTCONbits.TMR0IE =  1;   // Enable interrupt
-//  	T0CON = ((0x1 << 7) | (0x1 << 3)); // Ena TIMER0, 16-bit mode,no prescaler
-  
 	// TIMER 1 - to count OSC_CLOCK in 16-bit mode
 	//  It is used for 0.131072s timeout, when clock overflows
 	// Used for timeouts when we disable interrupts
@@ -137,8 +128,10 @@ void setup_start_io()
 	
 
 	// LED controls
-	TRIS_LEDP = OUTPUT;		// Drive it
-	LEDP = 0;				// LED off
+	pinMode(LEDP, OUTPUT);
+	pinWrite(LEDP, LOW);
+//	TRIS_LEDP = OUTPUT;		// Drive it
+//	LEDP = 0;				// LED off
 
 	// Button and Power sensors
 	INTCON2bits.RBPU = 0;	// Enable Weak Pull Ups
@@ -151,8 +144,8 @@ void setup_start_io()
 	WPUB_BTN = 1;			// Turn on Weak pull-up
 
 	// setup I2C pins both to high
-	DATA_HI();
-	CLOCK_HI();
+	I2C_DATA_HI();
+	I2C_CLOCK_HI();
 	
 	// Setup RTC 1PPS pin as input
 	TRIS_1PPS = INPUT;		

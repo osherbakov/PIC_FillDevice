@@ -23,10 +23,10 @@ void prepare_write(unsigned short long  address)
 {
 	  unsigned char cnt, bit_shift;
 	  busy_polling(); 
-	  SPI_CS = 0;               //assert chip select 
+	  pinWrite(SPI_CS, 0);      //assert chip select 
 	  putcSPI(SPI_WREN);       	//send write enable command 
-	  SPI_CS = 1;               //negate chip select 
-	  SPI_CS = 0;               //assert chip select 
+	  pinWrite(SPI_CS, 1);      //negate chip select 
+	  pinWrite(SPI_CS, 0);      //assert chip select 
 	  putcSPI(SPI_WRITE);       //send write command 
 	  
 	  for ( cnt = 0; cnt < EEPROM_ADDRESS_BYTES; cnt++)
@@ -41,7 +41,7 @@ void prepare_read(unsigned short long  address)
 {
 	  unsigned char cnt, bit_shift;
 	  busy_polling(); 
-	  SPI_CS = 0;               //assert chip select 
+	  pinWrite(SPI_CS, 0);     //assert chip select 
 	  putcSPI(SPI_READ);       //send write command 
 	  
 	  for ( cnt = 0; cnt < EEPROM_ADDRESS_BYTES; cnt++)
@@ -67,7 +67,7 @@ void array_write(unsigned short long  address,
 	  {
       	putcSPI(*wrptr++);  	//send data byte 
 	  }
-	  SPI_CS = 1;             //negate chip select 
+	  pinWrite(SPI_CS, 1);      //negate chip select 
   }
 } 
 
@@ -78,9 +78,9 @@ void array_read (unsigned short long address,
   prepare_read(address); 		//send address 
   while(count--)
   {
-     *rdptr++ = getcSPI();			// read data byte and place it in array
+     *rdptr++ = getcSPI();		// read data byte and place it in array
   }
-  SPI_CS = 1; 
+  pinWrite(SPI_CS, 1);      	//negate chip select 
 } 
 
 void byte_write (unsigned short long address, 
@@ -88,7 +88,7 @@ void byte_write (unsigned short long address,
 { 
   prepare_write(address);
   putcSPI(data);           	//send data byte 
-  SPI_CS = 1;               //negate chip select 
+  pinWrite(SPI_CS, 1);      //negate chip select 
 } 
 
 unsigned char byte_read (unsigned short long address) 
@@ -96,29 +96,29 @@ unsigned char byte_read (unsigned short long address)
   unsigned char var;
   prepare_read(address);	 //send bytes of address 
   var = getcSPI();         //read single byte 
-  SPI_CS = 1; 
+  pinWrite(SPI_CS, 1);     //negate chip select 
   return (var); 
 } 
 
 unsigned char status_read () 
 { 
   unsigned char var;
-  SPI_CS = 0;               //assert chip select 
+  pinWrite(SPI_CS, 0);     //assert chip select 
   putcSPI(SPI_RDSR); 		//send read status command 
   var = getcSPI();         	//read data byte 
-  SPI_CS = 1;               //negate chip select 
+  pinWrite(SPI_CS, 1);     //negate chip select 
   return (var); 
 } 
 
 void status_write (unsigned char data) 
 { 
-  SPI_CS = 0;               //assert chip select 
+  pinWrite(SPI_CS, 0);     //assert chip select 
   putcSPI(SPI_WREN);       	//send write enable command 
-  SPI_CS = 1;               //negate chip select 
-  SPI_CS = 0; 
+  pinWrite(SPI_CS, 1);     //negate chip select 
+  pinWrite(SPI_CS, 0);     //assert chip select 
   putcSPI(SPI_WRSR); 		//write status command 
   putcSPI(data);         	//status byte to write 
-  SPI_CS = 1;               //negate chip select 
+  pinWrite(SPI_CS, 1);     //negate chip select 
 } 
 
 void busy_polling (void) 
@@ -129,12 +129,12 @@ void busy_polling (void)
 unsigned char get_eeprom_id()
 {
 	unsigned char chip_id;
-  	SPI_CS = 0;               		//assert chip select 
+  	pinWrite(SPI_CS, 0);     		//assert chip select 
   	putcSPI(0xAB /*SPI_RDID*/ );    //send Release from PD and get ID command 
   	putcSPI(0x00);       			//send dummy address 
   	putcSPI(0x00);
 	putcSPI(0x00);
 	chip_id = getcSPI();		
-   	SPI_CS = 1;
+  	pinWrite(SPI_CS, 1);     		//negate chip select 
 	return chip_id;
 }

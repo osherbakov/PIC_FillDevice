@@ -10,10 +10,8 @@
 
 void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
 {
-	TRIS_RxPC 	= INPUT;
-	TRIS_TxPC 	= INPUT;
-	ANSEL_RxPC	= 0;
-	ANSEL_TxPC	= 0;
+	pinMode(RxPC, INPUT);
+	pinMode(TxPC, INPUT);
 
 	RCSTA1bits.CREN = 0; // Disable Rx
  	TXSTA1bits.TXEN = 0; // Disable Tx	

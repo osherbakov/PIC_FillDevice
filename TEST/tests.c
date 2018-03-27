@@ -1,6 +1,5 @@
 #include "config.h"
 #include "rtc.h"
-#include "clock.h"
 #include "delay.h"
 #include "string.h"
 #include "Fill.h"
@@ -23,32 +22,32 @@ char TestAllPins()
 	pinMode(PIN_E, OUTPUT);		// make pin input
 	pinMode(PIN_F, OUTPUT);		// make pin input
 
-  digitalWrite(PIN_B, LOW);	// Set all pins to LOW
-  digitalWrite(PIN_C, LOW);	
-  digitalWrite(PIN_D, LOW);	
-  digitalWrite(PIN_E, LOW);	
-  digitalWrite(PIN_F, LOW);	
+  pinWrite(PIN_B, LOW);	// Set all pins to LOW
+  pinWrite(PIN_C, LOW);	
+  pinWrite(PIN_D, LOW);	
+  pinWrite(PIN_E, LOW);	
+  pinWrite(PIN_F, LOW);	
 
   for(i = 0; i < 64; i++)
   {
-    digitalWrite(PIN_F, LOW);	
-    digitalWrite(PIN_B, HIGH);
+    pinWrite(PIN_F, LOW);	
+    pinWrite(PIN_B, HIGH);
     DelayUs(100);
 
-    digitalWrite(PIN_B, LOW);	
-    digitalWrite(PIN_C, HIGH);
+    pinWrite(PIN_B, LOW);	
+    pinWrite(PIN_C, HIGH);
     DelayUs(100);
     
-    digitalWrite(PIN_C, LOW);	
-    digitalWrite(PIN_D, HIGH);
+    pinWrite(PIN_C, LOW);	
+    pinWrite(PIN_D, HIGH);
     DelayUs(100);
 
-    digitalWrite(PIN_D, LOW);	
-    digitalWrite(PIN_E, HIGH);
+    pinWrite(PIN_D, LOW);	
+    pinWrite(PIN_E, HIGH);
     DelayUs(100);
 
-    digitalWrite(PIN_E, LOW);	
-    digitalWrite(PIN_F, HIGH);
+    pinWrite(PIN_E, LOW);	
+    pinWrite(PIN_F, HIGH);
     DelayUs(100);
   }
   

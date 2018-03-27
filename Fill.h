@@ -35,10 +35,6 @@ typedef enum
 #define delay(a) DelayMs(a)
 
 //--------------------------------------------------------------
-#define digitalRead(pin) (pin)
-#define digitalWrite(pin, value) pin = value
-#define pinMode(pin, mode) TRIS_##pin = mode
-
 #define FILL_MAX_SIZE (250)
 #define MODE2_3_CELL_SIZE (16)
 

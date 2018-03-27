@@ -39,35 +39,35 @@ static void SendMode23Query(byte Data)
   // Set up pins mode and levels
   pinMode(PIN_B, OUTPUT);    // make pin active
   pinMode(PIN_E, OUTPUT);    // make pin active
-  digitalWrite(PIN_E, HIGH);  // Set clock to High
+  pinWrite(PIN_E, HIGH);  // Set clock to High
   delayMicroseconds(tJ);      // Setup time for clock high
 
   // Output the first data bit of the request
-  digitalWrite(PIN_B, (Data & 0x01) ? LOW : HIGH);  // Output data bit
+  pinWrite(PIN_B, (Data & 0x01) ? LOW : HIGH);  // Output data bit
   Data >>= 1;
   delayMicroseconds(tK1);    // Satisfy Setup time tK1
 
     // Pulse the clock
-  digitalWrite(PIN_E, LOW);  // Drop Clock to LOW 
+  pinWrite(PIN_E, LOW);  // Drop Clock to LOW 
   delayMicroseconds(tT);     // Hold Clock in LOW for tT
-  digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+  pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
 
   // Output the rest of the data
   for(i = 0; i < 7; i++)
   {
     // Send next data bit    
-    digitalWrite(PIN_B, (Data & 0x01) ? LOW : HIGH);  // Output data bit
+    pinWrite(PIN_B, (Data & 0x01) ? LOW : HIGH);  // Output data bit
     Data >>= 1;
     delayMicroseconds(tT);     // Hold Clock in HIGH for tT (setup time)
 
-    digitalWrite(PIN_E, LOW);  // Drop Clock to LOW 
+    pinWrite(PIN_E, LOW);  // Drop Clock to LOW 
     delayMicroseconds(tT);     // Hold Clock in LOW for tT
-    digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+    pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
   	delayMicroseconds(tK2 - tT);  // Wait there
   	// Release PIN_B and PIN_E - the Radio will drive it
-  	digitalWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
-  	digitalWrite(PIN_E, LOW);  // Turn on 20 K Pullup
+  	pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
+  	pinWrite(PIN_E, LOW);  // Turn on 20 K Pullup
 	pinMode(PIN_B, INPUT);    // Tristate the pin
 	pinMode(PIN_E, INPUT);    // Tristate the pin
   	WPUB_PIN_B = 1;
@@ -85,8 +85,8 @@ static signed char GetEquipmentMode23Type(void)
   signed char	result;
   byte i;
 
-  digitalWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
-  digitalWrite(PIN_E, LOW);      	// Turn_on the pullup register
+  pinWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
+  pinWrite(PIN_E, LOW);      	// Turn_on the pullup register
   pinMode(PIN_B, INPUT);    		// Tristate the pin
   pinMode(PIN_E, INPUT);			// Tristate the pin
   WPUB_PIN_B = 1;
@@ -129,15 +129,15 @@ static void SendDS102Byte(byte Data)
 
   pinMode(PIN_D, OUTPUT);    // make a pin active
   pinMode(PIN_E, OUTPUT);    // make a pin active
-  digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+  pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   for(i = 0; i < 8; i++)
   {
-    digitalWrite(PIN_D, (Data & 0x01) ? LOW : HIGH);  // Output data bit
+    pinWrite(PIN_D, (Data & 0x01) ? LOW : HIGH);  // Output data bit
     Data >>= 1;
     delayMicroseconds(tT);    // Satisfy Setup time tT
-    digitalWrite(PIN_E, LOW);  // Drop Clock to LOW 
+    pinWrite(PIN_E, LOW);  // Drop Clock to LOW 
     delayMicroseconds(tT);     // Hold Clock in LOW for tT
-    digitalWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+    pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
   }
 }
 
@@ -166,17 +166,17 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 {
   	char   Result = ST_TIMEOUT;
 
-  	digitalWrite(PIN_C, HIGH);  // Set pullup 
+  	pinWrite(PIN_C, HIGH);  // Set pullup 
   	pinMode(PIN_C, INPUT); 
 	// For MODE23 fill we:
 	//  1. Keep pin B high with pullup
 	//  2. read PIN_B 
 	if(fill_type != MODE1) {
-	  	digitalWrite(PIN_B, HIGH);  // Set pullup 
+	  	pinWrite(PIN_B, HIGH);  // Set pullup 
     	pinMode(PIN_B, INPUT);	
     	WPUB_PIN_B = 1;
 	}else {
-	  	digitalWrite(PIN_B, HIGH);  // Keep pin_B HIGH
+	  	pinWrite(PIN_B, HIGH);  // Keep pin_B HIGH
     	pinMode(PIN_B, OUTPUT);	
     	WPUB_PIN_B = 1;
 	}
@@ -236,29 +236,29 @@ static void StartMode23Handshake(void)
   pinMode(PIN_D, OUTPUT);    // make pin output
   pinMode(PIN_E, OUTPUT);  
   pinMode(PIN_F, OUTPUT);    // make pin output
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, HIGH);
   WPUB_PIN_B = 1;
   delay(200);
 
   // Drop PIN_D first
-  digitalWrite(PIN_D, LOW);
+  pinWrite(PIN_D, LOW);
   //delay(tM);
-  digitalWrite(PIN_F, LOW);   // Drop PIN_F after delay
+  pinWrite(PIN_F, LOW);   // Drop PIN_F after delay
   delay(tA);                  // Pin D pulse width
-  digitalWrite(PIN_D, HIGH);  // Bring PIN_D up again
+  pinWrite(PIN_D, HIGH);  // Bring PIN_D up again
 }
 
 static void EndMode23Handshake(void)
 {
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, LOW);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, LOW);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -270,18 +270,18 @@ static void EndMode23Handshake(void)
 static void  EndFill(void)
 {
   delayMicroseconds(tL);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_F, HIGH);
   delay(tZ);
 }
 
 
 static void AcquireMode1Bus(void)
 {
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, HIGH);
   pinMode(PIN_B, OUTPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -292,11 +292,11 @@ static void AcquireMode1Bus(void)
 
 static void AcquireMode23Bus(void)
 {
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, HIGH);
   pinMode(PIN_B, INPUT);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
@@ -315,11 +315,11 @@ static void ReleaseBus(void)
   pinMode(PIN_E, INPUT);
   pinMode(PIN_F, INPUT);
   delay(tB);
-  digitalWrite(PIN_B, HIGH);
-  digitalWrite(PIN_C, HIGH);
-  digitalWrite(PIN_D, HIGH);
-  digitalWrite(PIN_E, HIGH);
-  digitalWrite(PIN_F, HIGH);
+  pinWrite(PIN_B, HIGH);
+  pinWrite(PIN_C, HIGH);
+  pinWrite(PIN_D, HIGH);
+  pinWrite(PIN_E, HIGH);
+  pinWrite(PIN_F, HIGH);
 }
 
 
