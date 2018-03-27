@@ -43,12 +43,12 @@ static char GetQueryByte(void)
 	byte  prev; 
 	char  ret;
   
-  	pinMode(PIN_B, INPUT);		
-  	pinMode(PIN_E, INPUT);
+  	pinMode(PIN_B, INPUT_PULLUP);		
+  	pinMode(PIN_E, INPUT_PULLUP);
 	pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
   	pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
-	WPUB_PIN_B = 1;
-  	WPUB_PIN_E = 1;
+//	WPUB_PIN_B = 1;
+//  	WPUB_PIN_E = 1;
 
 	bit_count = 0;
 	PreviousState = LOW;
@@ -110,12 +110,12 @@ static void SendEquipmentType(void)
   delayMicroseconds(tK4);  // Wait there
   
   // Release PIN_E - the Fill device will drive it
-  pinMode(PIN_E, INPUT);		// Tristate the pin
-  pinMode(PIN_B, INPUT);
+  pinMode(PIN_E, INPUT_PULLUP);		// Tristate the pin
+  pinMode(PIN_B, INPUT_PULLUP);
   pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+//  WPUB_PIN_B = 1;
+//  WPUB_PIN_E = 1;
 }
 
 static  byte  byte_count;
@@ -125,12 +125,12 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   byte  prev;
 
   pinMode(PIN_D, INPUT);		// make pin input DATA
-  pinMode(PIN_E, INPUT);		// make pin input CLOCK
+  pinMode(PIN_E, INPUT_PULLUP);	// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
   pinWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
-  WPUB_PIN_E = 1;
+//  WPUB_PIN_E = 1;
   
 
   byte_count = 0;
@@ -402,10 +402,10 @@ char StoreDS102Fill(byte stored_slot, byte required_fill)
 
 void SetType123PinsRx()
 {
-  pinMode(PIN_B, INPUT);
+  pinMode(PIN_B, INPUT_PULLUP);
   pinMode(PIN_C, OUTPUT);
   pinMode(PIN_D, INPUT);
-  pinMode(PIN_E, INPUT);
+  pinMode(PIN_E, INPUT_PULLUP);
   pinMode(PIN_F, INPUT);
 
   pinWrite(PIN_B, HIGH);
@@ -414,8 +414,8 @@ void SetType123PinsRx()
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
 
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 1;
+//  WPUB_PIN_B = 1;
+//  WPUB_PIN_E = 1;
   // Set up pins mode and levels
   delay(tB);
 }

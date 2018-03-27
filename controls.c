@@ -1,3 +1,4 @@
+
 #include "config.h"
 #include "controls.h"
 #include "delay.h"
@@ -5,55 +6,8 @@
 #include "Fill.h"
 
 
-// Audio/FILL connector
-#define	DATA_PIN_B	PORTBbits.RB1
-#define	DATA_PIN_C	PORTCbits.RC6
-#define	DATA_PIN_D	PORTCbits.RC7
-#define	DATA_PIN_E	PORTBbits.RB2
-#define	DATA_PIN_F	PORTCbits.RC0
-
-#define	TRIS_PIN_B	TRISBbits.RB1
-#define	TRIS_PIN_C	TRISCbits.RC6
-#define	TRIS_PIN_D	TRISCbits.RC7
-#define	TRIS_PIN_E	TRISBbits.RB2
-#define	TRIS_PIN_F	TRISCbits.RC0
-
-#define	ANSEL_PIN_B	ANSELBbits.ANSB1
-#define	ANSEL_PIN_C	ANSELCbits.ANSC6
-#define	ANSEL_PIN_D	ANSELCbits.ANSC7
-#define	ANSEL_PIN_E	ANSELBbits.ANSB2
 
 
-#define	WPUB_PIN_B	WPUBbits.WPUB1
-#define	WPUB_PIN_E	WPUBbits.WPUB2
-
-// LED control Ports and pins
-#define	DATA_LEDP  	PORTEbits.RE1
-#define	TRIS_LEDP	TRISEbits.RE1
-#define	ANSEL_LEDP	ANSELEbits.ANSE1
-
-
-// Zeroizing switch
-#define	DATA_ZBR		PORTEbits.RE2
-#define	TRIS_ZBR	TRISEbits.RE2
-#define	ANSEL_ZBR	ANSELEbits.ANSE2
-
-
-// Button press
-#define	DATA_BTN	PORTBbits.RB0
-#define	TRIS_BTN	TRISBbits.RB0
-#define	ANSEL_BTN	ANSELBbits.ANSB0
-#define	WPUB_BTN	WPUBbits.WPUB0
-
-// PIN_A_PWR is used to control the Pin A coonection
-#define	DATA_PIN_A_PWR	PORTCbits.RC1
-#define	TRIS_PIN_A_PWR	TRISCbits.RC1
-#define	ANSEL_PIN_A_PWR	ANSELCbits.ANSC1
-
-// PIN_F_PWR is used to control the Pin F power
-#define	DATA_PIN_F_PWR	PORTEbits.RE0
-#define	TRIS_PIN_F_PWR	TRISEbits.RE0
-#define	ANSEL_PIN_F_PWR	ANSELEbits.ANSE0
 
 
 //
@@ -67,10 +21,10 @@ byte get_switch_state()
 
   	// Force all bits of port A and D into Digital IO mode
 	// Make all of them Inputs (Tristate)
-	ANSELA = 0; 
-  	ANSELD = 0;
-	TRIS_S1_8 = 0xFF;
-  	TRIS_S9_16 = 0xFF;
+//	ANSELA = 0; 
+//  ANSELD = 0;
+//	TRIS_S1_8 = 0xFF;
+//  TRIS_S9_16 = 0xFF;
 	
 	// Data is inverted - selected pin is 0
 	data = ~(S1_8);
@@ -109,11 +63,13 @@ char is_bootloader_active()
 {
   // Check if the switch S16 is selected
   //  and the RxD is in break state  (MARK)
-  ANSELA = 0; 
-  ANSELC = 0;
+//  ANSELA = 0; 
+//  ANSELC = 0;
   
-  TRISAbits.RA7  = INPUT;  // That is a S16 pin
-  TRIS_RxPC = INPUT;
+//  TRISAbits.RA7  = INPUT;  // That is a S16 pin
+//  TRIS_RxPC = INPUT;
+  pinMode(S16, INPUT_PULLUP);
+  pinMode(RxPC, INPUT);
  
   //Switch is tied to the GND and Rx is (START)
   return (!PORTAbits.RA7 && RxPC);
@@ -276,29 +232,24 @@ void set_led_off()
 void pinMode(int pin, int mode)
 {
 	if(pin == PIN_B) {
-		if(mode == INPUT) {
+		if(mode == INPUT_PULLUP)
+		{
 			ANSEL_PIN_B = 0;
-			WPUB_PIN_B = 0;
+			WPU_PIN_B = 1;
 			TRIS_PIN_B = 1;
 		}else if(mode == OUTPUT)
 		{
 			ANSEL_PIN_B = 0;
-			WPUB_PIN_B = 0;
+			WPU_PIN_B = 0;
 			TRIS_PIN_B = 0;
-		}else if(mode == INPUT_PULLUP)
-		{
-			ANSEL_PIN_B = 0;
-			WPUB_PIN_B = 1;
-			TRIS_PIN_B = 1;
-		}else if(mode == INPUT_PULLDOWN)
-		{
-			ANSEL_PIN_B = 0;
-			WPUB_PIN_B = 0;
-			TRIS_PIN_B = 1;
 		}else if(mode == INPUT_ANALOG)
 		{
 			ANSEL_PIN_B = 1;
-			WPUB_PIN_B = 0;
+			WPU_PIN_B = 0;
+			TRIS_PIN_B = 1;
+		}else {
+			ANSEL_PIN_B = 0;
+			WPU_PIN_B = 0;
 			TRIS_PIN_B = 1;
 		}
 	}else if(pin == PIN_C) {

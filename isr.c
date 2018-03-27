@@ -49,12 +49,12 @@ void high_isr (void)
 	{
     	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
     	// The HIGH->LOW transition indicates the start of the second
-		if(PIN_1PPS == 0)
+		if(pinRead(RTC_1PPS) == 0)
 		{	
 			// Interrupt occured on HIGH->LOW transition
 	  		if(hq_enabled)  //  On HIGH->LOW transition - 0 ms
 	  		{
-	  			HQ_PIN = 1;	
+	  			pinWrite(HQ_DATA, 1);	
 	  			TMR4 = 10;					// Preload to compensate for the delay 
 	  			PR4 = HQII_TIMER;			// Load TIMER4
 	  			T4CONbits.TMR4ON = 1;		// Turn on the TIMER4
@@ -77,8 +77,8 @@ void high_isr (void)
 				GetRTCData();     		// Get current time and data from RTC
 				CalculateNextSecond();  // Calculate what time it will be on the next 1PPS
 				CalculateHQDate();		// Convert into the HQ date format
-				TRIS_HQ_PIN = OUTPUT;
-				HQ_PIN = 0;
+				pinMode(HQ_DATA, OUTPUT);
+				pinWrite(HQ_DATA, 0);
 			}
 		}
 		INTCONbits.RBIF = 0;
@@ -88,7 +88,7 @@ void high_isr (void)
 	// Is it TIMER4 interrupt? (300 us)
 	if(PIR5bits.TMR4IF)
 	{
-		HQ_PIN = hq_current_bit;
+		pinWrite(HQ_DATA, hq_current_bit);
 
 		// Now prepare the next bit
 
@@ -112,7 +112,7 @@ void high_isr (void)
 					hq_current_byte = hq_data[hq_byte_counter - START_FRAME_SIZE];
 				}else 
 				{
-					HQ_PIN = 0;
+					pinWrite(HQ_DATA, 0);
 					T4CONbits.TMR4ON = 0;		// Turn off the Timer4
 					PIE5bits.TMR4IE = 0;		// Disable Timer4 interrupts
 				}

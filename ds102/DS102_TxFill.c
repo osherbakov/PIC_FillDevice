@@ -68,10 +68,10 @@ static void SendMode23Query(byte Data)
   	// Release PIN_B and PIN_E - the Radio will drive it
   	pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
   	pinWrite(PIN_E, LOW);  // Turn on 20 K Pullup
-	pinMode(PIN_B, INPUT);    // Tristate the pin
+	pinMode(PIN_B, INPUT_PULLUP);    // Tristate the pin
 	pinMode(PIN_E, INPUT);    // Tristate the pin
-  	WPUB_PIN_B = 1;
-  	WPUB_PIN_E = 0;
+//  	WPUB_PIN_B = 1;
+//  	WPUB_PIN_E = 0;
 }
 
 static  byte  NewState;	
@@ -87,10 +87,10 @@ static signed char GetEquipmentMode23Type(void)
 
   pinWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
   pinWrite(PIN_E, LOW);      	// Turn_on the pullup register
-  pinMode(PIN_B, INPUT);    		// Tristate the pin
+  pinMode(PIN_B, INPUT_PULLUP);    		// Tristate the pin
   pinMode(PIN_E, INPUT);			// Tristate the pin
-  WPUB_PIN_B = 1;
-  WPUB_PIN_E = 0;
+//  WPUB_PIN_B = 1;
+//  WPUB_PIN_E = 0;
   
   set_timeout(tB);
 
@@ -173,12 +173,12 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 	//  2. read PIN_B 
 	if(fill_type != MODE1) {
 	  	pinWrite(PIN_B, HIGH);  // Set pullup 
-    	pinMode(PIN_B, INPUT);	
-    	WPUB_PIN_B = 1;
+    	pinMode(PIN_B, INPUT_PULLUP);	
+//    	WPUB_PIN_B = 1;
 	}else {
 	  	pinWrite(PIN_B, HIGH);  // Keep pin_B HIGH
     	pinMode(PIN_B, OUTPUT);	
-    	WPUB_PIN_B = 1;
+//    	WPUB_PIN_B = 1;
 	}
 
 	delayMicroseconds(tK1);    // Satisfy Setup time tK1
@@ -231,7 +231,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
 static void StartMode23Handshake(void)
 {
-  pinMode(PIN_B, INPUT);
+  pinMode(PIN_B, INPUT_PULLUP);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);    // make pin output
   pinMode(PIN_E, OUTPUT);  
@@ -241,7 +241,7 @@ static void StartMode23Handshake(void)
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
-  WPUB_PIN_B = 1;
+//  WPUB_PIN_B = 1;
   delay(200);
 
   // Drop PIN_D first
@@ -259,12 +259,12 @@ static void EndMode23Handshake(void)
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, LOW);
-  pinMode(PIN_B, INPUT);
+  pinMode(PIN_B, INPUT_PULLUP);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);    
-  WPUB_PIN_B = 1;
+//  WPUB_PIN_B = 1;
 }
 
 static void  EndFill(void)

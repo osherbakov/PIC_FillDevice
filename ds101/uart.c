@@ -2,6 +2,7 @@
 #include "delay.h"
 #include "HDLC.h"
 #include "Fill.h"
+#include "controls.h"
 #include "serial.h"
 
 #define TIMER_DTD 			(((XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
@@ -17,9 +18,12 @@
 void OpenRS232(char Master)
 {
   	close_eusart();
-	TRIS_RxPC = INPUT;
-	TRIS_TxPC = OUTPUT;
-  	TxPC  = 0;  // Set up the stop bit
+//	TRIS_RxPC = INPUT;
+//	TRIS_TxPC = OUTPUT;
+//  TxPC  = 0;  // Set up the stop bit
+	pinMode(RxPC, INPUT);
+	pinMode(TxPC, OUTPUT);
+	pinWrite(TxPC, 0);
   	if(Master) {
 		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
@@ -27,8 +31,10 @@ void OpenRS232(char Master)
 
 void CloseRS232()
 {
-	TRIS_RxPC = INPUT;
-	TRIS_TxPC = INPUT;
+	pinMode(RxPC, INPUT);
+	pinMode(TxPC, INPUT);
+//	TRIS_RxPC = INPUT;
+//	TRIS_TxPC = INPUT;
 }
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
@@ -47,7 +53,8 @@ int RxRS232Char()
 {
 	int  result;
 
-	TRIS_RxPC = INPUT;
+	pinMode(RxPC, INPUT);
+//	TRIS_RxPC = INPUT;
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
@@ -84,20 +91,21 @@ void TxRS232Char(char data)
 {
 	data = ~data;  			// Invert sysmbol
 
-	TRIS_TxPC = OUTPUT;
+	pinMode(TxPC, OUTPUT);
+//	TRIS_TxPC = OUTPUT;
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 
-	TxPC = 1;        		// Issue the start bit
+	pinWrite(TxPC, 1) ;        		// Issue the start bit
  	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-		TxPC = data & 0x01;		// Set the output
+		pinWrite(TxPC, data & 0x01);		// Set the output
 		data >>= 1;				// We use the fact that 
 						        // "0" bits are STOP bits
 	}
@@ -108,9 +116,12 @@ void TxRS232Char(char data)
 void OpenDTD(char Master)
 {
   	close_eusart();
-	TRIS_RxDTD = INPUT;
-	TRIS_TxDTD = OUTPUT;
-  	TxDTD  = 0;  // Set up the stop bit
+//	TRIS_RxDTD = INPUT;
+//	TRIS_TxDTD = OUTPUT;
+	pinMode(RxDTD, INPUT);
+	pinMode(TxDTD, OUTPUT);
+//  	TxDTD  = 0;  // Set up the stop bit
+	pinWrite(TxDTD, 0);
   	if(Master) {
 		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
@@ -118,8 +129,10 @@ void OpenDTD(char Master)
 
 void CloseDTD()
 {
-	TRIS_RxDTD = INPUT;
-	TRIS_TxDTD = INPUT;
+//	TRIS_RxDTD = INPUT;
+//	TRIS_TxDTD = INPUT;
+	pinMode(RxDTD, INPUT);
+	pinMode(TxDTD, INPUT);
 }
 
 
@@ -135,7 +148,8 @@ int RxDTDChar()
 {
 	int		result;
 
-	TRIS_RxDTD = INPUT;
+//	TRIS_RxDTD = INPUT;
+	pinMode(RxDTD, INPUT);
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
@@ -170,20 +184,21 @@ void TxDTDChar(char data)
 {
 	data = ~data;  			// Invert sysmbol
 	
-	TRIS_TxDTD = OUTPUT;
+//	TRIS_TxDTD = OUTPUT;
+	pinMode(TxDTD, OUTPUT);
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
 	TMR6 = 0;
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 
-	TxDTD = 1;        		// Issue the start bit
+	pinWrite(TxDTD, 1);        		// Issue the start bit
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
 		while(!PIR5bits.TMR6IF) {	/* wait until timer overflow bit is set*/};
 		PIR5bits.TMR6IF = 0;		// Clear timer overflow bit
-		TxDTD = data & 0x01;		// Set the output
+		pinWrite(TxDTD, data & 0x01);	// Set the output
 		data >>= 1;					// We use the fact that 
 						        	// "0" bits are STOP bits
 	}
@@ -191,37 +206,46 @@ void TxDTDChar(char data)
 
 void OpenRS485(char Master)
 {
-	ANSEL_Data_N = 0;
-	WPUB_Data_N = 1;
+//	ANSEL_Data_N = 0;
+//	WPUB_Data_N = 1;
 
-	ANSEL_Data_P = 0;
-	WPUB_Data_P = 1;
+//	ANSEL_Data_P = 0;
+//	WPUB_Data_P = 1;
 
   	OSCTUNEbits.PLLEN = 1;    	// *4 PLL (64MHZ)
 	DelayMs(4 * 10);			// Wait for PLL to become stable
 
 	if(Master) {
-		TRIS_Data_N = OUTPUT;
-		TRIS_Data_P = OUTPUT;
-		Data_P 		= HIGH;
-		Data_N 		= LOW;
+//		TRIS_Data_N = OUTPUT;
+//		TRIS_Data_P = OUTPUT;
+//		Data_P 		= HIGH;
+//		Data_N 		= LOW;
+		pinMode(Data_N, OUTPUT);
+		pinMode(Data_P, OUTPUT);
+		pinWrite(Data_N, LOW);		
+		pinWrite(Data_P, HIGH);		
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 	}else {
-		TRIS_Data_N = INPUT;
-		TRIS_Data_P = INPUT;
+//		TRIS_Data_N = INPUT;
+//		TRIS_Data_P = INPUT;
+		pinMode(Data_N, INPUT_PULLUP);
+		pinMode(Data_P, INPUT_PULLUP);
 	}		
 }
 
 void CloseRS485()
 {
-	TRIS_Data_N = INPUT;
-  	WPUB_Data_N = 1;
-	ANSEL_Data_N = 0;
+//	TRIS_Data_N = INPUT;
+//  	WPUB_Data_N = 1;
+//	ANSEL_Data_N = 0;
 
-	TRIS_Data_P = INPUT;
-  	WPUB_Data_P = 1;
-	ANSEL_Data_P = 0;
+//	TRIS_Data_P = INPUT;
+//  	WPUB_Data_P = 1;
+//	ANSEL_Data_P = 0;
+
+	pinMode(Data_N, INPUT_PULLUP);
+	pinMode(Data_P, INPUT_PULLUP);
 
   	OSCTUNEbits.PLLEN = 0;    	// No PLL (16MHZ)
 	DelayMs(10);				// Wait for the clock to become stable
@@ -257,8 +281,6 @@ typedef enum {
 #define 	PIN_P			(Data_P)
 #define 	PIN_N			(Data_N)
 #define 	PIN_IN			(Data_P)
-#define 	TRIS_PIN_P		(TRIS_Data_P)
-#define 	TRIS_PIN_N		(TRIS_Data_N)
 
 static		HDLC_STATES			st;
 static		int 				byte_count;
@@ -279,9 +301,11 @@ static		byte 				prevIRQ;
 int RxRS485Data(char *pData)
 {
 	// Take care of physical pins
-	TRIS_PIN_P = INPUT;
-	TRIS_PIN_N = INPUT;
-
+//	TRIS_PIN_P = INPUT;
+//	TRIS_PIN_N = INPUT;
+	pinMode(PIN_P, INPUT);
+	pinMode(PIN_N, INPUT);
+	
 	st = INIT;
 	Timer_Ctrl 		= TIMER_CTRL;
       	
@@ -489,10 +513,12 @@ void TxRS485Data(char *pData, int nBytes)
 	st = INIT;
 
 	// Take care of physical pin
-	TRIS_PIN_P 		= OUTPUT;
-	TRIS_PIN_N 		= OUTPUT;
-	PIN_P 			= 1;
-	PIN_N 			= 0;
+//	TRIS_PIN_P 		= OUTPUT;
+//	TRIS_PIN_N 		= OUTPUT;
+	pinMode(PIN_P, OUTPUT);
+	pinMode(PIN_N, OUTPUT);
+	pinWrite(PIN_P, 1);
+	pinWrite(PIN_N, 0);
 	next_bit 		= 1;
 
 	DelayMs(4 * 10);			// Little timeout
@@ -525,16 +551,16 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}	// Start of the cell
-			  		PIN_P = next_bit;
-					PIN_N = !next_bit;
+			  		pinWrite(PIN_P,next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!TimerFlag) {}	// Middle of the cell
-					PIN_P = next_bit;
-					PIN_N = !next_bit;
+					pinWrite(PIN_P, next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit; 	// Always flip the bit at the beginning of the cell 
 					bit_count--;
@@ -554,8 +580,8 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}		// Wait for the next cell beginning
-			  		PIN_P = next_bit;
-					PIN_N = !next_bit;
+			  		pinWrite(PIN_P, next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 
 					// Start calculating the next bit
@@ -571,8 +597,8 @@ void TxRS485Data(char *pData, int nBytes)
 					} 
 
 					while(!TimerFlag) {}		// We are now at the middle of the cell
-					PIN_P = next_bit;
-					PIN_N = !next_bit;
+					pinWrite(PIN_P, next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 					
 
@@ -580,15 +606,15 @@ void TxRS485Data(char *pData, int nBytes)
 					//  do the actual bit stuffing if needed - insert "0"
 					if(stuff_count >= 5) {
 						while(!TimerFlag) {}		// Wait for the next cell beginning
-			  			PIN_P = next_bit;
-						PIN_N = !next_bit;
+			  			pinWrite(PIN_P,next_bit);
+						pinWrite(PIN_N,!next_bit);
 						TimerFlag = 0;
 
 						next_bit = !next_bit;		// Send "0"
 
 						while(!TimerFlag) {}		// Wait for the middle of the cell
-						PIN_P = next_bit;
-						PIN_N = !next_bit;
+						pinWrite(PIN_P, next_bit);
+						pinWrite(PIN_N, !next_bit);
 						TimerFlag = 0;
 
 						next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
@@ -611,16 +637,16 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}		// Wait for the cell start
-			  		PIN_P = next_bit;
-					PIN_N = !next_bit;
+			  		pinWrite(PIN_P, next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!TimerFlag) {}		// Wait for the middle of the cell
-					PIN_P = next_bit;
-					PIN_N = !next_bit;
+					pinWrite(PIN_P, next_bit);
+					pinWrite(PIN_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
 					bit_count--;
@@ -629,16 +655,18 @@ void TxRS485Data(char *pData, int nBytes)
 			}
 			// Handle the last cell
 			while(!TimerFlag) {}		// Wait for the cell start
-	  		PIN_P = next_bit;
-			PIN_N = !next_bit;
+	  		pinWrite(PIN_P, next_bit);
+			pinWrite(PIN_N, !next_bit);
 			TimerFlag = 0;
 			st = DONE;
 		 	break;
 
 		case DONE:
   			INTCONbits.GIE = prevIRQ;
-			TRIS_PIN_P 		= INPUT;
-			TRIS_PIN_N 		= INPUT;
+//			TRIS_PIN_P 		= INPUT;
+//			TRIS_PIN_N 		= INPUT;
+			pinMode(PIN_P, INPUT);
+			pinMode(PIN_N, INPUT);
 			return;
 			break;
 		} 	
