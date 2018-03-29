@@ -108,8 +108,10 @@ enum {
 */
 
 
+#define DATAPORT(port)		PORT##port
+#define TRISPORT(port)		TRIS##port
+
 #define PIN(port, pin)		port##_##pin
-#define PORT(port)			PORT##port
 #define	DATA(port, pin)		PORT##port##bits.R##port##pin
 #define	TRIS(port, pin)		TRIS##port##bits.R##port##pin
 #define	ANSEL(port, pin)	ANSEL##port##bits.ANS##port##pin
@@ -117,16 +119,18 @@ enum {
 #define	IOC(port, pin)		IOC##port##bits.IOC##port##pin
 
 #define pinRead(pin) 			DATA_##pin
-#define pinWrite(pin, value) 	do{DATA_##pin = value;}while(0)
-
+#define pinWrite(pin, value) 	do{ DATA_##pin = value;}while(0)
+#define pinMode(pin, mode) 		do{ TRIS_##pin = (mode == OUTPUT) ? 0 : 1; \
+									ANSEL_##pin = (mode == INPUT_ANALOG) ? 0 : 1; \
+								}while(0)
 
 // Rotary switch ports - the position is indicated
 // by the grounding of the pin.
-#define S1_8 		PORT(D)
-#define S9_16 		PORT(A)
+#define S1_8 		DATAPORT(D)
+#define S9_16 		DATAPORT(A)
 // Registers that control the Data direction/Tristate for the ports
-//#define TRIS_S1_8 	TRISD
-//#define TRIS_S9_16 	TRISA
+#define TRIS_S1_8 	TRISPORT(D)
+#define TRIS_S9_16 	TRISPORT(A)
 
 
 // Audio/FILL connector
@@ -146,6 +150,7 @@ enum {
 #define	ANSEL_PIN_C	ANSEL(C,6)
 #define	ANSEL_PIN_D	ANSEL(C,7)
 #define	ANSEL_PIN_E	ANSEL(B,2)
+#define	ANSEL_PIN_F	ANSEL(C,0)
 
 #define	WPU_PIN_B	WPU(B,1)
 #define	WPU_PIN_E	WPU(B,2)
@@ -162,13 +167,14 @@ enum {
 #define	DATA_ZBR	DATA(E,2)
 #define	TRIS_ZBR	TRIS(E,2)
 #define	ANSEL_ZBR	ANSEL(E,2)
+#define	WPU_ZBR		WPU(E,2)
 
 
 // Button press
 #define	DATA_BTN	DATA(B,0)
 #define	TRIS_BTN	TRIS(B,0)
 #define	ANSEL_BTN	ANSEL(B,0)
-#define	WPUB_BTN	WPU(B,0)
+#define	WPU_BTN		WPU(B,0)
 
 
 
@@ -181,6 +187,12 @@ enum {
 #define	DATA_PIN_F_PWR	DATA(E,0)
 #define	TRIS_PIN_F_PWR	TRIS(E,0)
 #define	ANSEL_PIN_F_PWR	ANSEL(E,0)
+
+
+#define	DATA_S16	DATA(A,7)
+#define	TRIS_S16	TRIS(A,7)
+#define	ANSEL_S16	ANSEL(A,7)
+#define	WPU_S16		WPU(A,7)
 
 
 
@@ -232,10 +244,14 @@ enum {
 // NMEA 1PPS GPS pulse
 #define	GPS_1PPS		(PIN_E)
 #define DATA_GPS_1PPS	(DATA_PIN_E)
+#define TRIS_GPS_1PPS	(TRIS_PIN_E)
+#define ANSEL_GPS_1PPS	(ANSEL_PIN_E)
 
 // Have quick pin
 #define	HQ_DATA			(PIN_B)
 #define	DATA_HQ_DATA	(DATA_PIN_B)
+#define	TRIS_HQ_DATA	(TRIS_PIN_B)
+#define	ANSEL_HQ_DATA	(ANSEL_PIN_B)
 
 
 
@@ -253,8 +269,13 @@ enum {
 //  PIN_D - input, PIN_C - output
 #define	 TxPC			(PIN_C)
 #define	 DATA_TxPC		(DATA_PIN_C)
+#define	 TRIS_TxPC		(TRIS_PIN_C)
+#define	 ANSEL_TxPC		(ANSEL_PIN_C)
+
 #define	 RxPC			(PIN_D)
 #define	 DATA_RxPC		(DATA_PIN_D)
+#define	 TRIS_RxPC		(TRIS_PIN_D)
+#define	 ANSEL_RxPC		(ANSEL_PIN_D)
 
 // To communicate with another DTD the following pins are used:
 //  PIN_C - input, PIN_D - output

@@ -63,16 +63,14 @@ char is_bootloader_active()
 {
   // Check if the switch S16 is selected
   //  and the RxD is in break state  (MARK)
-//  ANSELA = 0; 
-//  ANSELC = 0;
-  
+
 //  TRISAbits.RA7  = INPUT;  // That is a S16 pin
 //  TRIS_RxPC = INPUT;
   pinMode(S16, INPUT_PULLUP);
   pinMode(RxPC, INPUT);
  
   //Switch is tied to the GND and Rx is (START)
-  return (!PORTAbits.RA7 && RxPC);
+  return (!pinRead(S16) && pinRead(RxPC));
 }
 
 void set_pin_a_as_gnd()
@@ -228,51 +226,3 @@ void set_led_off()
 	pinWrite(LEDP, LED_current_bit);
 }
 
-
-void pinMode(int pin, int mode)
-{
-	if(pin == PIN_B) {
-		if(mode == INPUT_PULLUP)
-		{
-			ANSEL_PIN_B = 0;
-			WPU_PIN_B = 1;
-			TRIS_PIN_B = 1;
-		}else if(mode == OUTPUT)
-		{
-			ANSEL_PIN_B = 0;
-			WPU_PIN_B = 0;
-			TRIS_PIN_B = 0;
-		}else if(mode == INPUT_ANALOG)
-		{
-			ANSEL_PIN_B = 1;
-			WPU_PIN_B = 0;
-			TRIS_PIN_B = 1;
-		}else {
-			ANSEL_PIN_B = 0;
-			WPU_PIN_B = 0;
-			TRIS_PIN_B = 1;
-		}
-	}else if(pin == PIN_C) {
-		if(mode == INPUT) {
-			ANSEL_PIN_C = 0;
-			TRIS_PIN_C = 1;
-		}else if(mode == OUTPUT)
-		{
-			ANSEL_PIN_C = 0;
-			TRIS_PIN_C = 0;
-		}else if(mode == INPUT_PULLUP)
-		{
-			ANSEL_PIN_C = 0;
-			TRIS_PIN_C = 1;
-		}else if(mode == INPUT_PULLDOWN)
-		{
-			ANSEL_PIN_C = 0;
-			TRIS_PIN_C = 1;
-		}else if(mode == INPUT_ANALOG)
-		{
-			ANSEL_PIN_C = 1;
-			TRIS_PIN_C = 1;
-		}
-	}	
-	
-}	

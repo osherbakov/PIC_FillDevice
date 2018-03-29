@@ -83,7 +83,7 @@ extern void set_led_off(void);
 
 // extern char pinRead(int pin);
 // extern void pinWrite(int pin, int value);
-extern void pinMode(int pin, int mode);
+// extern void pinMode(int pin, int mode);
 
 
 
