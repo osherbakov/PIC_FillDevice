@@ -297,12 +297,11 @@ static void AcquireMode23Bus(void)
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
-  pinMode(PIN_B, INPUT);
+  pinMode(PIN_B, INPUT_PULLUP);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
   pinMode(PIN_F, OUTPUT);
-  WPUB_PIN_B = 1;
   delayMicroseconds(200);
 }
 

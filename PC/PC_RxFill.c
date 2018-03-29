@@ -80,7 +80,7 @@ char CheckFillType4()
 	if( !RCSTA1bits.SPEN)
 	{
 		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
-	  	if(RxPC == LOW)
+	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_MBITR, DATA_POLARITY_RXTX);
@@ -118,7 +118,7 @@ char CheckFillRS232Type5()
 	if( !RCSTA1bits.SPEN )
 	{
 		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
-	  	if(RxPC == LOW)
+	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
 	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
@@ -140,7 +140,7 @@ char CheckFillDTD232Type5()
 {
 	if( !RCSTA1bits.SPEN )
 	{
-	  	if(RxDTD == LOW)
+	  	if(pinRead(RxDTD) == LOW)
 	  	{
 	  		 close_eusart();
 	  		 return MODE5;
@@ -160,7 +160,7 @@ char CheckFillRS485Type5()
 	pinMode(Data_P, INPUT_PULLUP);
 	DelayMs(10);
 
-	return ( Data_P != Data_N ) ? MODE5 : ST_TIMEOUT;
+	return ( pinRead(Data_P) != pinRead(Data_N) ) ? MODE5 : ST_TIMEOUT;
 }	
 
 

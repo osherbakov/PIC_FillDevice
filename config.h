@@ -122,6 +122,7 @@ enum {
 #define pinWrite(pin, value) 	do{ DATA_##pin = value;}while(0)
 #define pinMode(pin, mode) 		do{ TRIS_##pin = (mode == OUTPUT) ? 0 : 1; \
 									ANSEL_##pin = (mode == INPUT_ANALOG) ? 0 : 1; \
+									WPU_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 								}while(0)
 
 // Rotary switch ports - the position is indicated
@@ -132,6 +133,8 @@ enum {
 #define TRIS_S1_8 	TRISPORT(D)
 #define TRIS_S9_16 	TRISPORT(A)
 
+extern	byte	NO_WPU;
+extern	byte	NO_ANSEL;
 
 // Audio/FILL connector
 #define DATA_PIN_B DATA(B,1)
@@ -150,16 +153,20 @@ enum {
 #define	ANSEL_PIN_C	ANSEL(C,6)
 #define	ANSEL_PIN_D	ANSEL(C,7)
 #define	ANSEL_PIN_E	ANSEL(B,2)
-#define	ANSEL_PIN_F	ANSEL(C,0)
+#define	ANSEL_PIN_F	NO_ANSEL
 
 #define	WPU_PIN_B	WPU(B,1)
+#define	WPU_PIN_C	NO_WPU
+#define	WPU_PIN_D	NO_WPU
 #define	WPU_PIN_E	WPU(B,2)
+#define	WPU_PIN_F	NO_WPU
 
 
 // LED control Ports and pins
 #define	DATA_LEDP  	DATA(E,1)
 #define	TRIS_LEDP	TRIS(E,1)
 #define	ANSEL_LEDP	ANSEL(E,1)
+#define	WPU_LEDP	NO_WPU
 
 
 
@@ -167,7 +174,7 @@ enum {
 #define	DATA_ZBR	DATA(E,2)
 #define	TRIS_ZBR	TRIS(E,2)
 #define	ANSEL_ZBR	ANSEL(E,2)
-#define	WPU_ZBR		WPU(E,2)
+#define	WPU_ZBR		NO_WPU
 
 
 // Button press
@@ -181,18 +188,20 @@ enum {
 // PIN_A_PWR is used to control the Pin A coonection
 #define	DATA_PIN_A_PWR	DATA(C,1)
 #define	TRIS_PIN_A_PWR	TRIS(C,1)
-#define	ANSEL_PIN_A_PWR	ANSEL(C,1)
+#define	ANSEL_PIN_A_PWR	NO_ANSEL
+#define	WPU_PIN_A_PWR	NO_WPU
 
 // PIN_F_PWR is used to control the Pin F power
 #define	DATA_PIN_F_PWR	DATA(E,0)
 #define	TRIS_PIN_F_PWR	TRIS(E,0)
 #define	ANSEL_PIN_F_PWR	ANSEL(E,0)
+#define	WPU_PIN_F_PWR	NO_WPU
 
 
 #define	DATA_S16	DATA(A,7)
 #define	TRIS_S16	TRIS(A,7)
-#define	ANSEL_S16	ANSEL(A,7)
-#define	WPU_S16		WPU(A,7)
+#define	ANSEL_S16	NO_ANSEL
+#define	WPU_S16		NO_WPU
 
 
 
@@ -216,6 +225,7 @@ enum {
 #define  DATA_RTC_1PPS		DATA(B,5)
 #define  TRIS_RTC_1PPS		TRIS(B,5)
 #define  ANSEL_RTC_1PPS		ANSEL(B,5)
+#define  WPU_RTC_1PPS		WPU(B,5)
 #define  IOC_RTC_1PPS		IOC(B,5)
 
 
@@ -246,12 +256,14 @@ enum {
 #define DATA_GPS_1PPS	(DATA_PIN_E)
 #define TRIS_GPS_1PPS	(TRIS_PIN_E)
 #define ANSEL_GPS_1PPS	(ANSEL_PIN_E)
+#define WPU_GPS_1PPS	(WPU_PIN_E)
 
 // Have quick pin
 #define	HQ_DATA			(PIN_B)
 #define	DATA_HQ_DATA	(DATA_PIN_B)
 #define	TRIS_HQ_DATA	(TRIS_PIN_B)
 #define	ANSEL_HQ_DATA	(ANSEL_PIN_B)
+#define	WPU_HQ_DATA		(WPU_PIN_B)
 
 
 
@@ -262,8 +274,15 @@ enum {
 // PIN_C - Input, PIN_D - Output
 #define	 TxMBITR		(PIN_D)
 #define	 DATA_TxMBITR	(DATA_PIN_D)
+#define	 TRIS_TxMBITR	(TRIS_PIN_D)
+#define	 ANSEL_TxMBITR	(ANSEL_PIN_D)
+#define	 WPU_TxMBITR	(WPU_PIN_D)
+
 #define	 RxMBITR		(PIN_C)
 #define	 DATA_RxMBITR	(DATA_PIN_C)
+#define	 TRIS_RxMBITR	(TRIS_PIN_C)
+#define	 ANSEL_RxMBITR	(ANSEL_PIN_C)
+#define	 WPU_RxMBITR	(WPU_PIN_C)
 
 // To communicate with PC the following pins are used:
 //  PIN_D - input, PIN_C - output
@@ -271,26 +290,43 @@ enum {
 #define	 DATA_TxPC		(DATA_PIN_C)
 #define	 TRIS_TxPC		(TRIS_PIN_C)
 #define	 ANSEL_TxPC		(ANSEL_PIN_C)
+#define	 WPU_TxPC		(WPU_PIN_C)
 
 #define	 RxPC			(PIN_D)
 #define	 DATA_RxPC		(DATA_PIN_D)
 #define	 TRIS_RxPC		(TRIS_PIN_D)
 #define	 ANSEL_RxPC		(ANSEL_PIN_D)
+#define	 WPU_RxPC		(WPU_PIN_D)
 
 // To communicate with another DTD the following pins are used:
 //  PIN_C - input, PIN_D - output
 #define	 TxDTD			(PIN_D)
 #define	 DATA_TxDTD		(DATA_PIN_D)
+#define	 TRIS_TxDTD		(TRIS_PIN_D)
+#define	 ANSEL_TxDTD	(ANSEL_PIN_D)
+#define	 WPU_TxDTD		(WPU_PIN_D)
+
 #define	 RxDTD			(PIN_C)
 #define	 DATA_RxDTD		(DATA_PIN_C)
+#define	 TRIS_RxDTD		(TRIS_PIN_C)
+#define	 ANSEL_RxDTD	(ANSEL_PIN_C)
+#define	 WPU_RxDTD		(WPU_PIN_C)
 
 
 // To communicate with DS-101 (RS-485) @ 64Kbd the following pins are used:
 //  Data+  PIN_B,  Data-  PIN_E
 #define	 Data_P			(PIN_B)
 #define	 DATA_Data_P	(DATA_PIN_B)
+#define	 TRIS_Data_P	(TRIS_PIN_B)
+#define	 ANSEL_Data_P	(ANSEL_PIN_B)
+#define	 WPU_Data_P		(WPU_PIN_B)
+
 #define	 Data_N			(PIN_E)
 #define	 DATA_Data_N	(DATA_PIN_E)
+#define	 TRIS_Data_N	(TRIS_PIN_E)
+#define	 ANSEL_Data_N	(ANSEL_PIN_E)
+#define	 WPU_Data_N		(WPU_PIN_E)
+
 #define	 WAKEUP			(PIN_C)
 
 #endif	// __CONFIG_H__

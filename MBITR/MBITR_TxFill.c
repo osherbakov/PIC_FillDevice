@@ -88,18 +88,22 @@ char WaitReqSendMBITRFill(byte stored_slot)
 
 void open_mbitr(void)
 {
-	TRIS_RxMBITR = INPUT;
-	TRIS_TxMBITR = OUTPUT;
-	ANSEL_RxMBITR	= 0;
-	ANSEL_TxMBITR	= 0;
-	TxMBITR	= STOP;
+//	TRIS_RxMBITR = INPUT;
+//	TRIS_TxMBITR = OUTPUT;
+//	ANSEL_RxMBITR	= 0;
+//	ANSEL_TxMBITR	= 0;
+	pinMode(RxMBITR, INPUT);
+	pinMode(TxMBITR, OUTPUT);
+	pinWrite(TxMBITR, STOP);
 	DelayMs(50);
 }
 
 void close_mbitr(void)
 {
-	TRIS_RxMBITR = INPUT;
-	TRIS_TxMBITR = INPUT;
+//	TRIS_RxMBITR = INPUT;
+//	TRIS_TxMBITR = INPUT;
+	pinMode(RxMBITR, INPUT);
+	pinMode(TxMBITR, INPUT);
 }
 	
 byte rx_mbitr(unsigned char *p_data, byte ncount)
@@ -107,7 +111,9 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	byte bitcount, data;
 	byte	nrcvd = 0;	
 
-	TRIS_RxMBITR = INPUT;
+//	TRIS_RxMBITR = INPUT;
+	pinMode(RxMBITR, INPUT);
+	
 	T6CON = TIMER_MBITR_CTRL;
 	PR6 = TIMER_MBITR;
  	set_timeout(RX_TIMEOUT1_MBITR);
@@ -115,7 +121,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(RxMBITR )
+		if(pinRead(RxMBITR) )
 		{
 			TMR6 = TIMER_MBITR_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
@@ -125,10 +131,10 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (RxMBITR ? 0x80 : 0x00);
+				data = (data >> 1) | (pinRead(RxMBITR) ? 0x80 : 0x00);
 			}
 			while(!PIR5bits.TMR6IF){} ;
-			if(RxMBITR)
+			if(pinRead(RxMBITR))
 			{
   				break;
   			}
@@ -148,7 +154,9 @@ void tx_mbitr(const byte *p_data, byte ncount)
 
   	DelayMs(TX_MBITR_DELAY_MS);
 	
-	TRIS_TxMBITR = OUTPUT;
+//	TRIS_TxMBITR = OUTPUT;
+	pinMode(TxMBITR, OUTPUT);
+	
 	PR6 = TIMER_MBITR;
 	T6CON = TIMER_MBITR_CTRL;
 	
@@ -156,14 +164,14 @@ void tx_mbitr(const byte *p_data, byte ncount)
 	PIR5bits.TMR6IF = 0;	// Clear overflow flag
 	while(ncount-- )
 	{
-		TxMBITR = START;        // Issue the start bit
+		pinWrite(TxMBITR, START) ;        // Issue the start bit
 		data = ~(*p_data++);  // Get the symbol and advance pointer
     	// send 8 data bits and 4 stop bits
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
 			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
 			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
-			TxMBITR = data & 0x01;	// Set the output
+			pinWrite(TxMBITR, data & 0x01);	// Set the output
 			data >>= 1;				// We use the fact that 
 									// "0" bits are STOP bits
 		}

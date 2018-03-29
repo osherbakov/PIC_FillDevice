@@ -66,7 +66,7 @@ int RxRS232Char()
   	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(RxPC )
+		if(pinRead(RxPC) )
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
@@ -75,10 +75,10 @@ int RxRS232Char()
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (RxPC ? 0x00 : 0x80);
+				data = (data >> 1) | (pinRead(RxPC) ? 0x00 : 0x80);
 			}
  			while(!PIR5bits.TMR6IF){} ;	// Wait for stop bit
-			result =  RxPC ? -1 : ((int)data) & 0x00FF;
+			result =  pinRead(RxPC) ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -160,7 +160,7 @@ int RxDTDChar()
   	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
-		if(RxDTD )
+		if(pinRead(RxDTD) )
 		{
 			TMR6 = TIMER_DTD_START;
 			PIR5bits.TMR6IF = 0;	// Clear overflow flag
@@ -169,10 +169,10 @@ int RxDTDChar()
 				// Wait until timer overflows
 				while(!PIR5bits.TMR6IF){} ;
 				PIR5bits.TMR6IF = 0;	// Clear overflow flag
-				data = (data >> 1) | (RxDTD ? 0x00 : 0x80);
+				data = (data >> 1) | (pinRead(RxDTD) ? 0x00 : 0x80);
 			}
 			while(!PIR5bits.TMR6IF){} ; // Wait for stop bit
-			result = RxDTD ? -1 : ((int)data) & 0x00FF;
+			result = pinRead(RxDTD) ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -278,9 +278,12 @@ typedef enum {
 #define 	Timer_Counter	(TMR6)
 #define 	Timer_Ctrl		(T6CON)
 #define 	TimerFlag		(PIR5bits.TMR6IF)
-#define 	PIN_P			(Data_P)
-#define 	PIN_N			(Data_N)
-#define 	PIN_IN			(Data_P)
+
+#define 	PIN_IN			Data_P
+#define 	DATA_PIN_IN		DATA_Data_P
+#define 	TRIS_PIN_IN		TRIS_Data_P
+#define 	ANSEL_PIN_IN	ANSEL_Data_P
+#define 	WPU_PIN_IN		WPU_Data_P
 
 static		HDLC_STATES			st;
 static		int 				byte_count;
@@ -303,8 +306,8 @@ int RxRS485Data(char *pData)
 	// Take care of physical pins
 //	TRIS_PIN_P = INPUT;
 //	TRIS_PIN_N = INPUT;
-	pinMode(PIN_P, INPUT);
-	pinMode(PIN_N, INPUT);
+	pinMode(Data_P, INPUT);
+	pinMode(Data_N, INPUT);
 	
 	st = INIT;
 	Timer_Ctrl 		= TIMER_CTRL;
@@ -332,19 +335,22 @@ int RxRS485Data(char *pData)
 			flag_detected 	= 0;
 			timeout_cntr	= 0;
 
-			prev_Sample = rcvd_Sample = PIN_IN;
+			prev_Sample = rcvd_Sample = pinRead(PIN_IN);
 	
 			st = GET_EDGE;
 		 	break;
 
 		// Initial state - we are looking for any edge within big timeout
 		case GET_EDGE:	
-			if(rcvd_Sample){while(PIN_IN && !PIR1bits.TMR1IF){}} else{while(!PIN_IN && !PIR1bits.TMR1IF) {}}
+			if(rcvd_Sample)
+				{while(pinRead(PIN_IN) && !PIR1bits.TMR1IF){}} 
+			else
+				{while(!pinRead(PIN_IN) && !PIR1bits.TMR1IF) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;			// Clear overflow flag
 
 			// Save the value at the edge
-			prev_Sample = PIN_IN;
+			prev_Sample = pinRead(PIN_IN);
 
 			if(PIR1bits.TMR1IF) {
 				if(timeout_cntr++ >= TIMEOUT_CNT) {
@@ -362,13 +368,13 @@ int RxRS485Data(char *pData)
 			}
 			
 			while(!TimerFlag) {}
-			rcvd_Sample	= PIN_IN;
+			rcvd_Sample	= pinRead(PIN_IN);
 			break;
 		
 		// State to catch first HDLC Flag (0x7E) to achieve frame sync
 		// We exit it when we detect First HDLC flag
 		case GET_FLAG_EDGE:	
-			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
+			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;			// Clear overflow flag
 				
@@ -378,7 +384,7 @@ int RxRS485Data(char *pData)
 			}
 
 			// Save the value at the edge
-			prev_Sample = PIN_IN;
+			prev_Sample = pinRead(PIN_IN);
 
 			if(rcvd_byte == FLAG) { 
 				rcvd_byte = 0;
@@ -389,14 +395,14 @@ int RxRS485Data(char *pData)
 			}
 
 			while(!TimerFlag) {}
-			rcvd_Sample	= PIN_IN;
+			rcvd_Sample	= pinRead(PIN_IN);
 			break;
 
 		// State to handle HDLC Flags to achieve frame sync	
 		// We exit it when we detect First non-HDLC flag symbol
 		//  Here we also check for bit stuffing (if after 5 "1" comes "0" - discard it!
 		case GET_SAMPLE_EDGE:
-			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
+			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;			// Clear overflow flag
 				
@@ -419,7 +425,7 @@ int RxRS485Data(char *pData)
 			// End of bit stuffing handling
 
 			// Save the value at the edge
-			prev_Sample = PIN_IN;
+			prev_Sample = pinRead(PIN_IN);
 
 			// If the assembled byte is not FLAG - save it
 			if(bit_count >= 8) {
@@ -434,14 +440,14 @@ int RxRS485Data(char *pData)
 			}
 
 			while(!TimerFlag) {}
-			rcvd_Sample = PIN_IN;
+			rcvd_Sample = pinRead(PIN_IN);
 			break;
 
 		// State to handle HDLC Data	
 		// We exit it when we detect first HDLC flag symbol (or any symbol with 6 and more "1"s
 		// We also handle bit stuffing here
 		case GET_DATA_EDGE:
-			if(rcvd_Sample){while(PIN_IN){}} else{while(!PIN_IN) {}}
+			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
 			Timer_Counter 	= 0;
 			TimerFlag 		= 0;	// Clear overflow flag
 
@@ -464,7 +470,7 @@ int RxRS485Data(char *pData)
 			// End of bit stuffing handling
 
 			// Save the value at the edge
-			prev_Sample = PIN_IN;
+			prev_Sample = pinRead(PIN_IN);
 
 			// We got 6 "1" in a row - report as done
 			if(flag_detected) {
@@ -478,7 +484,7 @@ int RxRS485Data(char *pData)
 			}
 
 			while(!TimerFlag) {}
-			rcvd_Sample = PIN_IN;
+			rcvd_Sample = pinRead(PIN_IN);
 			break;
 		
 		case TIMEOUT:
@@ -515,10 +521,10 @@ void TxRS485Data(char *pData, int nBytes)
 	// Take care of physical pin
 //	TRIS_PIN_P 		= OUTPUT;
 //	TRIS_PIN_N 		= OUTPUT;
-	pinMode(PIN_P, OUTPUT);
-	pinMode(PIN_N, OUTPUT);
-	pinWrite(PIN_P, 1);
-	pinWrite(PIN_N, 0);
+	pinMode(Data_P, OUTPUT);
+	pinMode(Data_N, OUTPUT);
+	pinWrite(Data_P, 1);
+	pinWrite(Data_N, 0);
 	next_bit 		= 1;
 
 	DelayMs(4 * 10);			// Little timeout
@@ -551,16 +557,16 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}	// Start of the cell
-			  		pinWrite(PIN_P,next_bit);
-					pinWrite(PIN_N, !next_bit);
+			  		pinWrite(Data_P,next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!TimerFlag) {}	// Middle of the cell
-					pinWrite(PIN_P, next_bit);
-					pinWrite(PIN_N, !next_bit);
+					pinWrite(Data_P, next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit; 	// Always flip the bit at the beginning of the cell 
 					bit_count--;
@@ -580,8 +586,8 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}		// Wait for the next cell beginning
-			  		pinWrite(PIN_P, next_bit);
-					pinWrite(PIN_N, !next_bit);
+			  		pinWrite(Data_P, next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 
 					// Start calculating the next bit
@@ -597,8 +603,8 @@ void TxRS485Data(char *pData, int nBytes)
 					} 
 
 					while(!TimerFlag) {}		// We are now at the middle of the cell
-					pinWrite(PIN_P, next_bit);
-					pinWrite(PIN_N, !next_bit);
+					pinWrite(Data_P, next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 					
 
@@ -606,15 +612,15 @@ void TxRS485Data(char *pData, int nBytes)
 					//  do the actual bit stuffing if needed - insert "0"
 					if(stuff_count >= 5) {
 						while(!TimerFlag) {}		// Wait for the next cell beginning
-			  			pinWrite(PIN_P,next_bit);
-						pinWrite(PIN_N,!next_bit);
+			  			pinWrite(Data_P,next_bit);
+						pinWrite(Data_N,!next_bit);
 						TimerFlag = 0;
 
 						next_bit = !next_bit;		// Send "0"
 
 						while(!TimerFlag) {}		// Wait for the middle of the cell
-						pinWrite(PIN_P, next_bit);
-						pinWrite(PIN_N, !next_bit);
+						pinWrite(Data_P, next_bit);
+						pinWrite(Data_N, !next_bit);
 						TimerFlag = 0;
 
 						next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
@@ -637,16 +643,16 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!TimerFlag) {}		// Wait for the cell start
-			  		pinWrite(PIN_P, next_bit);
-					pinWrite(PIN_N, !next_bit);
+			  		pinWrite(Data_P, next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!TimerFlag) {}		// Wait for the middle of the cell
-					pinWrite(PIN_P, next_bit);
-					pinWrite(PIN_N, !next_bit);
+					pinWrite(Data_P, next_bit);
+					pinWrite(Data_N, !next_bit);
 					TimerFlag = 0;
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
 					bit_count--;
@@ -655,8 +661,8 @@ void TxRS485Data(char *pData, int nBytes)
 			}
 			// Handle the last cell
 			while(!TimerFlag) {}		// Wait for the cell start
-	  		pinWrite(PIN_P, next_bit);
-			pinWrite(PIN_N, !next_bit);
+	  		pinWrite(Data_P, next_bit);
+			pinWrite(Data_N, !next_bit);
 			TimerFlag = 0;
 			st = DONE;
 		 	break;
@@ -665,8 +671,8 @@ void TxRS485Data(char *pData, int nBytes)
   			INTCONbits.GIE = prevIRQ;
 //			TRIS_PIN_P 		= INPUT;
 //			TRIS_PIN_N 		= INPUT;
-			pinMode(PIN_P, INPUT);
-			pinMode(PIN_N, INPUT);
+			pinMode(Data_P, INPUT);
+			pinMode(Data_N, INPUT);
 			return;
 			break;
 		} 	
