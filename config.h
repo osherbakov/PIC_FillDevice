@@ -110,6 +110,7 @@ enum {
 
 #define DATAPORT(port)		PORT##port
 #define TRISPORT(port)		TRIS##port
+#define ANSELPORT(port)		ANSEL##port
 
 #define PIN(port, pin)		port##_##pin
 #define	DATA(port, pin)		PORT##port##bits.R##port##pin
@@ -123,15 +124,19 @@ enum {
 #define pinMode(pin, mode) 		do{ TRIS_##pin = (mode == OUTPUT) ? 0 : 1; \
 									ANSEL_##pin = (mode == INPUT_ANALOG) ? 0 : 1; \
 									WPU_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
+									DATA_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 								}while(0)
 
 // Rotary switch ports - the position is indicated
 // by the grounding of the pin.
-#define S1_8 		DATAPORT(D)
-#define S9_16 		DATAPORT(A)
+#define DATA_S1_8 	DATAPORT(D)
+#define DATA_S9_16 	DATAPORT(A)
 // Registers that control the Data direction/Tristate for the ports
 #define TRIS_S1_8 	TRISPORT(D)
 #define TRIS_S9_16 	TRISPORT(A)
+// Registers that control the Analog functions of the ports
+#define ANSEL_S1_8 	ANSELPORT(D)
+#define ANSEL_S9_16 ANSELPORT(A)
 
 extern	byte	NO_WPU;
 extern	byte	NO_ANSEL;
@@ -208,9 +213,13 @@ extern	byte	NO_ANSEL;
 // Software I2C bit-banging
 #define  DATA_I2C_SDA	  DATA(B,4)
 #define  TRIS_I2C_SDA	  TRIS(B,4)
+#define  ANSEL_I2C_SDA	  ANSEL(B,4)
+#define  WPU_I2C_SDA	  WPU(B,4)
 
 #define  DATA_I2C_SCL	  DATA(B,3)
 #define  TRIS_I2C_SCL	  TRIS(B,3)
+#define  ANSEL_I2C_SCL	  ANSEL(B,3)
+#define  WPU_I2C_SCL	  WPU(B,3)
 
 #define  I2C_DATA_LOW()   do{pinWrite(I2C_SDA,0); TRIS_I2C_SDA = 0;}while(0) 	// define macro for data pin output
 #define  I2C_DATA_HI()    do{TRIS_I2C_SDA = 1;}while(0)                   	// define macro for data pin input
@@ -233,18 +242,22 @@ extern	byte	NO_ANSEL;
 #define	DATA_SPI_CS		DATA(C,2)
 #define	TRIS_SPI_CS		TRIS(C,2)
 #define	ANSEL_SPI_CS	ANSEL(C,2)
+#define	WPU_SPI_CS		NO_WPU
 
 #define	DATA_SPI_SCK	DATA(C,3)
 #define	TRIS_SPI_SCK	TRIS(C,3)
 #define	ANSEL_SPI_SCK	ANSEL(C,3)
+#define	WPU_SPI_SCK		NO_WPU
 
 #define	DATA_SPI_SDI	DATA(C,4)
 #define	TRIS_SPI_SDI	TRIS(C,4)
 #define	ANSEL_SPI_SDI	ANSEL(C,4)
+#define	WPU_SPI_SDI		NO_WPU
 
 #define	DATA_SPI_SDO	DATA(C,5)
 #define	TRIS_SPI_SDO	TRIS(C,5)
 #define	ANSEL_SPI_SDO	ANSEL(C,5)
+#define	WPU_SPI_SDO		NO_WPU
 
 
 // NMEA Serial GPS Data

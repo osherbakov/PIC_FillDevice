@@ -18,9 +18,6 @@
 void OpenRS232(char Master)
 {
   	close_eusart();
-//	TRIS_RxPC = INPUT;
-//	TRIS_TxPC = OUTPUT;
-//  TxPC  = 0;  // Set up the stop bit
 	pinMode(RxPC, INPUT);
 	pinMode(TxPC, OUTPUT);
 	pinWrite(TxPC, 0);
@@ -33,8 +30,6 @@ void CloseRS232()
 {
 	pinMode(RxPC, INPUT);
 	pinMode(TxPC, INPUT);
-//	TRIS_RxPC = INPUT;
-//	TRIS_TxPC = INPUT;
 }
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
@@ -54,7 +49,6 @@ int RxRS232Char()
 	int  result;
 
 	pinMode(RxPC, INPUT);
-//	TRIS_RxPC = INPUT;
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
@@ -92,7 +86,6 @@ void TxRS232Char(char data)
 	data = ~data;  			// Invert sysmbol
 
 	pinMode(TxPC, OUTPUT);
-//	TRIS_TxPC = OUTPUT;
 
 	PR6 = TIMER_DTD;
 	T6CON = TIMER_DTD_CTRL;
@@ -116,11 +109,8 @@ void TxRS232Char(char data)
 void OpenDTD(char Master)
 {
   	close_eusart();
-//	TRIS_RxDTD = INPUT;
-//	TRIS_TxDTD = OUTPUT;
 	pinMode(RxDTD, INPUT);
 	pinMode(TxDTD, OUTPUT);
-//  	TxDTD  = 0;  // Set up the stop bit
 	pinWrite(TxDTD, 0);
   	if(Master) {
 		DelayMs(500);		// Keep pins that way for the slave to detect condition
@@ -129,8 +119,6 @@ void OpenDTD(char Master)
 
 void CloseDTD()
 {
-//	TRIS_RxDTD = INPUT;
-//	TRIS_TxDTD = INPUT;
 	pinMode(RxDTD, INPUT);
 	pinMode(TxDTD, INPUT);
 }
@@ -148,7 +136,6 @@ int RxDTDChar()
 {
 	int		result;
 
-//	TRIS_RxDTD = INPUT;
 	pinMode(RxDTD, INPUT);
 
 	PR6 = TIMER_DTD;
@@ -184,7 +171,6 @@ void TxDTDChar(char data)
 {
 	data = ~data;  			// Invert sysmbol
 	
-//	TRIS_TxDTD = OUTPUT;
 	pinMode(TxDTD, OUTPUT);
 
 	PR6 = TIMER_DTD;
@@ -206,20 +192,10 @@ void TxDTDChar(char data)
 
 void OpenRS485(char Master)
 {
-//	ANSEL_Data_N = 0;
-//	WPUB_Data_N = 1;
-
-//	ANSEL_Data_P = 0;
-//	WPUB_Data_P = 1;
-
   	OSCTUNEbits.PLLEN = 1;    	// *4 PLL (64MHZ)
 	DelayMs(4 * 10);			// Wait for PLL to become stable
 
 	if(Master) {
-//		TRIS_Data_N = OUTPUT;
-//		TRIS_Data_P = OUTPUT;
-//		Data_P 		= HIGH;
-//		Data_N 		= LOW;
 		pinMode(Data_N, OUTPUT);
 		pinMode(Data_P, OUTPUT);
 		pinWrite(Data_N, LOW);		
@@ -227,8 +203,6 @@ void OpenRS485(char Master)
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 		DelayMs(1000);			// Keep pins that way for the slave to detect condition
 	}else {
-//		TRIS_Data_N = INPUT;
-//		TRIS_Data_P = INPUT;
 		pinMode(Data_N, INPUT_PULLUP);
 		pinMode(Data_P, INPUT_PULLUP);
 	}		
@@ -236,14 +210,6 @@ void OpenRS485(char Master)
 
 void CloseRS485()
 {
-//	TRIS_Data_N = INPUT;
-//  	WPUB_Data_N = 1;
-//	ANSEL_Data_N = 0;
-
-//	TRIS_Data_P = INPUT;
-//  	WPUB_Data_P = 1;
-//	ANSEL_Data_P = 0;
-
 	pinMode(Data_N, INPUT_PULLUP);
 	pinMode(Data_P, INPUT_PULLUP);
 
@@ -304,8 +270,6 @@ static		byte 				prevIRQ;
 int RxRS485Data(char *pData)
 {
 	// Take care of physical pins
-//	TRIS_PIN_P = INPUT;
-//	TRIS_PIN_N = INPUT;
 	pinMode(Data_P, INPUT);
 	pinMode(Data_N, INPUT);
 	
@@ -519,8 +483,6 @@ void TxRS485Data(char *pData, int nBytes)
 	st = INIT;
 
 	// Take care of physical pin
-//	TRIS_PIN_P 		= OUTPUT;
-//	TRIS_PIN_N 		= OUTPUT;
 	pinMode(Data_P, OUTPUT);
 	pinMode(Data_N, OUTPUT);
 	pinWrite(Data_P, 1);
@@ -669,8 +631,6 @@ void TxRS485Data(char *pData, int nBytes)
 
 		case DONE:
   			INTCONbits.GIE = prevIRQ;
-//			TRIS_PIN_P 		= INPUT;
-//			TRIS_PIN_N 		= INPUT;
 			pinMode(Data_P, INPUT);
 			pinMode(Data_N, INPUT);
 			return;

@@ -21,19 +21,19 @@ byte get_switch_state()
 
   	// Force all bits of port A and D into Digital IO mode
 	// Make all of them Inputs (Tristate)
-//	ANSELA = 0; 
-//  ANSELD = 0;
-//	TRIS_S1_8 = 0xFF;
-//  TRIS_S9_16 = 0xFF;
-	
+	ANSEL_S1_8 = 0x00;
+    ANSEL_S9_16 = 0x00;
+	TRIS_S1_8 = 0xFF;
+    TRIS_S9_16 = 0xFF;
+    
 	// Data is inverted - selected pin is 0
-	data = ~(S1_8);
+	data = ~(DATA_S1_8);
 	if(data != 0x00)
 	{	
 		data = bit_pos(data);		
 	}else
 	{
-		data = ~(S9_16);
+		data = ~(DATA_S9_16);
 		if(data != 0x00)
 		{	
 			data = bit_pos(data) + 8;
@@ -63,10 +63,7 @@ char is_bootloader_active()
 {
   // Check if the switch S16 is selected
   //  and the RxD is in break state  (MARK)
-
-//  TRISAbits.RA7  = INPUT;  // That is a S16 pin
-//  TRIS_RxPC = INPUT;
-  pinMode(S16, INPUT_PULLUP);
+  pinMode(S16, INPUT);
   pinMode(RxPC, INPUT);
  
   //Switch is tied to the GND and Rx is (START)
@@ -111,6 +108,9 @@ void enable_tx_hqii()
 }  
 
 
+
+byte	NO_WPU;			// Dummy
+byte	NO_ANSEL;		// Dummy
 
 
 unsigned char Threshold = 0xB0;
@@ -222,7 +222,8 @@ void set_led_on()
 
 void set_led_off()
 {
-	LED_current_bit = HIGH;				// Turn off LED
+	led_counter = 0;
+	LED_current_bit = LOW;				// Turn off LED
 	pinWrite(LEDP, LED_current_bit);
 }
 

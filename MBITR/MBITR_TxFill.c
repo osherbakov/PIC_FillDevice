@@ -88,10 +88,6 @@ char WaitReqSendMBITRFill(byte stored_slot)
 
 void open_mbitr(void)
 {
-//	TRIS_RxMBITR = INPUT;
-//	TRIS_TxMBITR = OUTPUT;
-//	ANSEL_RxMBITR	= 0;
-//	ANSEL_TxMBITR	= 0;
 	pinMode(RxMBITR, INPUT);
 	pinMode(TxMBITR, OUTPUT);
 	pinWrite(TxMBITR, STOP);
@@ -100,8 +96,6 @@ void open_mbitr(void)
 
 void close_mbitr(void)
 {
-//	TRIS_RxMBITR = INPUT;
-//	TRIS_TxMBITR = INPUT;
 	pinMode(RxMBITR, INPUT);
 	pinMode(TxMBITR, INPUT);
 }
@@ -111,7 +105,6 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 	byte bitcount, data;
 	byte	nrcvd = 0;	
 
-//	TRIS_RxMBITR = INPUT;
 	pinMode(RxMBITR, INPUT);
 	
 	T6CON = TIMER_MBITR_CTRL;
@@ -154,7 +147,6 @@ void tx_mbitr(const byte *p_data, byte ncount)
 
   	DelayMs(TX_MBITR_DELAY_MS);
 	
-//	TRIS_TxMBITR = OUTPUT;
 	pinMode(TxMBITR, OUTPUT);
 	
 	PR6 = TIMER_MBITR;

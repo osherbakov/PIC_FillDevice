@@ -75,13 +75,11 @@ void setup_clocks()
 
 void setup_spi()
 {
-	TRIS_SPI_CS 	= 0;	// Drive the CS pin
-	TRIS_SPI_SCK	= 0;	// Drive the CLOCK pin
-	TRIS_SPI_SDI	= 1;	// SDInput is Input
-	TRIS_SPI_SDO	= 0;	// Drive the SDOout
-
-	SPI_CS = 1;				// Keep CS HIGH
-	
+	pinMode(SPI_CS, OUTPUT);
+	pinMode(SPI_SCK, OUTPUT);
+	pinMode(SPI_SDI, INPUT);
+	pinMode(SPI_SDO, OUTPUT);
+	pinWrite(SPI_CS, 1);				// Keep CS HIGH
 	// Mode (0,0), clock is FOSC/16, sample data in the middle
 	OpenSPI1(SPI_FOSC_16, MODE_00, SMPEND);
 }
@@ -104,52 +102,47 @@ void setup_start_io()
 	ANSELE = 0x00;
 
   	// Apply power to PIN_A
-  	TRIS_PIN_A_PWR = OUTPUT;
-  	PIN_A_PWR = 1;
+  	pinMode(PIN_A_PWR, OUTPUT);
+  	pinWrite(PIN_A_PWR, 1);
 
   	// Apply no power to PIN_F
-  	TRIS_PIN_F_PWR = OUTPUT;
-  	PIN_F_PWR = 0;
+  	pinMode(PIN_F_PWR, OUTPUT);
+  	pinWrite(PIN_F_PWR, 0);
 
   	// Switch S1 - S16 settings
 	TRIS_S1_8 = 0xFF;	// Inputs
 	TRIS_S9_16 = 0xFF;	// Inputs
 		
 	// Audio Connector - Inputs
-	TRIS_PIN_B = INPUT;
-	TRIS_PIN_C = INPUT;
-	TRIS_PIN_D = INPUT;
-	TRIS_PIN_E = INPUT;
-	TRIS_PIN_F = INPUT;
+	pinMode(PIN_B, INPUT_PULLUP);
+	pinMode(PIN_C, INPUT_PULLUP);
+	pinMode(PIN_D, INPUT_PULLUP);
+	pinMode(PIN_E, INPUT_PULLUP);
+	pinMode(PIN_F, INPUT_PULLUP);
 
-	// Apply weak pull ups
-	WPUB_PIN_B = 1;
-	WPUB_PIN_E = 1;
-	
 
 	// LED controls
 	pinMode(LEDP, OUTPUT);
 	pinWrite(LEDP, LOW);
-//	TRIS_LEDP = OUTPUT;		// Drive it
-//	LEDP = 0;				// LED off
 
 	// Button and Power sensors
 	INTCON2bits.RBPU = 0;	// Enable Weak Pull Ups
 
 	// Zero button - input and no pullup
-	TRIS_ZBR = INPUT;		// Input
+	pinMode(ZBR, INPUT_PULLUP);
 
 	// Push button - input with weak pullup
-	TRIS_BTN = INPUT;		// Input
-	WPUB_BTN = 1;			// Turn on Weak pull-up
+	pinMode(BTN, INPUT_PULLUP);
 
 	// setup I2C pins both to high
+	pinMode(I2C_SDA, OUTPUT);
+	pinMode(I2C_SCL, OUTPUT);
 	I2C_DATA_HI();
 	I2C_CLOCK_HI();
 	
 	// Setup RTC 1PPS pin as input
-	TRIS_1PPS = INPUT;		
-	IOC_1PPS = 1;         	// Enable IOC
+	pinMode(RTC_1PPS, INPUT);
+//	IOC_1PPS = 1;         	// Enable IOC
 	INTCONbits.RBIE	= 1; 	// Enable 1PPS interrupt
 	
 	setup_clocks();			// 16 MHz
@@ -190,34 +183,31 @@ void setup_sleep_io()
 	ANSELE = 0xFF;
 
 	// Disable LED
-	ANSEL_LEDP = 0;
-	TRIS_LEDP = 0;
-	LEDP = 0;				// LED off
+	pinMode(LEDP, OUTPUT);
+	pinWrite(LEDP, 0);
 
   	// Apply power to PIN_A
-  	TRIS_PIN_A_PWR = OUTPUT;
-  	PIN_A_PWR = 1;
+  	pinMode(PIN_A_PWR, OUTPUT);
+  	pinWrite(PIN_A_PWR, 1);
 
   	// Apply no power to PIN_F
-  	ANSEL_PIN_F_PWR = 0;
-  	TRIS_PIN_F_PWR = OUTPUT;
-  	PIN_F_PWR = 0;
+  	pinMode(PIN_F_PWR, OUTPUT);
+  	pinWrite(PIN_F_PWR, 0);
 
 
 	INTCON2bits.RBPU = 1;	// Disable Weak Pull Ups
 	WPUB = 0x00;			// Turn off Weak pull-up
 
 	// Turn off SPI
-	ANSEL_SPI_CS = 0;	  	// Drive the CS pin
-	ANSEL_SPI_SCK = 0;		// Drive the CLOCK pin		
-	ANSEL_SPI_SDO = 0;		// Drive SDOut pin
-	
-	TRIS_SPI_CS = OUTPUT;	// Drive the CS pin
-	TRIS_SPI_SCK = OUTPUT;	// Drive the CLOCK pin		
-	TRIS_SPI_SDO = OUTPUT;	// Drive SDOut pin
-	SPI_CS = 1;				// Keep CS HIGH
-	SPI_SCK = 1;			// Keep CLOCK HIGH
-	SPI_SDO = 1;			// Keep SDOut HIGH
+//	SPI_CS = 1;				// Keep CS HIGH
+//	SPI_SCK = 1;			// Keep CLOCK HIGH
+//	SPI_SDO = 1;			// Keep SDOut HIGH
+	pinMode(SPI_CS, OUTPUT);
+	pinMode(SPI_SCK, OUTPUT);
+	pinMode(SPI_SDO, OUTPUT);
+	pinWrite(SPI_CS, 1);
+	pinWrite(SPI_SCK, 1);
+	pinWrite(SPI_SDO, 1);
 
 	OSCCONbits.IDLEN = 0; 	// On Sleep() enter Sleep
 }

@@ -47,8 +47,6 @@ static char GetQueryByte(void)
   	pinMode(PIN_E, INPUT_PULLUP);
 	pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
   	pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
-//	WPUB_PIN_B = 1;
-//  	WPUB_PIN_E = 1;
 
 	bit_count = 0;
 	PreviousState = LOW;
@@ -91,7 +89,7 @@ static void SendEquipmentType(void)
   
   pinMode(PIN_B, OUTPUT);		// make a pin active
   pinMode(PIN_E, OUTPUT);		// make a pin active
-  pinWrite(PIN_E, HIGH);	// Set clock to High
+  pinWrite(PIN_E, HIGH);		// Set clock to High
   delayMicroseconds(tJ);		// Setup time for clock high
 
   // Output the data bit of the equipment code
@@ -114,8 +112,6 @@ static void SendEquipmentType(void)
   pinMode(PIN_B, INPUT_PULLUP);
   pinWrite(PIN_B, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
-//  WPUB_PIN_B = 1;
-//  WPUB_PIN_E = 1;
 }
 
 static  byte  byte_count;
@@ -130,7 +126,6 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
-//  WPUB_PIN_E = 1;
   
 
   byte_count = 0;
@@ -219,8 +214,8 @@ char CheckFillType23()
 	char ret_val = ST_TIMEOUT;
 
 	// Setup pins
-	pinMode(PIN_D, INPUT);		// make pin D input
-	pinMode(PIN_F, INPUT);		// make pin F input
+	pinMode(PIN_D, INPUT_PULLUP);		// make pin D input
+	pinMode(PIN_F, INPUT_PULLUP);		// make pin F input
   	pinWrite(PIN_D, HIGH);  // Turn on 20 K Pullup
   	pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
 
@@ -414,8 +409,6 @@ void SetType123PinsRx()
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
 
-//  WPUB_PIN_B = 1;
-//  WPUB_PIN_E = 1;
   // Set up pins mode and levels
   delay(tB);
 }
