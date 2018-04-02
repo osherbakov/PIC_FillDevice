@@ -312,8 +312,7 @@ char ReceiveHQTime(void )
 	ExtractHQDate();
 	CalculateNextSecond();
 
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
+	DISABLE_IRQ(prev);
 	SetRTCDataPart1();
 
   	//	3. Find the next HQ stream rising edge with interrupts disabled
@@ -331,7 +330,7 @@ char ReceiveHQTime(void )
 
 	SetRTCDataPart2();
 	
-	INTCONbits.GIE = prev;		// Enable interrupts
+	ENABLE_IRQ(prev);		// Enable interrupts
 	
 	//  5. Get the HQ time again and compare with the current RTC
 	if( GetHQTime() != ST_OK)	return ST_ERR;

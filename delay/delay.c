@@ -23,19 +23,18 @@ volatile signed int timeout_counter;
 volatile char timeout_flag;
 volatile char ms_10;
 
-
+static char  prev;
 void set_timeout(int timeout_ms)
 {
-	char  prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;
+	DISABLE_IRQ(prev);
 	timeout_counter = timeout_ms;
 	timeout_flag = 0;
-	INTCONbits.GIE = prev;
+	ENABLE_IRQ(prev);
 }
 
 char is_timeout(void)
 {
-	if((INTCONbits.GIE == 0) && PIR1bits.TMR2IF) {
+	if(IS_IRQ_DISABLED() && PIR1bits.TMR2IF) {
 		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;
@@ -46,7 +45,7 @@ char is_timeout(void)
 
 char is_not_timeout(void)
 {
-	if((INTCONbits.GIE == 0) && PIR1bits.TMR2IF) {
+	if(IS_IRQ_DISABLED() && PIR1bits.TMR2IF) {
 		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;

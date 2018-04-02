@@ -141,6 +141,7 @@ volatile byte *rx_data;   // Pointer to the current receive data
 volatile byte rx_idx_in;  // Index of characters received
 volatile byte rx_idx_out; // Index of characters consumed
 volatile byte rx_idx_max; // Max index in the buffer
+
 static  char prev;
 
 // Return the number of bytes received and stored in the buffer
@@ -148,22 +149,18 @@ byte rx_eusart_count(void)
 {
 	byte	count;
 
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
+	DISABLE_IRQ(prev);		// Disable interrupts
 	count = rx_idx_in - rx_idx_out;	
 	if(count == 0) { rx_idx_in = rx_idx_out = 0; }
-
-	INTCONbits.GIE = prev;
-
+	ENABLE_IRQ(prev);
 	return	count;
 }	
 
 void rx_eusart_reset(void)
 {
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
+	DISABLE_IRQ(prev);		// Disable interrupts
 	rx_idx_in = rx_idx_out = 0; 
-	INTCONbits.GIE = prev;
+	ENABLE_IRQ(prev);
 }	
 
 
@@ -171,24 +168,20 @@ int rx_eusart_symbol(void)
 {
 	int 	result = -1;
 
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
+	DISABLE_IRQ(prev);		// Disable interrupts
 	
 	if (rx_idx_in > rx_idx_out) {
 		result = ((int)rx_data[rx_idx_out++]) & 0x00FF;
 	}
 	// Check for the all symbols taken and adjust the indices
 	if(rx_idx_in == rx_idx_out){rx_idx_in = rx_idx_out = 0; }
-
-	INTCONbits.GIE = prev;
-
+	ENABLE_IRQ(prev);
 	return	result;
 }	
 
 byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
+	DISABLE_IRQ(prev);		// Disable interrupts
 	
   	set_timeout(timeout);
   	
@@ -197,9 +190,7 @@ byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout)
 	rx_idx_out += ncount;
 	// Check for the all symbols taken and adjust the indices
 	if(rx_idx_in == rx_idx_out){ rx_idx_in = rx_idx_out = 0; }
-
-	INTCONbits.GIE = prev;
-
+	ENABLE_IRQ(prev);
 	return	ncount;
 }	
 

@@ -45,7 +45,7 @@ void high_isr (void)
 {
 	//--------------------------------------------------------------------------
 	// Is this a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
-	if(INTCONbits.RBIF)
+	if(IS_1PPS())
 	{
     	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
     	// The HIGH->LOW transition indicates the start of the second
@@ -81,7 +81,7 @@ void high_isr (void)
 				pinWrite(HQ_DATA, 0);
 			}
 		}
-		INTCONbits.RBIF = 0;
+		CLEAR_1PPS();
 	}
 	
 	//--------------------------------------------------------------------------

@@ -53,7 +53,8 @@ typedef enum
 
 
 // Pin definitions
-#define PIN(port, pin)		port##_##pin
+// #define PIN(port, pin)		port##_##pin
+// #define PIN(port, pin)		port##_##pin
 #define	DATA(port, pin)		PORT##port##bits.R##port##pin
 #define	TRIS(port, pin)		TRIS##port##bits.R##port##pin
 #define	ANSEL(port, pin)	ANSEL##port##bits.ANS##port##pin
@@ -112,17 +113,24 @@ enum {
 #define TRISPORT(port)		TRIS##port
 #define ANSELPORT(port)		ANSEL##port
 
-#define PIN(port, pin)		port##_##pin
 #define	DATA(port, pin)		PORT##port##bits.R##port##pin
 #define	TRIS(port, pin)		TRIS##port##bits.R##port##pin
 #define	ANSEL(port, pin)	ANSEL##port##bits.ANS##port##pin
 #define	WPU(port, pin)		WPU##port##bits.WPU##port##pin
 #define	IOC(port, pin)		IOC##port##bits.IOC##port##pin
 
+#define portMode(port, mode) 	do{TRIS_##port = (mode == OUTPUT) ? 0x00 : 0xFF; \
+								ANSEL_##port = (mode == INPUT_ANALOG) ? 0xFF : 0x00; \
+								WPU_##port = (mode == INPUT_PULLUP) ? 0xFF : 0x00; \
+								DATA_##port = (mode == INPUT_PULLUP) ? 0xFF : 0x00; \
+								}while(0)
+#define portWrite(port, value)	do{ DATA_##port = value;}while(0)
+#define portRead(port) 			DATA_##port
+
 #define pinRead(pin) 			DATA_##pin
 #define pinWrite(pin, value) 	do{ DATA_##pin = value;}while(0)
 #define pinMode(pin, mode) 		do{ TRIS_##pin = (mode == OUTPUT) ? 0 : 1; \
-									ANSEL_##pin = (mode == INPUT_ANALOG) ? 0 : 1; \
+									ANSEL_##pin = (mode == INPUT_ANALOG) ? 1 : 0; \
 									WPU_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 									DATA_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 								}while(0)
@@ -137,6 +145,9 @@ enum {
 // Registers that control the Analog functions of the ports
 #define ANSEL_S1_8 	ANSELPORT(D)
 #define ANSEL_S9_16 ANSELPORT(A)
+// Registers that control the Weak Pull Up functions of the ports
+#define WPU_S1_8 	NO_WPU
+#define WPU_S9_16 	NO_WPU
 
 extern	byte	NO_WPU;
 extern	byte	NO_ANSEL;
@@ -341,5 +352,16 @@ extern	byte	NO_ANSEL;
 #define	 WPU_Data_N		(WPU_PIN_E)
 
 #define	 WAKEUP			(PIN_C)
+
+#define	DISABLE_IRQ(a)	do{a = INTCONbits.GIE;	INTCONbits.GIE = 0;}while(0)
+#define ENABLE_IRQ(a)	do{INTCONbits.GIE = a;}while(0)
+#define DISABLE_PIRQ()	do{INTCONbits.PEIE = 0;}while(0)
+#define ENABLE_PIRQ()	do{INTCONbits.PEIE = 1;}while(0)
+#define IS_IRQ_ENABLED() (INTCONbits.GIE)
+#define IS_IRQ_DISABLED() (!INTCONbits.GIE)
+
+#define ENABLE_1PPS_IRQ()	do{INTCONbits.RBIE = 1;}while(0)
+#define IS_1PPS()			INTCONbits.RBIF
+#define CLEAR_1PPS()		do{INTCONbits.RBIF = 0;}while(0)
 
 #endif	// __CONFIG_H__

@@ -74,12 +74,12 @@ static void SendMode23Query(byte Data)
 
 static  byte  NewState;	
 static	byte  PreviousState;
+static  char  prev;
 
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
 //   The total number of clocks is 40 (41), but only the last bit matters
 static signed char GetEquipmentMode23Type(void)
 {
-  char 	prev;
   signed char	result;
   byte i;
 
@@ -90,8 +90,7 @@ static signed char GetEquipmentMode23Type(void)
   
   set_timeout(tB);
 
-  prev = INTCONbits.GIE;
-  INTCONbits.GIE = 0;
+  DISABLE_IRQ(prev);
 
   i = 0;
   result = -1;
@@ -114,7 +113,7 @@ static signed char GetEquipmentMode23Type(void)
       PreviousState = NewState;
     }
   }
-  INTCONbits.GIE = prev;
+  ENABLE_IRQ(prev);
   return result;
 }
 

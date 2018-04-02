@@ -84,10 +84,11 @@ void setup_spi()
 	OpenSPI1(SPI_FOSC_16, MODE_00, SMPEND);
 }
 
+static byte prev;
 void setup_start_io()
 {
-	INTCONbits.GIE = 0;		// Disable interrupts
-	RCONbits.IPEN = 0;		// Disable Priorities
+	DISABLE_IRQ(prev);
+	DISABLE_PIRQ();
 
 	// Initially set up all ports as Digital IO
 	PORTA = 0x00;
@@ -142,8 +143,8 @@ void setup_start_io()
 	
 	// Setup RTC 1PPS pin as input
 	pinMode(RTC_1PPS, INPUT);
-//	IOC_1PPS = 1;         	// Enable IOC
-	INTCONbits.RBIE	= 1; 	// Enable 1PPS interrupt
+	// 	IOC_1PPS = 1;         	// Enable IOC
+	ENABLE_1PPS_IRQ();		// Enable 1PPS interrupt
 	
 	setup_clocks();			// 16 MHz
 	setup_spi();
@@ -161,14 +162,14 @@ void setup_start_io()
 	
 
 	// Enable all interrupts
-	INTCONbits.PEIE = 1;
-	INTCONbits.GIE = 1;
+	ENABLE_PIRQ();
+	ENABLE_IRQ(1);
 }
 
 void setup_sleep_io()
 {
-	INTCONbits.GIE = 0;		// Disable interrupts
-	INTCONbits.PEIE = 0;
+	DISABLE_PIRQ();
+	DISABLE_IRQ(prev);
 
 	// Use all ports as Analog In
 	TRISA = 0xFF;
@@ -199,11 +200,9 @@ void setup_sleep_io()
 	WPUB = 0x00;			// Turn off Weak pull-up
 
 	// Turn off SPI
-//	SPI_CS = 1;				// Keep CS HIGH
-//	SPI_SCK = 1;			// Keep CLOCK HIGH
-//	SPI_SDO = 1;			// Keep SDOut HIGH
 	pinMode(SPI_CS, OUTPUT);
 	pinMode(SPI_SCK, OUTPUT);
+	pinMode(SPI_SDI, INPUT);
 	pinMode(SPI_SDO, OUTPUT);
 	pinWrite(SPI_CS, 1);
 	pinWrite(SPI_SCK, 1);

@@ -38,9 +38,9 @@ static	byte  NewState;
 static	byte  bit_count;
 static	byte  Data;
 
+static byte  prev; 
 static char GetQueryByte(void)
 {
-	byte  prev; 
 	char  ret;
   
   	pinMode(PIN_B, INPUT_PULLUP);		
@@ -52,9 +52,8 @@ static char GetQueryByte(void)
 	PreviousState = LOW;
 	set_timeout(tZ);
 
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;
-
+	DISABLE_IRQ(prev);
+	
 	ret = ST_TIMEOUT;
   	// We exit on timeout or Pin F going high
 	while( is_not_timeout() && (pin_F() == LOW) )
@@ -75,9 +74,7 @@ static char GetQueryByte(void)
       		PreviousState = NewState;
     	}
   	}
-
-	INTCONbits.GIE = prev;
-
+	ENABLE_IRQ(prev);
   	return ret;
 }
 
@@ -118,8 +115,6 @@ static  byte  byte_count;
 
 static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 {
-  byte  prev;
-
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT_PULLUP);	// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
@@ -134,8 +129,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 
   set_timeout(tE);
 
-  prev = INTCONbits.GIE;
-  INTCONbits.GIE = 0;
+  DISABLE_IRQ(prev);
 
   while( is_not_timeout() &&  (byte_count < count) )
   {
@@ -165,9 +159,7 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 	      }
 	    }
   }
-
-  INTCONbits.GIE = prev;
-
+  ENABLE_IRQ(prev);
   return byte_count;
 }
 

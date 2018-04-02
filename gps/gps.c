@@ -242,9 +242,7 @@ char ReceiveGPSTime()
 	if(rtc_date.Valid == 0) return ST_TIMEOUT;
 
 	//	6. Find the 1PPS rising edge with interrupts disabled
-	prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
-
+	DISABLE_IRQ(prev);		// Disable interrupts
 	SetRTCDataPart1();		// Prepare for the RTC Clock set
 
 	while(pinRead(GPS_1PPS));	// wait for LOW
@@ -260,7 +258,7 @@ char ReceiveGPSTime()
 
 	SetRTCDataPart2();
 	
-	INTCONbits.GIE = prev;		// Enable interrupts
+	ENABLE_IRQ(prev);		// Enable interrupts
 
 	//  8. Get the GPS time again and compare with the current RTC
 	if( GetGPSTime() != ST_OK)	return ST_ERR;

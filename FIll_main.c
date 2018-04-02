@@ -221,12 +221,12 @@ static void  PinsToDefault(void)
 	pinMode(PIN_F,INPUT);
 }
 
+char prev;
 static void bump_idle_counter(void)
 {
-	char prev = INTCONbits.GIE;
-  	INTCONbits.GIE = 0; 
+	DISABLE_IRQ(prev);
 	idle_counter = seconds_counter + IDLE_SECS;
-  	INTCONbits.GIE = prev;
+	ENABLE_IRQ(prev);
 }
 
 
@@ -355,8 +355,8 @@ void main()
 					if( is_bootloader_active() )
 				  	{
   				  		set_led_off();			// Turn off LED
-    					INTCONbits.GIE = 0;		// Disable interrupts
-    					INTCONbits.PEIE = 0;
+  				  		DISABLE_IRQ(prev);
+  				  		DISABLE_PIRQ();
    				  		BootloadMode();       	// Go to bootloader
 				  	}else
 				  	{

@@ -210,16 +210,14 @@ void GetRTCData()
 	CalculateJulianDay();
 }
 
+static char prev;
 void SetRTCData()
 {
-	char prev = INTCONbits.GIE;
-	INTCONbits.GIE = 0;		// Disable interrupts
-
+	DISABLE_IRQ(prev);
 	SetRTCDataPart1();
 	SWAckI2C(READ);
 	SetRTCDataPart2();
-	
-	INTCONbits.GIE = prev;		// Enable interrupts
+	ENABLE_IRQ(prev);	
 }
 
 void SetRTCDataPart1()
@@ -262,7 +260,7 @@ void SetRTCDataPart2()
 	SWStopI2C();
 	
 	ms_10 = 0;
-	INTCONbits.RBIF = 0;		// Clear bit
+	CLEAR_1PPS();
 }
 
 

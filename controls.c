@@ -21,19 +21,17 @@ byte get_switch_state()
 
   	// Force all bits of port A and D into Digital IO mode
 	// Make all of them Inputs (Tristate)
-	ANSEL_S1_8 = 0x00;
-    ANSEL_S9_16 = 0x00;
-	TRIS_S1_8 = 0xFF;
-    TRIS_S9_16 = 0xFF;
-    
+	portMode(S1_8, INPUT_PULLUP);
+	portMode(S9_16, INPUT_PULLUP);
+  
 	// Data is inverted - selected pin is 0
-	data = ~(DATA_S1_8);
+	data = ~(portRead(S1_8));
 	if(data != 0x00)
 	{	
 		data = bit_pos(data);		
 	}else
 	{
-		data = ~(DATA_S9_16);
+		data = ~(portRead(S9_16));
 		if(data != 0x00)
 		{	
 			data = bit_pos(data) + 8;

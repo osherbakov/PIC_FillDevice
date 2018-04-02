@@ -276,8 +276,7 @@ int RxRS485Data(char *pData)
 	st = INIT;
 	Timer_Ctrl 		= TIMER_CTRL;
       	
-	prevIRQ = INTCONbits.GIE;
-  	INTCONbits.GIE = 0;
+    DISABLE_IRQ(prevIRQ);
 
 	// Set the big 16-bit timeout counter
   	T1GCONbits.TMR1GE = 0;	// No gating
@@ -452,12 +451,12 @@ int RxRS485Data(char *pData)
 			break;
 		
 		case TIMEOUT:
-  			INTCONbits.GIE = prevIRQ;
+    		ENABLE_IRQ(prevIRQ);
 			return -1;
 			break;
 
 		case DONE:
-  			INTCONbits.GIE = prevIRQ;
+    		ENABLE_IRQ(prevIRQ);
 			return byte_count;
 			break;
 			
@@ -465,7 +464,7 @@ int RxRS485Data(char *pData)
 			break;
 		}			
 	}	
-	INTCONbits.GIE = prevIRQ;
+    ENABLE_IRQ(prevIRQ);
 	return -1;
 }	
 
@@ -482,7 +481,7 @@ void TxRS485Data(char *pData, int nBytes)
 
 	st = INIT;
 
-	// Take care of physical pin
+	// Take care of physical pins
 	pinMode(Data_P, OUTPUT);
 	pinMode(Data_N, OUTPUT);
 	pinWrite(Data_P, 1);
@@ -493,8 +492,7 @@ void TxRS485Data(char *pData, int nBytes)
 
 	Timer_Ctrl 		= TIMER_CTRL;
 
-	prevIRQ = INTCONbits.GIE;
-  	INTCONbits.GIE = 0;
+	DISABLE_IRQ(prevIRQ);
 	
 	while(1) {
 		switch(st) {
@@ -630,7 +628,7 @@ void TxRS485Data(char *pData, int nBytes)
 		 	break;
 
 		case DONE:
-  			INTCONbits.GIE = prevIRQ;
+    		ENABLE_IRQ(prevIRQ);
 			pinMode(Data_P, INPUT);
 			pinMode(Data_N, INPUT);
 			return;
