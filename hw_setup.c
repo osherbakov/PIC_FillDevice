@@ -8,34 +8,40 @@
 #include "gps.h"
 
 extern void setup_clocks();	
+extern void setup_xtal();	
 extern void setup_spi();
 extern void setup_start_io();
 
 #define TMR2_FREQ  (100)  // 100 Hz timer tick - 10ms
 #define CNT_10MS ((( XTAL_FREQ * 1000000L) / ( 4L * TMR2_FREQ * 10L * 16L )) - 1 )
 
-void setup_clocks()
+void setup_xtal()
 {
-  	OSCTUNE = 0;    // No PLL
+  	OSCTUNE = 0;    		// No PLL
 	OSCCONbits.IDLEN = 1; 	// On Sleep() enter IDLE
 
 	// Select appropriate clock source
-#if XTAL_FREQ == 16MHZ
+#if XTAL_FREQ == 16 MHZ
 	OSCCONbits.IRCF = 0x7;	// 16MHz
 #endif
-#if XTAL_FREQ == 8MHZ
+#if XTAL_FREQ == 8 MHZ
 	OSCCONbits.IRCF = 0x6;	// 8MHz
 #endif
-#if XTAL_FREQ == 4MHZ
+#if XTAL_FREQ == 4 MHZ
 	OSCCONbits.IRCF = 0x5;	// 4MHz
 #endif
-#if XTAL_FREQ == 2MHZ
+#if XTAL_FREQ == 2 MHZ
 	OSCCONbits.IRCF = 0x4;	// 2MHz
 #endif
 #if XTAL_FREQ == 1MHZ
 	OSCCONbits.IRCF = 0x3;	// 1MHz
 #endif
 	OSCCONbits.SCS = 0x00;	// Internal with MUX (can be PLL'd*4)
+}	
+
+void setup_clocks()
+{
+	setup_xtal();
 
 	// TIMER 1 - to count OSC_CLOCK in 16-bit mode
 	//  It is used for 0.131072s timeout, when clock overflows
@@ -60,9 +66,9 @@ void setup_clocks()
 	PR4 = HQII_TIMER;
 	PIR5bits.TMR4IF = 0;	// Clear Interrupt
 	PIE5bits.TMR4IE = 0;	// Disable TIMER4 Interrupt
-	T4CON = 0x02;			    // 1:1 Post, 16 prescaler, off 
+	T4CON = 0x02;			// 1:1 Post, 16 prescaler, off 
 
-	// Set up the timer 6 to roll over the set amount with no interrupts
+	// Set up the timer 6 to roll over with no interrupts
 	// It is used as a general timeout counter, looking at PIR5bits.TMR6IF flag
 	PR6 = 0xFF;
 	PIR5bits.TMR6IF = 0;	// Clear Interrupt
@@ -91,16 +97,11 @@ void setup_start_io()
 	DISABLE_PIRQ();
 
 	// Initially set up all ports as Digital IO
-	PORTA = 0x00;
-	PORTB = 0x00;
-	PORTC = 0x00;
-	PORTD = 0x00;
-	PORTE = 0x00;
-	ANSELA = 0x00;
-	ANSELB = 0x00;
-	ANSELC = 0x00;
-	ANSELD = 0x00;
-	ANSELE = 0x00;
+	portMode(A, INPUT);
+	portMode(B, INPUT);
+	portMode(C, INPUT);
+	portMode(D, INPUT);
+	portMode(E, INPUT);
 
   	// Apply power to PIN_A
   	pinMode(PIN_A_PWR, OUTPUT);
@@ -172,16 +173,11 @@ void setup_sleep_io()
 	DISABLE_IRQ(prev);
 
 	// Use all ports as Analog In
-	TRISA = 0xFF;
-	TRISB = 0xFF;
-	TRISC = 0xFF;
-	TRISD = 0xFF;
-	TRISE = 0xFF;
-	ANSELA = 0xFF;
-	ANSELB = 0xFF;
-	ANSELC = 0xFF;
-	ANSELD = 0xFF;
-	ANSELE = 0xFF;
+	portMode(A, INPUT_ANALOG);
+	portMode(B, INPUT_ANALOG);
+	portMode(C, INPUT_ANALOG);
+	portMode(D, INPUT_ANALOG);
+	portMode(E, INPUT_ANALOG);
 
 	// Disable LED
 	pinMode(LEDP, OUTPUT);

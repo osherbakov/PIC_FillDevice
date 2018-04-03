@@ -221,7 +221,7 @@ static void  PinsToDefault(void)
 	pinMode(PIN_F,INPUT);
 }
 
-char prev;
+static char prev;
 static void bump_idle_counter(void)
 {
 	DISABLE_IRQ(prev);

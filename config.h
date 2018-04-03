@@ -3,7 +3,7 @@
 
 #include <p18cxxx.h>
 #define	MHZ	*1
-#define XTAL_FREQ	16MHZ
+#define XTAL_FREQ	16 MHZ
 
 #ifndef MAX
 #define MAX(a,b)  ((a) > (b) ? (a) : (b))
@@ -112,6 +112,7 @@ enum {
 #define DATAPORT(port)		PORT##port
 #define TRISPORT(port)		TRIS##port
 #define ANSELPORT(port)		ANSEL##port
+#define WPUPORT(port)		WPU##port
 
 #define	DATA(port, pin)		PORT##port##bits.R##port##pin
 #define	TRIS(port, pin)		TRIS##port##bits.R##port##pin
@@ -134,6 +135,31 @@ enum {
 									WPU_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 									DATA_##pin = (mode == INPUT_PULLUP) ? 1 : 0; \
 								}while(0)
+
+// Generic port settings
+#define DATA_A		DATAPORT(A)
+#define DATA_B		DATAPORT(B)
+#define DATA_C		DATAPORT(C)
+#define DATA_D		DATAPORT(D)
+#define DATA_E		DATAPORT(E)
+
+#define TRIS_A		TRISPORT(A)
+#define TRIS_B		TRISPORT(B)
+#define TRIS_C		TRISPORT(C)
+#define TRIS_D		TRISPORT(D)
+#define TRIS_E		TRISPORT(E)
+
+#define ANSEL_A		ANSELPORT(A)
+#define ANSEL_B		ANSELPORT(B)
+#define ANSEL_C		ANSELPORT(C)
+#define ANSEL_D		ANSELPORT(D)
+#define ANSEL_E		ANSELPORT(E)
+
+#define WPU_A		NO_WPU
+#define WPU_B		WPUPORT(B)
+#define WPU_C		NO_WPU
+#define WPU_D		NO_WPU
+#define WPU_E		NO_WPU
 
 // Rotary switch ports - the position is indicated
 // by the grounding of the pin.
@@ -363,5 +389,15 @@ extern	byte	NO_ANSEL;
 #define ENABLE_1PPS_IRQ()	do{INTCONbits.RBIE = 1;}while(0)
 #define IS_1PPS()			INTCONbits.RBIF
 #define CLEAR_1PPS()		do{INTCONbits.RBIF = 0;}while(0)
+
+
+#define 	timerSetup(timer, control, period)	do{T##timer##CON = control; PR##timer = period;TMR##timer = 0; PIR5bits.TMR##timer##IF = 0;}while(0)
+#define 	timerReset(timer)			do{TMR##timer = 0;PIR5bits.TMR##timer##IF = 0;}while(0)
+#define 	timerSet(timer, value)		do{TMR##timer = value;PIR5bits.TMR##timer##IF = 0;}while(0)
+#define 	timerFlag(timer)			PIR5bits.TMR##timer##IF
+#define 	timerClearFlag(timer)		do{PIR5bits.TMR##timer##IF = 0;}while(0)
+
+#define		timeoutReset()				do{TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;}while(0)
+#define		timeoutFlag()				PIR1bits.TMR1IF
 
 #endif	// __CONFIG_H__
