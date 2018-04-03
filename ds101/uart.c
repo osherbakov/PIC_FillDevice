@@ -50,7 +50,7 @@ int RxRS232Char()
 
 	pinMode(RxPC, INPUT);
 
-	timerSetup(6, TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
       	
 	result = -1;
   	
@@ -63,11 +63,11 @@ int RxRS232Char()
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
-				while(!timerFlag(6)){} ;
-				timerClearFlag(6);
+				while(!timerFlag()){} ;
+				timerClearFlag();
 				data = (data >> 1) | (pinRead(RxPC) ? 0x00 : 0x80);
 			}
- 			while(!timerFlag(6)){} ;	// Wait for stop bit
+ 			while(!timerFlag()){} ;	// Wait for stop bit
 			result =  pinRead(RxPC) ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
@@ -83,14 +83,14 @@ void TxRS232Char(char data)
 
 	pinMode(TxPC, OUTPUT);
 
-	timerSetup(6, TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
 
 	pinWrite(TxPC, 1) ;        		// Issue the start bit
  	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
-		while(!timerFlag(6)) {/* wait until timer overflow bit is set*/};
-		timerClearFlag(6);				// Clear timer overflow bit
+		while(!timerFlag()) {/* wait until timer overflow bit is set*/};
+		timerClearFlag();				// Clear timer overflow bit
 		pinWrite(TxPC, data & 0x01);	// Set the output
 		data >>= 1;						// We use the fact that 
 						        		// "0" bits are STOP bits
@@ -131,7 +131,7 @@ int RxDTDChar()
 
 	pinMode(RxDTD, INPUT);
 
-	timerSetup(6, TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
       	
 	result = -1;
   	while( is_not_timeout() )
@@ -143,11 +143,11 @@ int RxDTDChar()
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
-				while(!timerFlag(6)){} ;
-				timerClearFlag(6);				// Clear timer overflow bit
+				while(!timerFlag()){} ;
+				timerClearFlag();				// Clear timer overflow bit
 				data = (data >> 1) | (pinRead(RxDTD) ? 0x00 : 0x80);
 			}
-			while(!timerFlag(6)){} ; // Wait for stop bit
+			while(!timerFlag()){} ; // Wait for stop bit
 			result = pinRead(RxDTD) ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
@@ -162,14 +162,14 @@ void TxDTDChar(char data)
 	
 	pinMode(TxDTD, OUTPUT);
 
-	timerSetup(6, TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
 
 	pinWrite(TxDTD, 1);        		// Issue the start bit
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
-		while(!timerFlag(6)) {	/* wait until timer overflow bit is set*/};
-		timerClearFlag(6);				// Clear timer overflow bit
+		while(!timerFlag()) {	/* wait until timer overflow bit is set*/};
+		timerClearFlag();				// Clear timer overflow bit
 		pinWrite(TxDTD, data & 0x01);	// Set the output
 		data >>= 1;					// We use the fact that 
 						        	// "0" bits are STOP bits
@@ -256,9 +256,6 @@ int RxRS485Data(char *pData)
 	
 	st = INIT;
 	
-	// Start the timer to sample at 0.625T
-	timerSetup(6, TIMER_CTRL, SAMPLE_CNTR);
-    	
     DISABLE_IRQ(prevIRQ);
 
 	// Set the big 16-bit timeout counter
@@ -275,6 +272,9 @@ int RxRS485Data(char *pData)
 			flag_detected 	= 0;
 			timeout_cntr	= 0;
 
+			// Start the timer to sample at 0.625T
+			timerSetup(TIMER_CTRL, SAMPLE_CNTR);
+
 			prev_Sample = rcvd_Sample = pinRead(PIN_IN);
 	
 			st = GET_EDGE;
@@ -287,7 +287,7 @@ int RxRS485Data(char *pData)
 			else
 				{while(!pinRead(PIN_IN) && !timeoutFlag()) {}}
 
-			timerReset(6);
+			timerReset();
 			// Save the value at the edge
 			prev_Sample = pinRead(PIN_IN);
 
@@ -302,7 +302,7 @@ int RxRS485Data(char *pData)
 				st = GET_FLAG_EDGE;
 			}
 			
-			while(!timerFlag(6)) {}
+			while(!timerFlag()) {}
 			rcvd_Sample	= pinRead(PIN_IN);
 			break;
 		
@@ -311,7 +311,7 @@ int RxRS485Data(char *pData)
 		case GET_FLAG_EDGE:	
 			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
 			
-			timerReset(6);
+			timerReset();
 			
 			rcvd_byte >>= 1; 
 			if(rcvd_Sample == prev_Sample) {
@@ -329,7 +329,7 @@ int RxRS485Data(char *pData)
 				st = GET_SAMPLE_EDGE;
 			}
 
-			while(!timerFlag(6)) {}
+			while(!timerFlag()) {}
 			rcvd_Sample	= pinRead(PIN_IN);
 			break;
 
@@ -338,7 +338,7 @@ int RxRS485Data(char *pData)
 		//  Here we also check for bit stuffing (if after 5 "1" comes "0" - discard it!
 		case GET_SAMPLE_EDGE:
 			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
-			timerReset(6);
+			timerReset();
 				
 			// Beginning of bit stuffing detection and handling
 			//  Every "0" after five consecutive "1" should be ignored 
@@ -373,7 +373,7 @@ int RxRS485Data(char *pData)
 				flag_detected = 0;
 			}
 
-			while(!timerFlag(6)) {}
+			while(!timerFlag()) {}
 			rcvd_Sample = pinRead(PIN_IN);
 			break;
 
@@ -382,7 +382,7 @@ int RxRS485Data(char *pData)
 		// We also handle bit stuffing here
 		case GET_DATA_EDGE:
 			if(rcvd_Sample){while(pinRead(PIN_IN)){}} else{while(!pinRead(PIN_IN)) {}}
-			timerReset(6);
+			timerReset();
 
 			// Beginning of bit stuffing detection and handling
 			//  Every "0" after five consecutive "1" should be ignored 
@@ -416,7 +416,7 @@ int RxRS485Data(char *pData)
 				}
 			}
 
-			while(!timerFlag(6)) {}
+			while(!timerFlag()) {}
 			rcvd_Sample = pinRead(PIN_IN);
 			break;
 		
@@ -469,7 +469,7 @@ void TxRS485Data(char *pData, int nBytes)
 			byte_count	= 0;
 			stuff_count = 0;
 			
-			timerSetup(6, TIMER_CTRL, HALF_PERIOD_CNTR);
+			timerSetup(TIMER_CTRL, HALF_PERIOD_CNTR);
 
 			st 				= SEND_START_FLAG;
 		 	break;
@@ -482,18 +482,18 @@ void TxRS485Data(char *pData, int nBytes)
 			  	bit_count = 8;
 			  	while(bit_count > 0)
 			  	{
-					while(!timerFlag(6)) {}	// Start of the cell
+					while(!timerFlag()) {}	// Start of the cell
 			  		pinWrite(Data_P,next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
-					while(!timerFlag(6)) {}	// Middle of the cell
+					while(!timerFlag()) {}	// Middle of the cell
 					pinWrite(Data_P, next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 					next_bit = !next_bit; 	// Always flip the bit at the beginning of the cell 
 					bit_count--;
 				}
@@ -511,10 +511,10 @@ void TxRS485Data(char *pData, int nBytes)
 			  	bit_count = 8;
 			  	while(bit_count > 0)
 			  	{
-					while(!timerFlag(6)) {}		// Wait for the next cell beginning
+					while(!timerFlag()) {}		// Wait for the next cell beginning
 			  		pinWrite(Data_P, next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 
 					// Start calculating the next bit
 					bit_to_send = tx_byte & 0x01;
@@ -528,25 +528,25 @@ void TxRS485Data(char *pData, int nBytes)
 						stuff_count = 0;
 					} 
 
-					while(!timerFlag(6)) {}		// We are now at the middle of the cell
+					while(!timerFlag()) {}		// We are now at the middle of the cell
 					pinWrite(Data_P, next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 					
 
 					// OK, the bit was sent, now 
 					//  do the actual bit stuffing if needed - insert "0"
 					if(stuff_count >= 5) {
-						while(!timerFlag(6)) {}		// Wait for the next cell beginning
+						while(!timerFlag()) {}		// Wait for the next cell beginning
 			  			pinWrite(Data_P,next_bit);
 						pinWrite(Data_N,!next_bit);
-						timerClearFlag(6);
+						timerClearFlag();
 						next_bit = !next_bit;		// Send "0"
 
-						while(!timerFlag(6)) {}		// Wait for the middle of the cell
+						while(!timerFlag()) {}		// Wait for the middle of the cell
 						pinWrite(Data_P, next_bit);
 						pinWrite(Data_N, !next_bit);
-						timerClearFlag(6);
+						timerClearFlag();
 
 						next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
 						stuff_count = 0;
@@ -567,28 +567,28 @@ void TxRS485Data(char *pData, int nBytes)
 			  	bit_count = 8;
 			  	while(bit_count > 0)
 			  	{
-					while(!timerFlag(6)) {}		// Wait for the cell start
+					while(!timerFlag()) {}		// Wait for the cell start
 			  		pinWrite(Data_P, next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
-					while(!timerFlag(6)) {}		// Wait for the middle of the cell
+					while(!timerFlag()) {}		// Wait for the middle of the cell
 					pinWrite(Data_P, next_bit);
 					pinWrite(Data_N, !next_bit);
-					timerClearFlag(6);
+					timerClearFlag();
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
 					bit_count--;
 				}	
 				byte_count--;
 			}
 			// Handle the last cell
-			while(!timerFlag(6)) {}		// Wait for the cell start
+			while(!timerFlag()) {}		// Wait for the cell start
 	  		pinWrite(Data_P, next_bit);
 			pinWrite(Data_N, !next_bit);
-			timerClearFlag(6);
+			timerClearFlag();
 			st = DONE;
 		 	break;
 

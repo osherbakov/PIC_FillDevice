@@ -34,22 +34,22 @@ void set_timeout(int timeout_ms)
 
 char is_timeout(void)
 {
-	if(IS_IRQ_DISABLED() && PIR1bits.TMR2IF) {
+	if(IS_IRQ_DISABLED() && timer10msFlag()) {
 		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;
-		PIR1bits.TMR2IF = 0;	// Clear overflow flag
+		timer10msClearFlag();	// Clear overflow flag
 	}
 	return timeout_flag;
 }
 
 char is_not_timeout(void)
 {
-	if(IS_IRQ_DISABLED() && PIR1bits.TMR2IF) {
+	if(IS_IRQ_DISABLED() && timer10msFlag()) {
 		ms_10++;
 		timeout_counter -= 10;
 		if(timeout_counter <= 0) timeout_flag = 1;
-		PIR1bits.TMR2IF = 0;	// Clear overflow flag
+		timer10msClearFlag();	// Clear overflow flag
 	}
 	return !timeout_flag;
 }

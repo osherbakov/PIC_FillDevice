@@ -55,11 +55,13 @@ void setup_clocks()
 
 	//  TIMER 2 - 10 ms heartbeat timer
 	// Set up the timer 2 to fire every 10 ms, ON
-	PR2 = CNT_10MS;
-	TMR2 = 0;	
-	PIR1bits.TMR2IF = 0;	// Clear Interrupt
-	PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
-	T2CON = (9 << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
+	timer10msSetup((9 << 3) | (1 << 2) | 2, CNT_10MS);
+	timer10msEnableIRQ();
+	//PR2 = CNT_10MS;
+	//TMR2 = 0;	
+	//PIR1bits.TMR2IF = 0;	// Clear Interrupt
+	//PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
+	//T2CON = (9 << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 
 	// Set up the timer 4 to fire every 300us
 	// Is used for Have Quick data stream generation
@@ -70,10 +72,8 @@ void setup_clocks()
 
 	// Set up the timer 6 to roll over with no interrupts
 	// It is used as a general timeout counter, looking at PIR5bits.TMR6IF flag
-	PR6 = 0xFF;
-	PIR5bits.TMR6IF = 0;	// Clear Interrupt
-	PIE5bits.TMR6IE = 0;	// Disable TIMER6 Interrupt
-	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
+	timerSetup(HQII_TIMER_CTRL, 0xFF);
+	timerDisableIRQ();
 
 	// Initialize the seconds counter
   	seconds_counter = 0;

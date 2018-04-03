@@ -128,7 +128,7 @@ void high_isr (void)
 
 	//--------------------------------------------------------------------------
 	// Is it TIMER2 interrupt? (10 ms)
-	if(PIR1bits.TMR2IF)	
+	if(timer10msFlag())	
 	{
 		ms_10++;
 		if(!timeout_flag) {
@@ -144,7 +144,7 @@ void high_isr (void)
 			LED_current_bit = ~LED_current_bit;
 			pinWrite(LEDP, LED_current_bit);
 		}
-		PIR1bits.TMR2IF = 0;	// Clear overflow flag and interrupt
+		timer10msClearFlag();	// Clear overflow flag and interrupt
 	}
 
 	//--------------------------------------------------------------------------
