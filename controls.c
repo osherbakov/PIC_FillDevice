@@ -6,10 +6,6 @@
 #include "Fill.h"
 
 
-
-
-
-
 //
 // Function to get the reading of the switch
 //   Returns the position number currently selected.
@@ -104,7 +100,6 @@ void enable_tx_hqii()
 {
   	hq_enabled = 1;
 }  
-
 
 
 byte	NO_WPU;			// Dummy

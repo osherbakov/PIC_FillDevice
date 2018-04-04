@@ -107,8 +107,9 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	pinMode(RxMBITR, INPUT);
 	
-	T6CON = TIMER_MBITR_CTRL;
-	PR6 = TIMER_MBITR;
+	timerSetup(TIMER_MBITR_CTRL, TIMER_MBITR);
+	timerDisableIRQ();
+
  	set_timeout(RX_TIMEOUT1_MBITR);
 	
 	while( (ncount > nrcvd) && is_not_timeout() )
@@ -116,22 +117,21 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 		// Start conditiona was detected - count 1.5 cell size	
 		if(pinRead(RxMBITR) )
 		{
-			TMR6 = TIMER_MBITR_START;
-			PIR5bits.TMR6IF = 0;	// Clear overflow flag
+			timerSet(TIMER_MBITR_START);
 		  	set_timeout(RX_TIMEOUT2_MBITR);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
-				while(!PIR5bits.TMR6IF){} ;
-				PIR5bits.TMR6IF = 0;	// Clear overflow flag
+				while(!timerFlag()){} ;	// Wait 1.5 cells
+				timerClearFlag();		// Clear overflow flag
 				data = (data >> 1) | (pinRead(RxMBITR) ? 0x80 : 0x00);
 			}
-			while(!PIR5bits.TMR6IF){} ;
-			if(pinRead(RxMBITR))
+			while(!timerFlag()){} ;		// Wait for STOP
+			if(pinRead(RxMBITR))		//   no stop - exit
 			{
   				break;
   			}
-			*p_data++ = ~data;
+			*p_data++ = ~data;			// Invert data
 			nrcvd++;
 		}
 	}
@@ -145,15 +145,14 @@ void tx_mbitr(const byte *p_data, byte ncount)
 	byte 	bitcount;
 	byte 	data;
 
-  	DelayMs(TX_MBITR_DELAY_MS);
-	
 	pinMode(TxMBITR, OUTPUT);
+	pinWrite(TxMBITR, STOP) ;        // Issue the STOP bit
 	
-	PR6 = TIMER_MBITR;
-	T6CON = TIMER_MBITR_CTRL;
-	
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;	// Clear overflow flag
+  	DelayMs(TX_MBITR_DELAY_MS);
+
+	timerSetup(TIMER_MBITR_CTRL, TIMER_MBITR);
+	timerDisableIRQ();
+
 	while(ncount-- )
 	{
 		pinWrite(TxMBITR, START) ;        // Issue the start bit
@@ -161,8 +160,8 @@ void tx_mbitr(const byte *p_data, byte ncount)
     	// send 8 data bits and 4 stop bits
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
-			while(!PIR5bits.TMR6IF) {/* wait until timer overflow bit is set*/};
-			PIR5bits.TMR6IF = 0;	// Clear timer overflow bit
+			while(!timerFlag()) {	/* wait until timer overflow bit is set*/};
+			timerClearFlag();		// Clear timer overflow bit
 			pinWrite(TxMBITR, data & 0x01);	// Set the output
 			data >>= 1;				// We use the fact that 
 									// "0" bits are STOP bits

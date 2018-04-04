@@ -391,22 +391,25 @@ extern	byte	NO_ANSEL;
 #define CLEAR_1PPS()		do{INTCONbits.RBIF = 0;}while(0)
 
 
-#define 	timer10msSetup(control, period)	do{T2CON = control; PR2 = period; TMR2 = 0; PIR1bits.TMR2IF = 0;}while(0)
+#define 	timer10msSetup(control, period)	do{PR2 = period; TMR2 = 0; PIR1bits.TMR2IF = 0;T2CON = control;}while(0)
 #define 	timer10msReset()			do{TMR2 = 0;PIR5bits.TMR2IF = 0;}while(0)
 #define 	timer10msSet(value)			do{TMR2 = value;PIR1bits.TMR2IF = 0;}while(0)
 #define 	timer10msFlag()				PIR1bits.TMR2IF
 #define 	timer10msClearFlag()		do{PIR1bits.TMR2IF = 0;}while(0)
 #define		timer10msEnableIRQ()		do{PIE1bits.TMR2IE = 1;}while(0)
 #define		timer10msDisableIRQ()		do{PIE1bits.TMR2IE = 0;}while(0)
+#define		timer10msIsIRQEnabled()		PIE1bits.TMR2IE
 
-#define 	timerSetup(control, period)	do{T6CON = control; PR6 = period; TMR6 = 0; PIR5bits.TMR6IF = 0;}while(0)
+#define 	timerSetup(control, period)	do{PR6 = period; TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = control;}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerSet(value)				do{TMR6 = value;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerFlag()					PIR5bits.TMR6IF
 #define 	timerClearFlag()			do{PIR5bits.TMR6IF = 0;}while(0)
 #define		timerEnableIRQ()			do{PIE5bits.TMR6IE = 1;}while(0)
 #define		timerDisableIRQ()			do{PIE5bits.TMR6IE = 0;}while(0)
+#define		timerIsIRQEnabled()			PIE5bits.TMR6IE
 
+#define		timeoutSetup(control)		do{T1GCONbits.TMR1GE = 0; TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;T1CON = control;PIE1bits.TMR1IE = 0;}while(0)
 #define		timeoutReset()				do{TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;}while(0)
 #define		timeoutFlag()				PIR1bits.TMR1IF
 

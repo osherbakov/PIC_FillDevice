@@ -12,8 +12,9 @@ extern void setup_xtal();
 extern void setup_spi();
 extern void setup_start_io();
 
-#define TMR2_FREQ  (100)  // 100 Hz timer tick - 10ms
-#define CNT_10MS ((( XTAL_FREQ * 1000000L) / ( 4L * TMR2_FREQ * 10L * 16L )) - 1 )
+#define FREQ_10MS  (100)  // 100 Hz timer tick - 10ms
+#define CNT_10MS 	((( XTAL_FREQ * 1000000L) / ( 4L * FREQ_10MS * 10L * 16L )) - 1 )
+#define CNTRL_10MS	( (9 << 3) | (1 << 2) | 2 )		// Post=1:10, Pre=1:16, Enable
 
 void setup_xtal()
 {
@@ -46,32 +47,15 @@ void setup_clocks()
 	// TIMER 1 - to count OSC_CLOCK in 16-bit mode
 	//  It is used for 0.131072s timeout, when clock overflows
 	// Used for timeouts when we disable interrupts
-  	TMR1H = 0;
-  	TMR1L = 0;	// Reset the timer
-  	T1GCONbits.TMR1GE = 0;	// No gating
-	PIR1bits.TMR1IF = 0;	// Clear Interrupt
-	PIE1bits.TMR1IE = 0;	// Disable TIMER1 Interrupt
-  	T1CON = (0x3 << 4) | (1<<1) | 1; // 8-prescalar, 16-bits, enable
+  	timeoutSetup((0x3 << 4) | (1<<1) | 1);		// 8-prescalar, 16-bits, enable
 
 	//  TIMER 2 - 10 ms heartbeat timer
 	// Set up the timer 2 to fire every 10 ms, ON
-	timer10msSetup((9 << 3) | (1 << 2) | 2, CNT_10MS);
+	timer10msSetup(CNTRL_10MS, CNT_10MS);
 	timer10msEnableIRQ();
-	//PR2 = CNT_10MS;
-	//TMR2 = 0;	
-	//PIR1bits.TMR2IF = 0;	// Clear Interrupt
-	//PIE1bits.TMR2IE = 1;	// Enable TIMER2 Interrupt
-	//T2CON = (9 << 3) | (1 << 2) | 2; // 1:10, EN, 1:16
 
-	// Set up the timer 4 to fire every 300us
-	// Is used for Have Quick data stream generation
-	PR4 = HQII_TIMER;
-	PIR5bits.TMR4IF = 0;	// Clear Interrupt
-	PIE5bits.TMR4IE = 0;	// Disable TIMER4 Interrupt
-	T4CON = 0x02;			// 1:1 Post, 16 prescaler, off 
-
-	// Set up the timer 6 to roll over with no interrupts
-	// It is used as a general timeout counter, looking at PIR5bits.TMR6IF flag
+	// TIMER 6 - to roll over with no interrupts
+	// It is used as a general timeout counter, looking at timerFlag()
 	timerSetup(HQII_TIMER_CTRL, 0xFF);
 	timerDisableIRQ();
 

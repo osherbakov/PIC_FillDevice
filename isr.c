@@ -49,17 +49,15 @@ void high_isr (void)
 	{
     	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
     	// The HIGH->LOW transition indicates the start of the second
-		if(pinRead(RTC_1PPS) == 0)
+		if(pinRead(RTC_1PPS) == LOW)
 		{	
 			// Interrupt occured on HIGH->LOW transition
 	  		if(hq_enabled)  //  On HIGH->LOW transition - 0 ms
 	  		{
-	  			pinWrite(HQ_DATA, 1);	
-	  			TMR4 = 10;					// Preload to compensate for the delay 
-	  			PR4 = HQII_TIMER;			// Load TIMER4
-	  			T4CONbits.TMR4ON = 1;		// Turn on the TIMER4
-	  			PIR5bits.TMR4IF = 0;		// Clear TIMER4 Interrupt
-	  			PIE5bits.TMR4IE = 1;		// Enable TIMER4 Interrupt
+	  			pinWrite(HQ_DATA, 1);
+	  			timerSetup(HQII_TIMER_CTRL, HQII_TIMER);	// Will generate IRQ every 300usec
+	  			timerSet(10);				// Preload to compensate for the delay 
+	  			timerEnableIRQ();
 	  			// Calculate next value
 	  			hq_current_bit = 0;
 	  			hq_current_byte = (START_FRAME_DATA << 1);
@@ -85,8 +83,8 @@ void high_isr (void)
 	}
 	
 	//--------------------------------------------------------------------------
-	// Is it TIMER4 interrupt? (300 us)
-	if(PIR5bits.TMR4IF)
+	// Is it TIMER interrupt? (300 us)
+	if(hq_enabled && timerIsIRQEnabled() && timerFlag())
 	{
 		pinWrite(HQ_DATA, hq_current_bit);
 
@@ -113,8 +111,8 @@ void high_isr (void)
 				}else 
 				{
 					pinWrite(HQ_DATA, 0);
-					T4CONbits.TMR4ON = 0;		// Turn off the Timer4
-					PIE5bits.TMR4IE = 0;		// Disable Timer4 interrupts
+					disable_tx_hqii();
+					timerDisableIRQ();
 				}
 				hq_byte_counter++;
 			}
@@ -123,7 +121,7 @@ void high_isr (void)
 		}
 		hq_bit_counter++;
 		hq_bit_counter &= 0x0F;
-		PIR5bits.TMR4IF = 0;	// Clear the interrupt
+		timerClearFlag();			// Clear the interrupt
 	}
 
 	//--------------------------------------------------------------------------

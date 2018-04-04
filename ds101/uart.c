@@ -33,7 +33,7 @@ void CloseRS232()
 }
 
 //  Simulate UARTs for DTD RS-232 and DS-101 RS-485 communications
-//  TMR6 is used to count bits in Tx and Rx
+//  TMR is used to count bits in Tx and Rx
 //
 // Soft UART to communicate with RS232 port
 // Returns:

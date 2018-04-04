@@ -169,10 +169,8 @@ static char curr_bit;
 static char WaitEdge(unsigned char timeout)
 {
 	ret_value = current_pin;
-	PR6 = timeout;	
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;
-	while(!PIR5bits.TMR6IF)
+	timerSetup(HQII_TIMER_CTRL, timeout);
+	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
 		if(hq_pin != current_pin)
@@ -190,10 +188,8 @@ static char WaitEdge(unsigned char timeout)
 static char WaitTimer(unsigned char timeout)
 {
 	ret_value = 0;
-	PR6 = timeout;
-	TMR6 = 0;
-	PIR5bits.TMR6IF = 0;
-	while(!PIR5bits.TMR6IF)
+	timerSetup(HQII_TIMER_CTRL, timeout);
+	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
 		if(hq_pin != current_pin)
@@ -218,7 +214,8 @@ static HQ_STATES State;
 
 static char GetHQTime(void)
 {
-	T6CON = HQII_TIMER_CTRL;// 1:1 Post, 16 prescaler, on 
+	timerSetup(HQII_TIMER_CTRL, HQII_TIMER);
+	timerDisableIRQ();
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
 
