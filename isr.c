@@ -17,6 +17,7 @@ static byte hq_bit_counter;
 static byte hq_byte_counter;
 static byte hq_current_bit; 
 static byte hq_current_byte; 
+static byte ch;
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
@@ -147,7 +148,7 @@ void high_isr (void)
 
 	//--------------------------------------------------------------------------
 	// Is it a EUSART RX interrupt ?
-	if(PIE1bits.RC1IE && PIR1bits.RC1IF)
+	if(uartIsIRQRx() && uartIsRx())
 	{
 		// Maintain a circular buffer pointed by rx_data
 		if(rx_idx_in > rx_idx_max)
@@ -159,12 +160,12 @@ void high_isr (void)
 			}
 			if(rx_idx_out > 0) rx_idx_out--;	// Adjust OUT index
 		}
-		rx_data[rx_idx_in++] = RCREG1;	// Save the last received symbol
+		rx_data[rx_idx_in++] = uartRx();	// Save the last received symbol
 		// overruns? clear it
-		if(RCSTA1 & 0x06)
+		if(uartIsError())
 		{
-			RCSTA1bits.CREN = 0;
-			RCSTA1bits.CREN = 1;
+			uartModeRx(0);
+			uartModeRx(1);
 		}
 		// No need to clear the Interrupt Flag
 	}
@@ -174,15 +175,15 @@ void high_isr (void)
   	// If there are bytes to send - get the symbol from the 
   	//  buffer pointed by tx_data and decrement the counter
   	// If that was the last symbol - disable interrupts.
-	if(PIE1bits.TX1IE && PIR1bits.TX1IF)
+	if(uartIsIRQTx() && uartIsTx())
 	{
 		if( tx_count )	// not the last byte
 		{
-			TXREG1 = *tx_data++;
+			uartTx(*tx_data++);
 			tx_count--;
 			if( tx_count == 0 )	// Last byte was sent
 			{
-				PIE1bits.TX1IE = 0;	// Disable Interrupts
+				uartIRQTx(0);	// Disable Interrupts
 			}
 		}
 		// No need to clear the Interrupt Flag

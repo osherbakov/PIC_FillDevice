@@ -77,7 +77,7 @@ static void send_options(void)
 // Check serial port if there is a request to send DES keys
 char CheckFillType4()
 {
-	if( !RCSTA1bits.SPEN)
+	if( !uartIsEnabled())
 	{
 		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
 	  	if(pinRead(RxPC) == LOW)
@@ -115,7 +115,7 @@ char CheckFillType4()
 char CheckFillRS232Type5()
 {
   	// Coming in first time - enable eusart and setup buffer
-	if( !RCSTA1bits.SPEN )
+	if( !uartIsEnabled())
 	{
 		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
 	  	if(pinRead(RxPC) == LOW)
@@ -138,7 +138,7 @@ char CheckFillRS232Type5()
 // Check if there is the request from the DTD to send DS-101/RS-232 keys
 char CheckFillDTD232Type5()
 {
-	if( !RCSTA1bits.SPEN )
+	if( !uartIsEnabled() )
 	{
 	  	if(pinRead(RxDTD) == LOW)
 	  	{

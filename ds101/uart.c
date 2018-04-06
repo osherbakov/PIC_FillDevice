@@ -178,7 +178,7 @@ void TxDTDChar(char data)
 
 void OpenRS485(char Master)
 {
-  	OSCTUNEbits.PLLEN = 1;    	// *4 PLL (64MHZ)
+  	pllEnable(1);				// *4 PLL (64MHZ)
 	DelayMs(4 * 10);			// Wait for PLL to become stable
 
 	if(Master) {
@@ -199,7 +199,7 @@ void CloseRS485()
 	pinMode(Data_N, INPUT_PULLUP);
 	pinMode(Data_P, INPUT_PULLUP);
 
-  	OSCTUNEbits.PLLEN = 0;    	// No PLL (16MHZ)
+  	pllEnable(0);		    	// No PLL (16MHZ)
 	DelayMs(10);				// Wait for the clock to become stable
 }
 

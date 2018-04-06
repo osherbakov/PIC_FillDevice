@@ -170,14 +170,14 @@ static char GetGPSTime(void)
 	gps_state = INIT;
 	while(is_not_timeout())
 	{
-		if(PIR1bits.RC1IF)	// Data is avaiable
+		if(uartIsRx())	// Data is avaiable
 		{
 			// Get and process received symbol
-			ch = RCREG1;
+			ch = uartRx();
 			// overruns? clear it
-			if(RCSTA1 & 0x06){
-				RCSTA1bits.CREN = 0;
-				RCSTA1bits.CREN = 1;
+			if(uartIsError()){
+				uartModeRx(0);
+				uartModeRx(1);
 			}else { // ... or process the symbol
 				process_gps_symbol(ch);
 			}

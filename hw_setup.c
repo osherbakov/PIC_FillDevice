@@ -112,7 +112,7 @@ void setup_start_io()
 	pinWrite(LEDP, LOW);
 
 	// Button and Power sensors
-	INTCON2bits.RBPU = 0;	// Enable Weak Pull Ups
+	pullUps(1);		// Enable Weak Pull Ups
 
 	// Zero button - input and no pullup
 	pinMode(ZBR, INPUT_PULLUP);
@@ -128,7 +128,6 @@ void setup_start_io()
 	
 	// Setup RTC 1PPS pin as input
 	pinMode(RTC_1PPS, INPUT);
-	// 	IOC_1PPS = 1;         	// Enable IOC
 	ENABLE_1PPS_IRQ();		// Enable 1PPS interrupt
 	
 	setup_clocks();			// 16 MHz
@@ -138,13 +137,11 @@ void setup_start_io()
 	
 	// Setup and disable USART
 	// Configure the EUSART module
-	RCSTA1 = 0x00;	      	// Disable RX
-	TXSTA1 = 0x00;			// Disable TX
-	PIE1bits.RC1IE = 0;	  	// Disable RX interrupt
-	PIE1bits.TX1IE = 0;	  	// Disable TX Interrupts
-	PIR1bits.RC1IF = 0;   	// Clear Interrupt flags
-	PIR1bits.TX1IF = 0;
-	
+	uartEnable(0);
+	uartIRQRx(0);
+	uartIRQTx(0);
+	uartModeRx(0);
+	uartModeTx(0);
 
 	// Enable all interrupts
 	ENABLE_PIRQ();
@@ -176,8 +173,7 @@ void setup_sleep_io()
   	pinWrite(PIN_F_PWR, 0);
 
 
-	INTCON2bits.RBPU = 1;	// Disable Weak Pull Ups
-	WPUB = 0x00;			// Turn off Weak pull-up
+	pullUps(1);				// Disable Weak Pull Ups
 
 	// Turn off SPI
 	pinMode(SPI_CS, OUTPUT);

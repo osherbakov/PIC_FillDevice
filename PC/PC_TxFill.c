@@ -21,7 +21,7 @@ void PCInterface()
  	byte *p_data = &data_cell[0];
 	// If entering the first time - enable eusart
 	// and initialize the buffer to get chars
-	if( RCSTA1bits.SPEN == 0)
+	if( !uartIsEnabled())
 	{
 		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
  		rx_eusart_async(p_data, 6, INF_TIMEOUT);

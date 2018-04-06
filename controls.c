@@ -90,15 +90,20 @@ void set_pin_f_as_power()
 	pinWrite(PIN_F_PWR, 1);
 }
 
+static byte  prev;
 void disable_tx_hqii()
 {
+	DISABLE_IRQ(prev);
   	hq_enabled = 0;
+	ENABLE_IRQ(prev);
 }
 
 
 void enable_tx_hqii()
 {
+	DISABLE_IRQ(prev);
   	hq_enabled = 1;
+	ENABLE_IRQ(prev);
 }  
 
 
@@ -191,7 +196,6 @@ char pin_F()
 //-------------------------------------------------
 //  LED support fucntions
 //------------------------------------------------
-
 volatile unsigned char led_counter;
 volatile unsigned char led_on_time;
 volatile unsigned char led_off_time;
@@ -199,24 +203,31 @@ volatile unsigned char LED_current_bit;
 
 void set_led_state(char on_time, char off_time)
 {
+	DISABLE_IRQ(prev);
 	led_on_time = on_time;
 	led_off_time = off_time;
 	LED_current_bit = led_on_time ? HIGH : LOW;	// Turn on/off LED
 	pinWrite(LEDP, LED_current_bit);
 	led_counter = (led_on_time && led_off_time) ? led_on_time : 0;
+	ENABLE_IRQ(prev);
 }
 
 void set_led_on()
 {
+	DISABLE_IRQ(prev);
 	led_counter = 0;
 	LED_current_bit = HIGH;				// Turn on LED
 	pinWrite(LEDP, LED_current_bit);
+	ENABLE_IRQ(prev);
 }
 
 void set_led_off()
 {
+	DISABLE_IRQ(prev);
 	led_counter = 0;
 	LED_current_bit = LOW;				// Turn off LED
 	pinWrite(LEDP, LED_current_bit);
+	ENABLE_IRQ(prev);
+
 }
 

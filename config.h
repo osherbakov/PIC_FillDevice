@@ -377,8 +377,6 @@ extern	byte	NO_ANSEL;
 #define	 ANSEL_Data_N	(ANSEL_PIN_E)
 #define	 WPU_Data_N		(WPU_PIN_E)
 
-#define	 WAKEUP			(PIN_C)
-
 #define	DISABLE_IRQ(a)	do{a = INTCONbits.GIE;	INTCONbits.GIE = 0;}while(0)
 #define ENABLE_IRQ(a)	do{INTCONbits.GIE = a;}while(0)
 #define DISABLE_PIRQ()	do{INTCONbits.PEIE = 0;}while(0)
@@ -386,9 +384,9 @@ extern	byte	NO_ANSEL;
 #define IS_IRQ_ENABLED() (INTCONbits.GIE)
 #define IS_IRQ_DISABLED() (!INTCONbits.GIE)
 
-#define ENABLE_1PPS_IRQ()	do{INTCONbits.RBIE = 1;}while(0)
+#define ENABLE_1PPS_IRQ()	do{IOC_RTC_1PPS=1;INTCONbits.RBIE=1;}while(0)
 #define IS_1PPS()			INTCONbits.RBIF
-#define CLEAR_1PPS()		do{INTCONbits.RBIF = 0;}while(0)
+#define CLEAR_1PPS()		do{INTCONbits.RBIF=0;}while(0)
 
 
 #define 	timer10msSetup(control, period)	do{PR2 = period; TMR2 = 0; PIR1bits.TMR2IF = 0;T2CON = control;}while(0)
@@ -400,7 +398,7 @@ extern	byte	NO_ANSEL;
 #define		timer10msDisableIRQ()		do{PIE1bits.TMR2IE = 0;}while(0)
 #define		timer10msIsIRQEnabled()		PIE1bits.TMR2IE
 
-#define 	timerSetup(control, period)	do{PR6 = period; TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = control;}while(0)
+#define 	timerSetup(control, period)	do{PR6 = (period); TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (control);}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerSet(value)				do{TMR6 = value;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerFlag()					PIR5bits.TMR6IF
@@ -412,5 +410,25 @@ extern	byte	NO_ANSEL;
 #define		timeoutSetup(control)		do{T1GCONbits.TMR1GE = 0; TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;T1CON = control;PIE1bits.TMR1IE = 0;}while(0)
 #define		timeoutReset()				do{TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;}while(0)
 #define		timeoutFlag()				PIR1bits.TMR1IF
+
+#define		uartSetup(config, polarity)	do{SPBRGH1=0x00; SPBRG1=(config);BAUDCON1=(polarity);RCSTA1=0;TXSTA1=0;}while(0)
+#define 	uartModeRx(en)				do{RCSTA1bits.CREN=(en);}while(0)
+#define 	uartModeTx(en)				do{TXSTA1bits.TXEN=(en);}while(0)
+#define 	uartIRQRx(en)				do{PIE1bits.RC1IE=(en);}while(0)
+#define 	uartIRQTx(en)				do{PIE1bits.TX1IE=(en);}while(0)
+#define 	uartEnable(en)				do{RCSTA1bits.SPEN=(en);}while(0)
+#define 	uartIsIRQRx()				PIE1bits.RC1IE
+#define 	uartIsIRQTx()				PIE1bits.TX1IE
+#define		uartIsError()				(RCSTA1 & 0x06)
+#define		uartRx()					(RCREG1)
+#define		uartTx(ch)					do{TXREG1=(ch);}while(0)
+#define		uartIsTxBusy()				(TXSTA1bits.TRMT)
+#define 	uartIsRx()					(PIR1bits.RC1IF)
+#define 	uartIsTx()					(PIR1bits.TX1IF)
+#define 	uartIsEnabled()				(RCSTA1bits.SPEN)
+
+#define		pullUps(en)					do{INTCON2bits.RBPU=(en);WPUB=(en)?0xFF:0x00;}while(0)
+
+#define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);}while(0)
 
 #endif	// __CONFIG_H__
