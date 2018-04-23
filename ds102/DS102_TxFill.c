@@ -149,8 +149,6 @@ static void SendDS102Cell(byte *p_cell, byte count)
 //      -1 	- Timeout
 //		0 	- Request received
 //		1 	- PinB was asserted - fill error
-static	byte  NewState_C;	
-static 	byte  PreviousState_C;
 
 static char WaitDS102Req(byte fill_type, byte req_type)
 {
@@ -185,15 +183,15 @@ static char WaitDS102Req(byte fill_type, byte req_type)
       	set_timeout(tF);	// If not first - wait 3 seconds until timeout
   	}
 
-  	PreviousState_C = HIGH;
+  	PreviousState = HIGH;
   	while( is_not_timeout() )  
   	{
-    	NewState_C = pin_C();
-    	if(PreviousState_C != NewState_C)  
+    	NewState = pin_C();
+    	if(PreviousState != NewState)  
     	{
       		// check if we should return now or wait for the PIN_C to go HIGH
       		// If this is the last request - return just as PinC goes LOW	
-      		if( NewState_C == HIGH ) 
+      		if( NewState == HIGH ) 
       		{
 				Result = ST_OK;
         		break;
@@ -208,7 +206,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
       				set_timeout(tD);
 				}
 			}
-      		PreviousState_C = NewState_C;
+      		PreviousState = NewState;
     	}
 
 	  	// Do not check for pin B in MODE1 fill or on REQ_FIRST
@@ -353,12 +351,14 @@ char CheckType123Equipment(byte fill_type)
   	return Equipment;
 }
 
+static 	byte num_retries;
+static	char wait_result;
+static 	char pos;			// Cell position (1..MAX_TYPE_3_POS)
+
 // Send only TOD fill info for Type 3 SINCGARS
 char WaitReqSendTODFill()
 {
-  	byte num_retries;
-  	char pos;	// Cell position (1..MAX_TYPE_3_POS)
-	char wait_result = ST_TIMEOUT;
+	wait_result = ST_TIMEOUT;
 
   	// On timeout return and check the switches
   	if( WaitDS102Req(MODE3, REQ_FIRST)  != ST_OK ) return ST_TIMEOUT;  
@@ -398,15 +398,15 @@ char WaitReqSendTODFill()
   	return wait_result;
 }
 
+
+static  	byte  	fill_type, records;
+static  	byte    bytes, rec_bytes, byte_cnt;
+static  	unsigned short long base_address;
+static  	unsigned short long rec_base_address;
+
 char SendDS102Fill(byte stored_slot)
 {
-  	byte    num_retries;
-  	byte  	fill_type, records;
-	byte    bytes, rec_bytes, byte_cnt;
-	unsigned short long base_address;
-	unsigned short long rec_base_address;
-	
-	char    wait_result = ST_TIMEOUT;
+	wait_result = ST_TIMEOUT;
 	
   	base_address = get_eeprom_address(stored_slot & 0x0F);
 	records = byte_read(base_address++);
