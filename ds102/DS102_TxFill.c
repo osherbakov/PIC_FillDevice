@@ -32,10 +32,14 @@
 #define tF  3000    	// End of fill - > response (4ms - 2sec)
 #define tC  (30000)  	// .5 minute - > until REQ (300us - 5min )
 
+static  byte  NewState;	
+static	byte  PreviousState;
+static  char  prev;
+static  byte i;
+
 // Sends byte data on PIN_B with clocking on PIN_E
 static void SendMode23Query(byte Data)
 {
-  byte i;
   // Set up pins mode and levels
   pinMode(PIN_B, OUTPUT);    // make pin active
   pinMode(PIN_E, OUTPUT);    // make pin active
@@ -72,16 +76,11 @@ static void SendMode23Query(byte Data)
 	pinMode(PIN_E, INPUT);    // Tristate the pin
 }
 
-static  byte  NewState;	
-static	byte  PreviousState;
-static  char  prev;
-
 // Receive the equipment data that is sent on PIN_B with clocking on PIN_E
 //   The total number of clocks is 40 (41), but only the last bit matters
 static signed char GetEquipmentMode23Type(void)
 {
   signed char	result;
-  byte i;
 
   pinWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
   pinWrite(PIN_E, LOW);      	// Turn_on the pullup register
@@ -120,8 +119,6 @@ static signed char GetEquipmentMode23Type(void)
 // Sends byte data on PIN_D with clocking on PIN_E
 static void SendDS102Byte(byte Data)
 {
-  byte i;
-
   pinMode(PIN_D, OUTPUT);    // make a pin active
   pinMode(PIN_E, OUTPUT);    // make a pin active
   pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
@@ -139,9 +136,8 @@ static void SendDS102Byte(byte Data)
 // Send Cell - a collection of bytes
 static void SendDS102Cell(byte *p_cell, byte count)
 {
-  byte i;
   delay(tE);     // Delay before sending first bit
-  for (i = 0; i < count; i++)
+  while(count-- > 0)
   {
     SendDS102Byte(*p_cell++);
   }
@@ -154,27 +150,34 @@ static void SendDS102Cell(byte *p_cell, byte count)
 //		0 	- Request received
 //		1 	- PinB was asserted - fill error
 static	byte  NewState_C;	
-static	byte  NewState_B;	
 static 	byte  PreviousState_C;
 
 static char WaitDS102Req(byte fill_type, byte req_type)
 {
   	char   Result = ST_TIMEOUT;
 
+	// The signal on pin C is the Fill Request
   	pinWrite(PIN_C, HIGH);  // Set pullup 
-  	pinMode(PIN_C, INPUT); 
+  	pinMode(PIN_C, INPUT_PULLUP);
+  	
 	// For MODE23 fill we:
 	//  1. Keep pin B high with pullup
 	//  2. read PIN_B 
-	if(fill_type != MODE1) {
-	  	pinWrite(PIN_B, HIGH);  // Set pullup 
-    	pinMode(PIN_B, INPUT_PULLUP);	
-	}else {
-	  	pinWrite(PIN_B, HIGH);  // Keep pin_B HIGH
+	if(fill_type == MODE1) {
+	  	pinWrite(PIN_B, HIGH);  // Keep pin_B HIGH for Mode 1
     	pinMode(PIN_B, OUTPUT);	
+	}else {
+	  	pinWrite(PIN_B, HIGH);  // Set pullup for Mode 2 and 3
+    	pinMode(PIN_B, INPUT_PULLUP);	
 	}
 
-	delayMicroseconds(tK1);    // Satisfy Setup time tK1
+	delayMicroseconds(100);    // Satisfy Setup time 
+
+	// Special case - Mode 1 fill and the last record 
+	//    most likely it is the First, and the Last, and the only record) was sent
+   	if( (req_type == REQ_LAST) && (fill_type == MODE1)) {
+	   	return ST_OK;
+	}	
 
   	if( req_type == REQ_FIRST){
 	    set_timeout(tB);	// Return every 500 ms to check for switch position
@@ -212,8 +215,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 		// For Type 1 there may be no ACK/REQ 
     	if( (req_type != REQ_FIRST) && (fill_type != MODE1) ) 
     	{
-    		NewState_B = pin_B();
-	    	if(NewState_B == LOW) {
+	    	if(pin_B() == LOW) {
       			Result = ST_ERR;  // Bad CRC
       		}			
     	}
@@ -389,7 +391,7 @@ char WaitReqSendTODFill()
 			break;
 		}
    		if(wait_result != ST_OK) break;
-	 }
+	}
 
   	EndFill();
   	ReleaseBus();
@@ -412,12 +414,12 @@ char SendDS102Fill(byte stored_slot)
 	// Get the fill type from the EEPROM
 	fill_type = byte_read(base_address++);
 
-	while(records)	
+	while(records)		// Loop on Records
 	{
  		rec_bytes = byte_read(base_address++);
  		rec_base_address = base_address;
 		num_retries = 0;
-	   	while(1)	// Loop on retries
+	   	while(num_retries < TYPE23_RETRIES)		// Loop on Retries
 	   	{
 	    	bytes = rec_bytes;
 	     	base_address = rec_base_address;
@@ -434,7 +436,7 @@ char SendDS102Fill(byte stored_slot)
 	 			{
 	 				FillTODData();
 	 				cm_append(TOD_cell, MODE2_3_CELL_SIZE);
-	 	  			SendDS102Cell(TOD_cell, byte_cnt);
+	 	  			SendDS102Cell(&TOD_cell[0], byte_cnt);
 	 			}else
 	 			{
 	 				SendDS102Cell(&data_cell[0], byte_cnt);
@@ -444,13 +446,15 @@ char SendDS102Fill(byte stored_slot)
 	 			base_address += byte_cnt;
 	 			bytes -= byte_cnt;
 			}
-	 		// After sending a record check for the next request
+	 		// After sending a record check for the next request - ONLY if there are more data
 	 		wait_result = WaitDS102Req(fill_type, (records > 1) ? REQ_NEXT : REQ_LAST );
-			if( wait_result == ST_OK) break;
-			if( num_retries >= TYPE23_RETRIES) break;
+			if( wait_result == ST_OK) break;	// The Response was OK - no more retries
+			// There was an error, and we reached the limit on retries
+			if( wait_result == ST_ERR) break;
 			num_retries++;
-		}
-		records--;
+		}	// Loop on Retries
+
+		records--;		// Process next record
 		
 		// Any errors not corrected - exit
 	   	if(wait_result == ST_ERR) break;
@@ -459,7 +463,8 @@ char SendDS102Fill(byte stored_slot)
 			wait_result = ST_DONE;
 			break;
 		}
-	}	
+	}	// Loop on Records
+	
   	EndFill();
    	ReleaseBus();
 	return wait_result;	
