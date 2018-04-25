@@ -171,12 +171,6 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
 	delayMicroseconds(100);    // Satisfy Setup time 
 
-	// Special case - Mode 1 fill and the last record 
-	//    most likely it is the First, and the Last, and the only record) was sent
-   	if( (req_type == REQ_LAST) && (fill_type == MODE1)) {
-	   	return ST_OK;
-	}	
-
   	if( req_type == REQ_FIRST){
 	    set_timeout(tB);	// Return every 500 ms to check for switch position
   	}else{
@@ -418,8 +412,8 @@ char SendDS102Fill(byte stored_slot)
 	{
  		rec_bytes = byte_read(base_address++);
  		rec_base_address = base_address;
-		num_retries = 0;
-	   	while(num_retries < TYPE23_RETRIES)		// Loop on Retries
+		num_retries = TYPE23_RETRIES;
+	   	while(num_retries-- > 0)		// Loop on Retries
 	   	{
 	    	bytes = rec_bytes;
 	     	base_address = rec_base_address;
@@ -446,12 +440,16 @@ char SendDS102Fill(byte stored_slot)
 	 			base_address += byte_cnt;
 	 			bytes -= byte_cnt;
 			}
-	 		// After sending a record check for the next request - ONLY if there are more data
+
+			// Special case - Mode 1 fill and the last record 
+			//    most likely it is the First, and the Last, and the only record) sent
+   			if( (fill_type == MODE1) && (records <= 1)) {
+	   			wait_result = ST_OK;
+	   			break;
+			}	
+	 		// After sending record check for the next request - ONLY if there are more data
 	 		wait_result = WaitDS102Req(fill_type, (records > 1) ? REQ_NEXT : REQ_LAST );
 			if( wait_result == ST_OK) break;	// The Response was OK - no more retries
-			// There was an error, and we reached the limit on retries
-			if( wait_result == ST_ERR) break;
-			num_retries++;
 		}	// Loop on Retries
 
 		records--;		// Process next record
