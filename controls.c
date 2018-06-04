@@ -3,7 +3,6 @@
 #include "delay.h"
 #include "gps.h"
 #include "Fill.h"
-#include "clock.h"
 
 
 // Variables that keep the current and previous states for 

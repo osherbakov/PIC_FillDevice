@@ -4,7 +4,6 @@
 #include "controls.h"
 #include "rtc.h"
 #include "serial.h"
-#include "clock.h"
 #include "gps.h"
 
 void high_isr (void);

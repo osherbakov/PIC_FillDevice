@@ -5,7 +5,6 @@
 #include <spi.h>
 #include "i2c_sw.h"
 #include "serial.h"
-#include "clock.h"
 #include "gps.h"
 
 extern void setup_clocks();	

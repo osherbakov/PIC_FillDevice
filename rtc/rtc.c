@@ -1,7 +1,6 @@
 #include "config.h"
 #include "rtc.h"
 #include "i2c_sw.h"
-#include "clock.h"
 #include "delay.h"
 
 #define RTC_I2C_ADDRESS			(0xD0)

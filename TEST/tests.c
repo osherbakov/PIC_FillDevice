@@ -1,6 +1,5 @@
 #include "config.h"
 #include "rtc.h"
-#include "clock.h"
 #include "delay.h"
 #include "string.h"
 #include "Fill.h"
