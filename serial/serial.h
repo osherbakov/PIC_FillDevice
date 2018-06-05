@@ -33,8 +33,9 @@
 // Use negative logic
 // because we don't use any RS-232 interface chips
 // and generate/sense RS-232 signals directly
-#define  START	(1)
-#define  STOP	(0)
+#define  START_BIT		(1)
+#define  STOP_BIT		(0)
+#define  DATA_BYTE(a)	~(a)
 
 #define TX_MBITR_DELAY_MS	(10) 	  
 

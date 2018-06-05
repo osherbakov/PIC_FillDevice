@@ -427,7 +427,7 @@ extern	byte	NO_ANSEL;
 #define 	uartIsTx()					(PIR1bits.TX1IF)
 #define 	uartIsEnabled()				(RCSTA1bits.SPEN)
 
-#define		pullUps(en)					do{INTCON2bits.RBPU=(en);WPUB=(en)?0xFF:0x00;}while(0)
+#define		pullUps(en)					do{INTCON2bits.RBPU=(!en);WPUB=(en)?0xFF:0x00;}while(0)
 
 #define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);}while(0)
 

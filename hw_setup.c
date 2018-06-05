@@ -87,17 +87,15 @@ void setup_start_io()
 	portMode(D, INPUT);
 	portMode(E, INPUT);
 
-  	// Apply power to PIN_A
-  	pinMode(PIN_A_PWR, OUTPUT);
-  	pinWrite(PIN_A_PWR, 1);
-
-  	// Apply no power to PIN_F
-  	pinMode(PIN_F_PWR, OUTPUT);
-  	pinWrite(PIN_F_PWR, 0);
+  	// Apply GND to PIN_A and no PWR on PIN_F
+	set_pin_a_as_gnd();		//  Set GND on Pin A
+  	set_pin_f_as_io();		//  Apply no power to PIN_F
 
   	// Switch S1 - S16 settings
 	TRIS_S1_8 = 0xFF;	// Inputs
 	TRIS_S9_16 = 0xFF;	// Inputs
+
+	pullUps(1);		// Enable Weak Pull Ups
 		
 	// Audio Connector - Inputs
 	pinMode(PIN_B, INPUT_PULLUP);
@@ -107,15 +105,16 @@ void setup_start_io()
 	pinMode(PIN_F, INPUT_PULLUP);
 
 
-	// LED controls
+	// LED controls - output and LED OFF
 	pinMode(LEDP, OUTPUT);
 	pinWrite(LEDP, LOW);
 
+	//
 	// Button and Power sensors
-	pullUps(1);		// Enable Weak Pull Ups
+	//
 
 	// Zero button - input and no pullup
-	pinMode(ZBR, INPUT_PULLUP);
+	pinMode(ZBR, INPUT);
 
 	// Push button - input with weak pullup
 	pinMode(BTN, INPUT_PULLUP);
@@ -164,16 +163,13 @@ void setup_sleep_io()
 	pinMode(LEDP, OUTPUT);
 	pinWrite(LEDP, 0);
 
-  	// Apply power to PIN_A
-  	pinMode(PIN_A_PWR, OUTPUT);
-  	pinWrite(PIN_A_PWR, 1);
-
+  	// Apply GND to PIN_A
   	// Apply no power to PIN_F
-  	pinMode(PIN_F_PWR, OUTPUT);
-  	pinWrite(PIN_F_PWR, 0);
+	set_pin_a_as_gnd();		//  Set GND on Pin A
+  	set_pin_f_as_io();		//  Apply no power to PIN_F
 
 
-	pullUps(1);				// Disable Weak Pull Ups
+	pullUps(0);				// Disable Weak Pull Ups
 
 	// Turn off SPI
 	pinMode(SPI_CS, OUTPUT);

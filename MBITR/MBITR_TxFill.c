@@ -90,7 +90,7 @@ void open_mbitr(void)
 {
 	pinMode(RxMBITR, INPUT);
 	pinMode(TxMBITR, OUTPUT);
-	pinWrite(TxMBITR, STOP);
+	pinWrite(TxMBITR, STOP_BIT);
 	DelayMs(50);
 }
 
@@ -131,7 +131,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 			{
   				break;
   			}
-			*p_data++ = ~data;			// Invert data
+			*p_data++ = DATA_BYTE(data);			// Invert data
 			nrcvd++;
 		}
 	}
@@ -146,7 +146,7 @@ void tx_mbitr(const byte *p_data, byte ncount)
 	byte 	data;
 
 	pinMode(TxMBITR, OUTPUT);
-	pinWrite(TxMBITR, STOP) ;        // Issue the STOP bit
+	pinWrite(TxMBITR, STOP_BIT) ;        // Issue the STOP bit
 	
   	DelayMs(TX_MBITR_DELAY_MS);
 
@@ -155,8 +155,8 @@ void tx_mbitr(const byte *p_data, byte ncount)
 
 	while(ncount-- )
 	{
-		pinWrite(TxMBITR, START) ;        // Issue the start bit
-		data = ~(*p_data++);  // Get the symbol and advance pointer
+		pinWrite(TxMBITR, START_BIT); // Issue the start bit
+		data = DATA_BYTE(*p_data++);  // Get the symbol and advance pointer
     	// send 8 data bits and 4 stop bits
 		for(bitcount = 0; bitcount < 12; bitcount++)
 		{
