@@ -49,7 +49,7 @@ byte get_power_state()
 
 byte get_button_state()
 {
-	pinMode(BTN, INPUT);
+	pinMode(BTN, INPUT_PULLUP);
    	return ( pinRead(BTN) ? UP_POS : DOWN_POS);
 }
 
@@ -57,7 +57,7 @@ char is_bootloader_active()
 {
   // Check if the switch S16 is selected
   //  and the RxD is in break state  (MARK)
-  pinMode(S16, INPUT);
+  pinMode(S16, INPUT_PULLUP);
   pinMode(RxPC, INPUT);
  
   //Switch is tied to the GND and Rx is (START)
