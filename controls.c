@@ -19,7 +19,8 @@ byte get_switch_state()
 	// Make all of them Inputs (Tristate)
 	portMode(S1_8, INPUT_PULLUP);
 	portMode(S9_16, INPUT_PULLUP);
-  
+  	DelayMs(1);
+ 
 	// Data is inverted - selected pin is 0
 	data = ~(portRead(S1_8));
 	if(data != 0x00)
@@ -44,12 +45,14 @@ byte get_switch_state()
 byte get_power_state()
 {
 	pinMode(ZBR, INPUT);
-	return (pinRead(ZBR)? ZERO_POS : ON_POS);
+	DelayMs(1);
+ 	return (pinRead(ZBR)? ZERO_POS : ON_POS);
 }
 
 byte get_button_state()
 {
 	pinMode(BTN, INPUT_PULLUP);
+	DelayMs(1);
    	return ( pinRead(BTN) ? UP_POS : DOWN_POS);
 }
 
@@ -59,7 +62,8 @@ char is_bootloader_active()
   //  and the RxD is in break state  (MARK)
   pinMode(S16, INPUT_PULLUP);
   pinMode(RxPC, INPUT);
- 
+  DelayMs(1);
+  
   //Switch is tied to the GND and Rx is (START)
   return (!pinRead(S16) && pinRead(RxPC));
 }

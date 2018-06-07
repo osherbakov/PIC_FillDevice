@@ -232,11 +232,12 @@ static void bump_idle_counter(void)
 
 extern char TestDAGRDecode(void);
 
+static char  result;
+static byte  fill_type;
+static char  allow_type45_fill;
+
 void main()
 {
-	char  result;
-  	byte  fill_type;
-  	char  allow_type45_fill;
   
 //	TestDAGRDecode();
 
@@ -247,15 +248,15 @@ void main()
 	DelayMs(100);
 	
 	// Initialize current state of the buttons, switches, etc
-//	prev_power_pos = get_power_state();
-//	prev_button_pos = get_button_state();
-//	prev_switch_pos = get_switch_state();
+	power_pos = prev_power_pos = get_power_state();
+	button_pos = prev_button_pos = get_button_state();
+	switch_pos = prev_switch_pos = get_switch_state();
 
 	// Special case on the startup:
 	// If the button is pressed on power-on, then ENABLE RS232 and RS485 (DS-101) fills
 	// Additionally, show the key status - Solid light for OK, No light for EMPTY
 	allow_type45_fill = FALSE;
-	if(get_button_state() == DOWN_POS)	
+	if(button_pos == DOWN_POS)	
 	{
   		allow_type45_fill = TRUE;
   		SetNextState(CHECK_KEY);
@@ -279,38 +280,41 @@ void main()
 		}
 
 
-		button_pos = get_button_state();
 	  	//
 	  	// Check the switch position - did it change? Only do it when button is not pressed
 	  	//
 		switch_pos = get_switch_state();
+		button_pos = get_button_state();
+		power_pos = get_power_state();
+
 		if( switch_pos && (switch_pos != prev_switch_pos))
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
+			prev_switch_pos = switch_pos; 	// Save new state
 			if(button_pos == UP_POS)  {
 				SetNextState(INIT);
 			}else {
   				SetNextState(CHECK_KEY);
 			}
 		}
-		prev_switch_pos = switch_pos; // Save new state
 
 	  	//
 	  	// Check the power position - did it change?
 	  	//
-		power_pos = get_power_state();
-		if( (button_pos == UP_POS) && (power_pos != prev_power_pos) )
+		if( /* (button_pos == UP_POS) && */ (power_pos != prev_power_pos) )
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
 			// Reset the state only when switch goes into the ZERO, but not back.
+			prev_power_pos = power_pos; 	// Save new state
 			if( power_pos == ZERO_POS )
 			{
 				SetNextState(INIT);
 			}
 		}
-		prev_power_pos = power_pos; // Save new state
+
+//		prev_button_pos = button_pos;	// Save new state
 		
 		switch(current_state)
 		{
