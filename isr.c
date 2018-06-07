@@ -126,7 +126,7 @@ void high_isr (void)
 	}
 
 	//--------------------------------------------------------------------------
-	// Is it TIMER2 interrupt? (10 ms)
+	// Is it 10ms timer interrupt?
 	if(timer10msFlag())	
 	{
 		ms_10++;

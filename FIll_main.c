@@ -279,14 +279,15 @@ void main()
 			};
 		}
 
-
-	  	//
-	  	// Check the switch position - did it change? Only do it when button is not pressed
-	  	//
+		//	Get the switch, power and button switches states
+		//
 		switch_pos = get_switch_state();
 		button_pos = get_button_state();
 		power_pos = get_power_state();
 
+	  	//
+	  	// Check the switch position - did it change? Only do it when button is not pressed
+	  	//
 		if( switch_pos && (switch_pos != prev_switch_pos))
 		{
       		// On any change bump the idle counter
@@ -302,7 +303,7 @@ void main()
 	  	//
 	  	// Check the power position - did it change?
 	  	//
-		if( /* (button_pos == UP_POS) && */ (power_pos != prev_power_pos) )
+		if(  (button_pos == UP_POS) && (power_pos != prev_power_pos) )
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
@@ -314,8 +315,6 @@ void main()
 			}
 		}
 
-//		prev_button_pos = button_pos;	// Save new state
-		
 		switch(current_state)
 		{
 			// This case when any switch or button changes
@@ -366,9 +365,8 @@ void main()
 				  	{
 					  	SetNextState(PC_CONN);// Switch to the PC connection mode
 					}
-				}else if(
-					((switch_pos == HQ_TIME_POS) || (switch_pos == SG_TIME_POS)) 
-						&& (power_pos == ZERO_POS))		// GPS/HQ time receive
+				}else if( ((switch_pos == HQ_TIME_POS) || (switch_pos == SG_TIME_POS)) 
+							&& (power_pos == ZERO_POS))		// GPS/HQ time receive
 				{
 					set_pin_a_as_gnd();
 					set_pin_f_as_power();
