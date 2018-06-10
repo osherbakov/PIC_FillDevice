@@ -37,11 +37,10 @@ void interrupt_at_high_vector(void)
 // High priority interrupt handler for:
 //  - 1 Second PPS from the RTC to generate precise start of Havequick sequence  
 //  - Havequick sequence generation (300us)
-//  - eusart tx interrupt
+//  - eusart tx and rx interrupt
 //
 // TIMER4 is used for Havequick clock
 // TIMER2 generates 10ms ticks
-// TIMER0 for fine tuning of the PIC internal processor clock
 void high_isr (void)
 {
 	//--------------------------------------------------------------------------
@@ -139,9 +138,9 @@ void high_isr (void)
 		if(led_counter && (--led_counter == 0))
 		{
 			// Toggle the LED and it's state
-			led_counter = LED_current_bit ? led_off_time : led_on_time;
-			LED_current_bit = ~LED_current_bit;
+			LED_current_bit = !LED_current_bit;
 			pinWrite(LEDP, LED_current_bit);
+			led_counter = LED_current_bit ? led_on_time : led_off_time;
 		}
 		timer10msClearFlag();	// Clear overflow flag and interrupt
 	}
@@ -167,7 +166,7 @@ void high_isr (void)
 			uartModeRx(0);
 			uartModeRx(1);
 		}
-		// No need to clear the Interrupt Flag
+		// No need to clear the Interrupt Flag - the read from the register clears it
 	}
 
 	//--------------------------------------------------------------------------

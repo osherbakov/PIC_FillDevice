@@ -90,7 +90,7 @@ static void SetNextState(char nextState)
 	switch(nextState)
 	{
 		case INIT:
-			set_led_state(10, 5000);		// Short Blink
+			set_led_state(10, 200);		// Short Blink
 			break;
 
 		case IDLE:
@@ -144,7 +144,7 @@ static void SetNextState(char nextState)
 	    case FILL_TX_TIME_PROC:
 	    case FILL_RX_TYPE1:
 	    case FILL_RX_TYPE23:
-			set_led_state(150, 0);		// "Key loading" blink pattern (Steady light)
+			set_led_state(100, 0);		// "Key loading" blink pattern (Steady light)
 			break;
     
 		case FILL_RX_RS232:
@@ -212,13 +212,37 @@ static void  PinsToDefault(void)
 {
 	disable_tx_hqii();
 	close_eusart();
-	set_pin_f_as_io();
 	set_pin_a_as_gnd();		//  Set GND on Pin A
+	set_pin_f_as_io();
 	pinMode(PIN_B,INPUT);
 	pinMode(PIN_C,INPUT);
 	pinMode(PIN_D,INPUT);
 	pinMode(PIN_E,INPUT);
 	pinMode(PIN_F,INPUT);
+	DelayMs(10);
+}
+
+static void  PinsToRS232(void)
+{
+	set_pin_a_as_gnd();		//  Set GND on Pin A
+	set_pin_f_as_power();
+	pinMode(PIN_B,INPUT);
+	pinMode(PIN_C,INPUT);
+	pinMode(PIN_D,INPUT);
+	pinMode(PIN_E,INPUT);
+	DelayMs(10);
+}
+
+static void  PinsToDS102(void)
+{
+	set_pin_a_as_power();		//  Set POWER on Pin A
+	set_pin_f_as_io();
+	pinMode(PIN_B,INPUT);
+	pinMode(PIN_C,INPUT);
+	pinMode(PIN_D,INPUT);
+	pinMode(PIN_E,INPUT);
+	pinMode(PIN_F,INPUT);
+	DelayMs(10);
 }
 
 static char prev;
@@ -230,8 +254,6 @@ static void bump_idle_counter(void)
 }
 
 
-extern char TestDAGRDecode(void);
-
 static char  result;
 static byte  fill_type;
 static char  allow_type45_fill;
@@ -239,14 +261,20 @@ static char  allow_type45_fill;
 void main()
 {
   
-//	TestDAGRDecode();
-
 	setup_start_io();
   	PinsToDefault();	
 
 	SetNextState(INIT);
-	DelayMs(100);
-	
+	DelayMs(200);
+
+	if( is_bootloader_active() )
+  	{
+  		set_led_off();			// Turn off LED
+  		DISABLE_IRQ(prev);
+  		DISABLE_PIRQ();
+  		BootloadMode();       	// Go to bootloader
+  	}
+
 	// Initialize current state of the buttons, switches, etc
 	power_pos = prev_power_pos = get_power_state();
 	button_pos = prev_button_pos = get_button_state();
@@ -261,8 +289,8 @@ void main()
   		allow_type45_fill = TRUE;
   		SetNextState(CHECK_KEY);
 	}
-		
-  	bump_idle_counter();
+
+ 	bump_idle_counter();
   
 	while(1)
 	{
@@ -303,7 +331,7 @@ void main()
 	  	//
 	  	// Check the power position - did it change?
 	  	//
-		if(  (button_pos == UP_POS) && (power_pos != prev_power_pos) )
+		if( power_pos != prev_power_pos )
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
@@ -323,7 +351,6 @@ void main()
 			//********************************************
 			//-----------INIT-----------------
 			case INIT:
-        		PinsToDefault();
         		bump_idle_counter();
         
         		// Start all from the beginning.................
@@ -352,8 +379,7 @@ void main()
 					}
 				}else if(switch_pos == PC_POS )		// Talk to PC
 				{
-					set_pin_a_as_gnd();						//  Set GND on Pin A
-          			set_pin_f_as_power();
+					PinsToRS232();
 					// Check for the bootloader activity
 					if( is_bootloader_active() )
 				  	{
@@ -368,24 +394,16 @@ void main()
 				}else if( ((switch_pos == HQ_TIME_POS) || (switch_pos == SG_TIME_POS)) 
 							&& (power_pos == ZERO_POS))		// GPS/HQ time receive
 				{
-					set_pin_a_as_gnd();
-					set_pin_f_as_power();
-					pinMode(PIN_B,INPUT);
-					pinMode(PIN_C,INPUT);
-					pinMode(PIN_D,INPUT);
-					pinMode(PIN_E,INPUT);
-					DelayMs(100);
+					PinsToRS232();
           			SetNextState(HQ_GPS_RX);
 				}else if(switch_pos == HQ_TIME_POS)	// HQ Transmit
 				{
-					set_pin_a_as_gnd();			// Make ground on Pin A
-				  	set_pin_f_as_power();
+					PinsToRS232();
 					SetNextState(HQ_TX);
 				}else if(switch_pos == SG_TIME_POS) // SINCGARS Time only fill
 				{
           			// SINCGARS TIME only fill - will use negative logic 
-          			set_pin_a_as_power();
-				  	set_pin_f_as_io();
+					PinsToDS102();
 					fill_type = MODE3;
 					SetNextState(FILL_TX_TIME);
 				}
@@ -398,18 +416,15 @@ void main()
 			case FILL_TX:
 				if(fill_type == MODE5)          	// Any DS-101 fill
 				{
-					set_pin_a_as_gnd();				//  Set GND on Pin A
-          			set_pin_f_as_power();
+					PinsToRS232();
 					SetNextState(FILL_TX_RS485);	// Start with RS232 and cycle thru 3 modes
 				}else if(fill_type == MODE4)    	// MBITR keys
 				{
-					set_pin_a_as_gnd();				//  Set GND on Pin A
-          			set_pin_f_as_power();
+					PinsToRS232();
 					SetNextState(FILL_TX_MBITR);
 				}else 
 				{       							// Any type 1,2,3 fill - DS-102
-					set_pin_a_as_power();			//  Set +5V on Pin A for Type 1,2,3
-          			set_pin_f_as_io();
+					PinsToDS102();
 					SetNextState(FILL_TX_DS102_WAIT);
 				}
 				break;
@@ -499,22 +514,14 @@ void main()
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
-        		PinsToDefault();
 			  	if( allow_type45_fill ){ 
         			// Only RS-232 and RS-485 fills are allowed 
-					set_pin_a_as_gnd();				//  Set GND on Pin A
-          			set_pin_f_as_power();
-          			// Set all pins as inputs and try to detect the type of the device connected
-					pinMode(PIN_B,INPUT);
-					pinMode(PIN_C,INPUT);
-					pinMode(PIN_D,INPUT);
-					pinMode(PIN_E,INPUT);
+					PinsToRS232();
 					DelayMs(100);
   					SetNextState(FILL_RX_RS232_WAIT);
 				}else {
 				  	// Only Type 1, 2 and 3 fills are allowed in DS-102 mode
-          			set_pin_a_as_power();         	// Set +5V on Pin A
-          			set_pin_f_as_io();
+					PinsToDS102();
   			  		SetType123PinsRx();
 					DelayMs(100);
  					SetNextState(FILL_RX_DS102_WAIT);
@@ -688,6 +695,7 @@ void main()
 			//********************************************
 			//-----------Check if key is loaded and valid --------------	
 			case CHECK_KEY:
+		    	PinsToDefault();
 				fill_type = CheckFillType(switch_pos);
 				if( fill_type != 0)
 				{
@@ -703,7 +711,6 @@ void main()
 			case CHECK_KEY_OK:
 			case CHECK_KEY_ERR:
 			case CHECK_KEY_EMPTY:
-		    	PinsToDefault();
         		current_state = WAIT_BTN_PRESS;
 				break;
 
@@ -711,7 +718,6 @@ void main()
 			//-----------DONE and ERROR--------------	
 			case ERROR:
 			case DONE:
-		    	PinsToDefault();
         		current_state = WAIT_BTN_PRESS;
 				break;
 

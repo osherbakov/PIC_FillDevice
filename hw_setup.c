@@ -91,11 +91,11 @@ void setup_start_io()
 	set_pin_a_as_gnd();		//  Set GND on Pin A
   	set_pin_f_as_io();		//  Apply no power to PIN_F
 
-  	// Switch S1 - S16 settings
-	TRIS_S1_8 = 0xFF;	// Inputs
-	TRIS_S9_16 = 0xFF;	// Inputs
-
 	pullUps(1);		// Enable Weak Pull Ups
+
+  	// Switch S1 - S16 settings
+	portMode(S1_8, INPUT_PULLUP);
+	portMode(S9_16, INPUT_PULLUP);
 		
 	// Audio Connector - Inputs
 	pinMode(PIN_B, INPUT_PULLUP);
