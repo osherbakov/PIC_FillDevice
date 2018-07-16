@@ -23,7 +23,7 @@ void PCInterface()
 	// and initialize the buffer to get chars
 	if( !uartIsEnabled())
 	{
-		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
+		open_eusart(PC_BAUDRATE, DATA_POLARITY_RXTX);
  		rx_eusart_async(p_data, 6, INF_TIMEOUT);
 	}
 	

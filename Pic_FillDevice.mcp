@@ -8,7 +8,7 @@ dir_src=
 dir_bin=
 dir_tmp=
 dir_sin=
-dir_inc=.;.\ds101;.\clock;.\serial;.\gps;.\i2c_sw;.\ds102;.\eeprom;.\crc_calc;.\rtc;.\delay
+dir_inc=.;.\ds101;.\serial;.\gps;.\i2c_sw;.\ds102;.\eeprom;.\crc_calc;.\rtc;.\delay
 dir_lib=C:\MCC18\lib
 dir_lkr=
 [CAT_FILTERS]

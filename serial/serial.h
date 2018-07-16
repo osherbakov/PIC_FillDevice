@@ -16,20 +16,6 @@
 #define DATA_POLARITY_TX 	(0x10)
 #define DATA_POLARITY_RXTX	(DATA_POLARITY_RX | DATA_POLARITY_TX)	// Appropriate Data polarity for RS-232 connected without Level Shifter.
 
-// Values for the Baud Rate Control registers
-#define BRREG_DTD 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
-#define BRREG_MBITR ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * MBITR_BAUDRATE)) - 1 )
-#define BRREG_PC 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * PC_BAUDRATE)) - 1 )
-#define BRREG_DAGR 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * DAGR_BAUDRATE)) - 1 )
-#define BRREG_GPS 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * NMEA_BAUDRATE)) - 1)
-#define BRREG_GPS1 	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * NMEA1_BAUDRATE)) - 1)
-#define BRREG_GPS2	( ( (XTAL_FREQ * 1000000L)/(4L * 16L * NMEA2_BAUDRATE)) - 1)
-
-// For MBITR we implement the Software USART - use TIMER6 as the bit timer
-#define TIMER_MBITR 		( ( (XTAL_FREQ * 1000000L) / ( 4L * 16L * MBITR_BAUDRATE)) - 1 )
-#define TIMER_MBITR_START 	( -(TIMER_MBITR/2) )
-#define TIMER_MBITR_CTRL 	( 15<<3 | 1<<2 | 2)
-
 // Use negative logic
 // because we don't use any RS-232 interface chips
 // and generate/sense RS-232 signals directly
@@ -48,7 +34,7 @@ extern volatile byte rx_idx_max;  // Last byte index
 
 extern void PCInterface(void);
 
-extern void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity);
+extern void open_eusart(unsigned int baudrate, unsigned char rxtx_polarity);
 extern void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout);
 extern byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout);
 extern byte rx_eusart_count(void);

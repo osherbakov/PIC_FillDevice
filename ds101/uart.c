@@ -6,12 +6,11 @@
 #include "serial.h"
 
 #define TIMER_DTD 			(((XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
-#define TIMER_DTD_START 	( -(TIMER_DTD/2) )
-
 #define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
 
-#define TIMER_DS101 		( ((64L * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
+#define TIMER_DTD_START 	( -(TIMER_DTD/2) )
 
+#define TIMER_DS101 		( ((64L * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
 #define TIMER_DS101_CTRL 	( (1<<2) | 0)   // ENA, 1:1
 
 
@@ -79,13 +78,13 @@ int RxRS232Char()
 
 void TxRS232Char(char data)
 {
-	data = ~data;  			// Invert sysmbol
+	data = DATA_BYTE(data);  			// Invert sysmbol
 
 	pinMode(TxPC, OUTPUT);
 
 	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
 
-	pinWrite(TxPC, 1) ;        		// Issue the start bit
+	pinWrite(TxPC, START_BIT) ;        		// Issue the start bit
  	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{
@@ -158,13 +157,13 @@ int RxDTDChar()
 
 void TxDTDChar(char data)
 {
-	data = ~data;  			// Invert sysmbol
+	data = DATA_BYTE(data);  			// Invert sysmbol
 	
 	pinMode(TxDTD, OUTPUT);
 
 	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
 
-	pinWrite(TxDTD, 1);        		// Issue the start bit
+	pinWrite(TxDTD, START_BIT);        		// Issue the start bit
    	// send 8 data bits and 3 stop bits
 	for(bitcount = 0; bitcount < 12; bitcount++)
 	{

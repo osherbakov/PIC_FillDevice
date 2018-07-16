@@ -12,9 +12,10 @@ extern void setup_xtal();
 extern void setup_spi();
 extern void setup_start_io();
 
-#define FREQ_10MS  (100)  // 100 Hz timer tick - 10ms
-#define CNT_10MS 	((( XTAL_FREQ * 1000000L) / ( 4L * FREQ_10MS * 10L * 16L )) - 1 )
-#define CNTRL_10MS	( (9 << 3) | (1 << 2) | 2 )		// Post=1:10, Pre=1:16, Enable
+#define FREQ_10MS  		(100)  // 100 Hz timer tick - 10ms
+#define CNT_10MS 		((( XTAL_FREQ * 1000000L) / ( 4L * FREQ_10MS * 10L * 16L )) - 1 )
+#define CNTRL_10MS		( (9 << 3) | (1 << 2) | 2 )		// Post=1:10, Pre=1:16, Enable
+#define GP_TIMER_CTRL 	( (1<<2) | 2)	// 1:16 pre, on
 
 void setup_xtal()
 {
@@ -56,7 +57,7 @@ void setup_clocks()
 
 	// TIMER 6 - to roll over with no interrupts
 	// It is used as a general timeout counter, looking at timerFlag()
-	timerSetup(HQII_TIMER_CTRL, 0xFF);
+	timerSetup(GP_TIMER_CTRL, 0xFF);
 	timerDisableIRQ();
 
 	// Initialize the seconds counter

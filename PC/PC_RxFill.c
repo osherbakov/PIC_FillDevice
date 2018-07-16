@@ -83,7 +83,7 @@ char CheckFillType4()
 	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_MBITR, DATA_POLARITY_RXTX);
+	  		open_eusart(MBITR_BAUDRATE, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}else if(rx_eusart_count() >= 4)
@@ -109,8 +109,6 @@ char CheckFillType4()
 	return ST_TIMEOUT;
 }
 
-
-
 // Check if there is the request from the PC to send DS-101/RS-232 keys
 char CheckFillRS232Type5()
 {
@@ -121,7 +119,7 @@ char CheckFillRS232Type5()
 	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
-	  		open_eusart(BRREG_PC, DATA_POLARITY_RXTX);
+	  		open_eusart(PC_BAUDRATE, DATA_POLARITY_RXTX);
 	  		rx_eusart_async(SerialBuffer, 4, RX_TIMEOUT1_PC);
 	  	}	
 	}else if( (rx_eusart_count() >= 2) && 	// The pattern of 2400 baud 0x7E flags as seen from 9600 baud view

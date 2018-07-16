@@ -7,13 +7,15 @@
 #include "rtc.h"
 
 
-
-void open_eusart(unsigned char baudrate_reg, unsigned char rxtx_polarity)
+static byte config_reg;
+void open_eusart(unsigned int baudrate, unsigned char rxtx_polarity)
 {
 	pinMode(RxPC, INPUT);
 	pinMode(TxPC, INPUT);
 
-	uartSetup(baudrate_reg, rxtx_polarity);
+// Values for the Baud Rate Control registers
+	config_reg = ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * baudrate)) - 1 );
+	uartSetup(config_reg, rxtx_polarity);
 	uartModeRx(0);
 	uartModeTx(0);
 	uartIRQRx(0);

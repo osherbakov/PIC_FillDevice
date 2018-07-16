@@ -149,11 +149,12 @@ static unsigned char *p_date;
 static unsigned char *p_time;
 
 static unsigned char baudrate_idx = 0;
-static unsigned char baudrates[] = 
+
+static unsigned int baudrates[] = 
 { 
-	BRREG_GPS,
-	BRREG_GPS1,
-	BRREG_GPS2
+	NMEA_BAUDRATE,
+	NMEA1_BAUDRATE,
+	NMEA2_BAUDRATE
 };	
 	
 

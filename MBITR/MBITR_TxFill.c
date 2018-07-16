@@ -86,6 +86,11 @@ char WaitReqSendMBITRFill(byte stored_slot)
 // Soft UART to communicate with MBITR
 //
 
+// For MBITR we implement the Software USART - use TIMER6 as the bit timer
+#define TIMER_MBITR 		( ( (XTAL_FREQ * 1000000L) / ( 4L * 16L * MBITR_BAUDRATE)) - 1 )
+#define TIMER_MBITR_START 	( -(TIMER_MBITR/2) )
+#define TIMER_MBITR_CTRL 	( 15<<3 | 1<<2 | 2)
+
 void open_mbitr(void)
 {
 	pinMode(RxMBITR, INPUT);

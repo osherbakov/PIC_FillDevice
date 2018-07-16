@@ -440,10 +440,11 @@ static unsigned char ch;
 static unsigned char *p_date;
 static unsigned char *p_time;
 
+
 static char SetupDAGR(void)
 {
 	// Configure the EUSART module
-  	open_eusart(BRREG_DAGR, DATA_POLARITY_DAGR);	
+  	open_eusart(DAGR_BAUDRATE, DATA_POLARITY_DAGR);	
 
 	rx_eusart_async(&RxTx_buff[0], FILL_MAX_SIZE, DAGR_DETECT_TIMEOUT_MS);
 
