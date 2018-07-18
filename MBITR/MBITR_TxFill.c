@@ -85,12 +85,6 @@ char WaitReqSendMBITRFill(byte stored_slot)
 //
 // Soft UART to communicate with MBITR
 //
-
-// For MBITR we implement the Software USART - use TIMER6 as the bit timer
-#define TIMER_MBITR 		( ( (XTAL_FREQ * 1000000L) / ( 4L * 16L * MBITR_BAUDRATE)) - 1 )
-#define TIMER_MBITR_START 	( -(TIMER_MBITR/2) )
-#define TIMER_MBITR_CTRL 	( 15<<3 | 1<<2 | 2)
-
 void open_mbitr(void)
 {
 	pinMode(RxMBITR, INPUT);
@@ -112,22 +106,26 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 
 	pinMode(RxMBITR, INPUT);
 	
-	timerSetup(TIMER_MBITR_CTRL, TIMER_MBITR);
+	timerSetupBaudrate(MBITR_BAUDRATE);
+	timerClear();
+
 	timerDisableIRQ();
 
  	set_timeout(RX_TIMEOUT1_MBITR);
 	
 	while( (ncount > nrcvd) && is_not_timeout() )
 	{
-		// Start conditiona was detected - count 1.5 cell size	
+		// Start conditiona was detected 
 		if(pinRead(RxMBITR) )
 		{
-			timerSet(TIMER_MBITR_START);
+			// Delay by 1/2 cell
+			DelayUs(1000000/(MBITR_BAUDRATE * 2));
+			timerClear();		// Clear counter and start counting cells
 		  	set_timeout(RX_TIMEOUT2_MBITR);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
-				while(!timerFlag()){} ;	// Wait 1.5 cells
+				while(!timerFlag()){} ;	// Wait for the next cell
 				timerClearFlag();		// Clear overflow flag
 				data = (data >> 1) | (pinRead(RxMBITR) ? 0x80 : 0x00);
 			}
@@ -155,7 +153,9 @@ void tx_mbitr(const byte *p_data, byte ncount)
 	
   	DelayMs(TX_MBITR_DELAY_MS);
 
-	timerSetup(TIMER_MBITR_CTRL, TIMER_MBITR);
+	timerSetupBaudrate(MBITR_BAUDRATE);
+	timerClear();
+	
 	timerDisableIRQ();
 
 	while(ncount-- )

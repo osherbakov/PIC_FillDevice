@@ -14,10 +14,10 @@ void open_eusart(unsigned int baudrate, unsigned char rxtx_polarity)
 	pinMode(TxPC, INPUT);
 
 // Values for the Baud Rate Control registers
-	config_reg = ( ( (XTAL_FREQ * 1000000L)/(4L * 16L * baudrate)) - 1 );
+	config_reg = ( ( (XTAL_FREQ * 1000000L / 4L)/(16L * baudrate)) - 1 );
 	uartSetup(config_reg, rxtx_polarity);
-	uartModeRx(0);
-	uartModeTx(0);
+	uartEnableRx(0);
+	uartEnableTx(0);
 	uartIRQRx(0);
 	uartIRQTx(0);
 	uartEnable(0);
@@ -32,9 +32,9 @@ void open_eusart(unsigned int baudrate, unsigned char rxtx_polarity)
 	tx_data = (volatile byte *) &RxTx_buff[0];
 	tx_count = 0;
 	
-	uartModeRx(1);	// Enable Rx
-	uartModeTx(1);	// Enable Tx
-	uartEnable(1); 	// Enable EUSART
+	uartEnableRx(1);	// Enable Rx
+	uartEnableTx(1);	// Enable Tx
+	uartEnable(1); 		// Enable EUSART
 
 }
 
@@ -43,8 +43,8 @@ void close_eusart()
 	uartEnable(0);
 	uartIRQRx(0);
 	uartIRQTx(0);
-	uartModeRx(0);
-	uartModeTx(0);
+	uartEnableRx(0);
+	uartEnableTx(0);
 
 	// Set up the Rx portion
 	rx_idx_in = rx_idx_out = 0;
@@ -59,14 +59,14 @@ void close_eusart()
 void rx_eusart_async(unsigned char *p_rx_data, byte max_size, unsigned int timeout)
 {
 	uartIRQRx(0);		// Disable RX interrupt
-	uartModeRx(0); 		// Disable Rx
+	uartEnableRx(0); 	// Disable Rx
 
 	rx_idx_in = rx_idx_out = 0;
 	rx_data = (volatile byte *) p_rx_data;
 	rx_idx_max = max_size - 1;
 	
 	set_timeout(timeout);
-	uartModeRx(1); 		// Enable Rx
+	uartEnableRx(1); 	// Enable Rx
 	uartIRQRx(1);	 	// Enable RX interrupt
 }
 
@@ -79,8 +79,8 @@ byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
   	byte	symbol;
   	byte  nrcvd = 0;
-	uartModeRx(1); 		// Enable Rx
-	uartIRQRx(0);	 	// Disable RX interrupt
+	uartEnableRx(1); 		// Enable Rx
+	uartIRQRx(0);	 		// Disable RX interrupt
 
   	set_timeout(timeout);
 	while( (nrcvd < ncount ) && is_not_timeout() )
@@ -95,8 +95,8 @@ byte rx_eusart(unsigned char *p_data, byte ncount, unsigned int timeout)
 			// overruns? clear it
 			if(uartIsError())
 			{
-				uartModeRx(0); 		// Disable Rx
-				uartModeRx(1); 		// Enable Rx
+				uartEnableRx(0); 	// Disable Rx
+				uartEnableRx(1); 	// Enable Rx
 			}
 		}
 	}
@@ -107,8 +107,8 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 {
   	byte	symbol;
   	byte  	nrcvd = 0;
-	uartModeRx(1); 		// Enable Rx
-	uartIRQRx(0);	 	// Disable RX interrupt
+	uartEnableRx(1); 		// Enable Rx
+	uartIRQRx(0);	 		// Disable RX interrupt
 
   	set_timeout(timeout);
 	while( (nrcvd < ncount) && is_not_timeout())
@@ -126,8 +126,8 @@ byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout)
 			// overruns? clear it
 			if(uartIsError())
 			{
-				uartModeRx(0); 		// Disable Rx
-				uartModeRx(1); 		// Enable Rx
+				uartEnableRx(0); 		// Disable Rx
+				uartEnableRx(1); 		// Enable Rx
 			}
 		}
 	}
@@ -201,8 +201,8 @@ void tx_eusart_async(const unsigned char *p_data, byte ncount)
 	tx_eusart_flush();	// Make sure that the old data is fully flushed and sent...
 	tx_data = (volatile byte *) p_data;
 	tx_count = ncount;
- 	uartModeTx(1); 	// Enable Tx	
-	uartIRQTx(1);	// Interrupt will be generated
+ 	uartEnableTx(1); 	// Enable Tx	
+	uartIRQTx(1);		// Interrupt will be generated
 }
 
 void tx_eusart_flush()

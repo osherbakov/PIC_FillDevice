@@ -5,14 +5,6 @@
 #include "controls.h"
 #include "serial.h"
 
-#define TIMER_DTD 			(((XTAL_FREQ * 1000000L)/(4L * 16L * DTD_BAUDRATE)) - 1 )
-#define TIMER_DTD_CTRL 		( (1<<2) | 2)     // ENA, 1:16
-
-#define TIMER_DTD_START 	( -(TIMER_DTD/2) )
-
-#define TIMER_DS101 		( ((64L * 1000000L) / ( 4L * DS101_BAUDRATE)) - 1 )
-#define TIMER_DS101_CTRL 	( (1<<2) | 0)   // ENA, 1:1
-
 
 void OpenRS232(char Master)
 {
@@ -48,9 +40,9 @@ int RxRS232Char()
 	int  result;
 
 	pinMode(RxPC, INPUT);
-
-	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
-      	
+	timerSetupBaudrate(DTD_BAUDRATE);
+	timerClear();
+  	
 	result = -1;
   	
   	while( is_not_timeout() )
@@ -58,7 +50,9 @@ int RxRS232Char()
 		// Start conditiona was detected - count 1.5 cell size	
 		if(pinRead(RxPC) )
 		{
-			timerSet(6, TIMER_DTD_START);
+			// Skip the half of the cell
+			DelayUs(1000000/(DTD_BAUDRATE*2));
+			timerClear();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -81,8 +75,8 @@ void TxRS232Char(char data)
 	data = DATA_BYTE(data);  			// Invert sysmbol
 
 	pinMode(TxPC, OUTPUT);
-
-	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetupBaudrate(DTD_BAUDRATE);
+	timerClear();
 
 	pinWrite(TxPC, START_BIT) ;        		// Issue the start bit
  	// send 8 data bits and 3 stop bits
@@ -129,16 +123,18 @@ int RxDTDChar()
 	int		result;
 
 	pinMode(RxDTD, INPUT);
+	timerSetupBaudrate(DTD_BAUDRATE);
+	timerClear();
 
-	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
-      	
 	result = -1;
   	while( is_not_timeout() )
 	{
 		// Start conditiona was detected - count 1.5 cell size	
 		if(pinRead(RxDTD) )
 		{
-			timerSet(6, TIMER_DTD_START);
+			// Skip the half of the cell
+			DelayUs(1000000/(DTD_BAUDRATE*2));
+			timerClear();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -160,8 +156,8 @@ void TxDTDChar(char data)
 	data = DATA_BYTE(data);  			// Invert sysmbol
 	
 	pinMode(TxDTD, OUTPUT);
-
-	timerSetup(TIMER_DTD_CTRL, TIMER_DTD);
+	timerSetupBaudrate(DTD_BAUDRATE);
+	timerClear();
 
 	pinWrite(TxDTD, START_BIT);        		// Issue the start bit
    	// send 8 data bits and 3 stop bits
@@ -175,6 +171,10 @@ void TxDTDChar(char data)
 	}
 } 
 
+//
+//  Functions to deal with RS485 at 640000 bits/sec
+//   in order to handle such high rates we bump clock with PLL from 16MHz to 64MHz
+//
 void OpenRS485(char Master)
 {
   	pllEnable(1);				// *4 PLL (64MHZ)
@@ -216,14 +216,11 @@ typedef enum {
 	TIMEOUT
 } HDLC_STATES;
 
-
-
-#define TIMER_CTRL			(TIMER_DS101_CTRL)
-#define PERIOD_CNTR   		(TIMER_DS101)
-#define HALF_PERIOD_CNTR   	(PERIOD_CNTR/2)
-#define QTR_PERIOD_CNTR   	(PERIOD_CNTR/4)
-#define EIGTH_PERIOD_CNTR   (PERIOD_CNTR/8)
-#define SAMPLE_CNTR 		(HALF_PERIOD_CNTR + EIGTH_PERIOD_CNTR)	// PERIOD_CNTR * 0.625 ( 0.5 + 0.125)
+#define DS101_PERIOD   		(DS101_PERIOD_US)
+#define HALF_DS101_PERIOD  	(DS101_PERIOD/2)
+#define QTR_DS101_PERIOD   	(DS101_PERIOD/4)
+#define EIGTH_DS101_PERIOD	(DS101_PERIOD/8)
+#define SAMPLE_PERIOD 		(HALF_DS101_PERIOD + EIGTH_DS101_PERIOD)	// PERIOD_CNTR * 0.625 ( 0.5 + 0.125)
 
 #define 	PIN_IN			Data_P
 #define 	DATA_PIN_IN		DATA_Data_P
@@ -245,7 +242,7 @@ static		unsigned char		prev_Sample;		// The Sample at the 0.0T
 
 static		byte 				prevIRQ;
 
-#define		TIMEOUT_CNT			(15)
+#define 	DS101_TIMEOUT_MS	(2000)
 
 int RxRS485Data(char *pData)
 {
@@ -255,12 +252,15 @@ int RxRS485Data(char *pData)
 	
 	st = INIT;
 	
+	// Start the timer to sample at 0.625T
+	timerSetupPeriodUs(SAMPLE_PERIOD);
+	set_timeout(DS101_TIMEOUT_MS);
+	DelayMs(4 * 10);			// Little timeout
+
     DISABLE_IRQ(prevIRQ);
 
-	// Set the big 16-bit timeout counter
-	timeoutReset();
-
-	while(!timeoutFlag()) {
+	
+	while(is_not_timeout()) {
 
 		switch(st) {
 		  case INIT:
@@ -271,38 +271,32 @@ int RxRS485Data(char *pData)
 			flag_detected 	= 0;
 			timeout_cntr	= 0;
 
-			// Start the timer to sample at 0.625T
-			timerSetup(TIMER_CTRL, SAMPLE_CNTR);
-
 			prev_Sample = rcvd_Sample = pinRead(PIN_IN);
 	
+			reset_timeout();
 			st = GET_EDGE;
 		 	break;
 
 		// Initial state - we are looking for any edge within big timeout
 		case GET_EDGE:	
 			if(rcvd_Sample)
-				{while(pinRead(PIN_IN) && !timeoutFlag()){}} 
+				{while(pinRead(PIN_IN) && is_not_timeout()){}} 
 			else
-				{while(!pinRead(PIN_IN) && !timeoutFlag()) {}}
-
+				{while(!pinRead(PIN_IN) && is_not_timeout()) {}}
 			timerReset();
+
 			// Save the value at the edge
 			prev_Sample = pinRead(PIN_IN);
 
-			if(timeoutFlag()) {
-				if(timeout_cntr++ >= TIMEOUT_CNT) {
-					st = TIMEOUT;
-				}else {				// Extend the BIG Timeout
-					timeoutReset();
-				}	
+			if(is_timeout()) {
+				st = TIMEOUT;
 			}else {
-			  	timeoutReset();
+			  	reset_timeout();
 				st = GET_FLAG_EDGE;
 			}
 			
 			while(!timerFlag()) {}
-			rcvd_Sample	= pinRead(PIN_IN);
+			rcvd_Sample	= pinRead(PIN_IN);	// Read the value of the pin after 0.65
 			break;
 		
 		// State to catch first HDLC Flag (0x7E) to achieve frame sync
@@ -457,6 +451,8 @@ void TxRS485Data(char *pData, int nBytes)
 	pinWrite(Data_N, 0);
 	next_bit 		= 1;
 
+	timerSetupPeriodUs(HALF_DS101_PERIOD);
+	set_timeout(DS101_TIMEOUT_MS);
 	DelayMs(4 * 10);			// Little timeout
 
 	DISABLE_IRQ(prevIRQ);
@@ -467,9 +463,7 @@ void TxRS485Data(char *pData, int nBytes)
 			bit_count 	= 0;
 			byte_count	= 0;
 			stuff_count = 0;
-			
-			timerSetup(TIMER_CTRL, HALF_PERIOD_CNTR);
-
+	
 			st 				= SEND_START_FLAG;
 		 	break;
 

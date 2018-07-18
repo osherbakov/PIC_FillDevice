@@ -45,7 +45,7 @@ void high_isr (void)
 {
 	//--------------------------------------------------------------------------
 	// Is this a 1SEC Pulse interrupt from RTC? (on both Pos and Neg edges)
-	if(IS_1PPS())
+	if(IS_1PPS_IRQ_ENABLED() && IS_1PPS())
 	{
     	// Interrupts on 1 PPS pin from RTC LOW->HIGH and HIGH->LOW transitions
     	// The HIGH->LOW transition indicates the start of the second
@@ -55,8 +55,7 @@ void high_isr (void)
 	  		if(hq_enabled)  //  On HIGH->LOW transition - 0 ms
 	  		{
 	  			pinWrite(HQ_DATA, 1);
-	  			timerSetup(HQII_TIMER_CTRL, HQII_TIMER);	// Will generate IRQ every 300usec
-	  			timerSet(10);				// Preload to compensate for the delay 
+	  			timerSetupPeriodUs(HQII_HALFPERIOD_US);	// Will generate IRQ every 300usec
 	  			timerEnableIRQ();
 	  			// Calculate next value
 	  			hq_current_bit = 0;
@@ -126,13 +125,14 @@ void high_isr (void)
 
 	//--------------------------------------------------------------------------
 	// Is it 10ms timer interrupt?
-	if(timer10msFlag())	
+	if(timer10msIsIRQEnabled() && timer10msFlag())	
 	{
 		ms_10++;
 		if(!timeout_flag) {
-			timeout_counter -= 10;
-			if(timeout_counter <= 0) timeout_flag = 1;
+			timeout_counter++;
+			if(timeout_counter >= timeout_limit) timeout_flag = 1;
 		}
+		timer10msClearFlag();	// Clear overflow flag and interrupt
 
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
@@ -142,12 +142,11 @@ void high_isr (void)
 			pinWrite(LEDP, LED_current_bit);
 			led_counter = LED_current_bit ? led_on_time : led_off_time;
 		}
-		timer10msClearFlag();	// Clear overflow flag and interrupt
 	}
 
 	//--------------------------------------------------------------------------
 	// Is it a EUSART RX interrupt ?
-	if(uartIsIRQRx() && uartIsRx())
+	if(uartIsRxEnabled() && uartIsIRQRx() && uartIsRx())
 	{
 		// Maintain a circular buffer pointed by rx_data
 		if(rx_idx_in > rx_idx_max)
@@ -163,8 +162,8 @@ void high_isr (void)
 		// overruns? clear it
 		if(uartIsError())
 		{
-			uartModeRx(0);
-			uartModeRx(1);
+			uartEnableRx(0);
+			uartEnableRx(1);
 		}
 		// No need to clear the Interrupt Flag - the read from the register clears it
 	}
@@ -174,7 +173,7 @@ void high_isr (void)
   	// If there are bytes to send - get the symbol from the 
   	//  buffer pointed by tx_data and decrement the counter
   	// If that was the last symbol - disable interrupts.
-	if(uartIsIRQTx() && uartIsTx())
+	if(uartIsTxEnabled() && uartIsIRQTx() && uartIsTx())
 	{
 		if( tx_count )	// not the last byte
 		{

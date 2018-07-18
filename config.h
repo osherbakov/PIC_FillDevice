@@ -384,36 +384,43 @@ extern	byte	NO_ANSEL;
 #define IS_IRQ_ENABLED() (INTCONbits.GIE)
 #define IS_IRQ_DISABLED() (!INTCONbits.GIE)
 
-#define ENABLE_1PPS_IRQ()	do{IOC_RTC_1PPS=1;INTCONbits.RBIE=1;}while(0)
-#define IS_1PPS()			(INTCONbits.RBIF)
-#define CLEAR_1PPS()		do{INTCONbits.RBIF=0;}while(0)
 
+#define		pullUps(en)					do{INTCON2bits.RBPU=(!en);}while(0)
+#define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);}while(0)
 
-#define 	timer10msSetup(control, period)	do{PR2 = period; TMR2 = 0; PIR1bits.TMR2IF = 0;T2CON = (control);}while(0)
+#define 	ENABLE_1PPS_IRQ()			do{IOC_RTC_1PPS=1;INTCONbits.RBIE=1;}while(0)
+#define 	IS_1PPS()					(INTCONbits.RBIF)
+#define 	CLEAR_1PPS()				do{INTCONbits.RBIF=0;}while(0)
+#define 	IS_1PPS_IRQ_ENABLED()		(INTCONbits.RBIE)
+
+#define 	FREQ_100HZ  				(100)  // 100 Hz timer tick - 10ms
+#define 	TIMER_10MS_REG 				((( XTAL_FREQ * 1000000L / 4L) / (FREQ_100HZ * 10L * 16L)) - 1 )
+#define 	TIMER_10MS_CTRL 			( (9 << 3) | (1 << 2) | 2 )		// Post=1:10, Pre=1:16, ENA
+
+#define 	timer10msSetup()			do{PR2 = (TIMER_10MS_REG); TMR2 = 0; PIR1bits.TMR2IF = 0;T2CON = (TIMER_10MS_CTRL);}while(0)
 #define 	timer10msReset()			do{TMR2 = 0;PIR1bits.TMR2IF = 0;}while(0)
-#define 	timer10msSet(value)			do{TMR2 = value;PIR1bits.TMR2IF = 0;}while(0)
+#define 	timer10msClear()			do{TMR2 = 0;PIR1bits.TMR2IF = 0;}while(0)
 #define 	timer10msFlag()				(PIR1bits.TMR2IF)
 #define 	timer10msClearFlag()		do{PIR1bits.TMR2IF = 0;}while(0)
 #define		timer10msEnableIRQ()		do{PIE1bits.TMR2IE = 1;}while(0)
 #define		timer10msDisableIRQ()		do{PIE1bits.TMR2IE = 0;}while(0)
 #define		timer10msIsIRQEnabled()		(PIE1bits.TMR2IE)
 
-#define 	timerSetup(control, period)	do{PR6 = (period); TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (control);}while(0)
+extern void timerSetupBaudrate(unsigned int baudrate);
+extern void	timerSetupPeriodUs(unsigned int period_us);
+
+#define 	timerSetup(count, ctrl)		do{PR6 = (count); TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (ctrl);}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
-#define 	timerSet(value)				do{TMR6 = value;PIR5bits.TMR6IF = 0;}while(0)
+#define 	timerClear()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerFlag()					(PIR5bits.TMR6IF)
 #define 	timerClearFlag()			do{PIR5bits.TMR6IF = 0;}while(0)
 #define		timerEnableIRQ()			do{PIE5bits.TMR6IE = 1;}while(0)
 #define		timerDisableIRQ()			do{PIE5bits.TMR6IE = 0;}while(0)
 #define		timerIsIRQEnabled()			(PIE5bits.TMR6IE)
 
-#define		timeoutSetup(control)		do{T1GCONbits.TMR1GE = 0; TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;T1CON = (control);PIE1bits.TMR1IE = 0;}while(0)
-#define		timeoutReset()				do{TMR1H = 0; TMR1L = 0;PIR1bits.TMR1IF = 0;}while(0)
-#define		timeoutFlag()				PIR1bits.TMR1IF
-
 #define		uartSetup(config, polarity)	do{SPBRGH1=0x00; SPBRG1=(config);BAUDCON1=(polarity);RCSTA1=0;TXSTA1=0;}while(0)
-#define 	uartModeRx(en)				do{RCSTA1bits.CREN=(en);}while(0)
-#define 	uartModeTx(en)				do{TXSTA1bits.TXEN=(en);}while(0)
+#define 	uartEnableRx(en)			do{RCSTA1bits.CREN=(en);}while(0)
+#define 	uartEnableTx(en)			do{TXSTA1bits.TXEN=(en);}while(0)
 #define 	uartIRQRx(en)				do{PIE1bits.RC1IE=(en);}while(0)
 #define 	uartIRQTx(en)				do{PIE1bits.TX1IE=(en);}while(0)
 #define 	uartEnable(en)				do{RCSTA1bits.SPEN=(en);}while(0)
@@ -426,9 +433,7 @@ extern	byte	NO_ANSEL;
 #define 	uartIsRx()					(PIR1bits.RC1IF)
 #define 	uartIsTx()					(PIR1bits.TX1IF)
 #define 	uartIsEnabled()				(RCSTA1bits.SPEN)
-
-#define		pullUps(en)					do{INTCON2bits.RBPU=(!en);}while(0)
-
-#define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);}while(0)
+#define 	uartIsRxEnabled()			(RCSTA1bits.CREN)
+#define 	uartIsTxEnabled()			(TXSTA1bits.TXEN)
 
 #endif	// __CONFIG_H__

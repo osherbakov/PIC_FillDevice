@@ -5,15 +5,11 @@
 #include "i2c_sw.h"
 #include "gps.h"
 #include "fill.h"
+#include "serial.h"
 
 #define START_FRAME_SIZE	(400/8)		// 400 SYNC bits of all "1"
 #define START_FRAME_DATA 	(0xFF)		// The data to be sent during SYNC phase
 #define MIN_DATA_FRAME_SIZE	(112/8)		// 112 bits of actual timing data
-
-
-#define TIMER_300US_PERIOD ( ((XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16)
-#define TIMER_DELAY_EDGE ( TIMER_300US_PERIOD + (TIMER_300US_PERIOD / 2 ) - 4)
-#define TIMER_WAIT_EDGE ( TIMER_300US_PERIOD - 4 )
 
 // The table to translate the BCS digit into the 
 // Hamming code to send all timing data
@@ -166,10 +162,9 @@ static char curr_bit;
 //  returns 0 - if LOW->HIGH ("0") is detected
 //  returns 1 - if HIGH->LOW ("1") was detected
 //  returns -1 - if the timeout occured
-static char WaitEdge(unsigned char timeout)
+static char WaitEdge(void)
 {
 	ret_value = current_pin;
-	timerSetup(HQII_TIMER_CTRL, timeout);
 	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
@@ -185,10 +180,9 @@ static char WaitEdge(unsigned char timeout)
 // WaitTimer - return ONLY after the timeout expired, returning the number of edges that happened within that timeout..
 //  returns number of edges detected within a specified timeout
 //  returns 0 - if no edges detected during that timeout
-static char WaitTimer(unsigned char timeout)
+static char WaitTimer(void)
 {
 	ret_value = 0;
-	timerSetup(HQII_TIMER_CTRL, timeout);
 	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
@@ -214,7 +208,7 @@ static HQ_STATES State;
 
 static char GetHQTime(void)
 {
-	timerSetup(HQII_TIMER_CTRL, HQII_TIMER);
+	timerSetupBaudrate(HQII_BAUDRATE);
 	timerDisableIRQ();
 
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
@@ -227,14 +221,16 @@ static char GetHQTime(void)
 		switch(State)
 		{
 		case INIT:	// Wait for no activity on the line and HQ_PIN == LOW for at least 3 clock periods
-			if( (WaitTimer(3 * TIMER_WAIT_EDGE) == 0) && (current_pin == LOW))
+			timerSetupPeriodUs(3 * HQII_WAIT_EDGE_US);
+			if( (WaitTimer() == 0) && (current_pin == LOW))
 			{
 				State = IDLE;
 			}
 			break;
 	
 		case IDLE:
-			if( WaitEdge(TIMER_DELAY_EDGE) == 0)	// LOW->HIGH transition detected
+			timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+			if( WaitEdge() == 0)	// LOW->HIGH transition detected
 			{
   				set_led_off();		// Set LED off
 				State = IDLE_1;
@@ -242,19 +238,22 @@ static char GetHQTime(void)
 			break;
 
 		case IDLE_1:
-			if( WaitEdge(TIMER_DELAY_EDGE) == 1 )	// HIGH->LOW transition detected
+			timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+			if( WaitEdge() == 1 )	// HIGH->LOW transition detected
 			{
 				sync_word = 0x0001;
 				bit_count = 1;
 				byte_count = 0;
   				set_led_on();		// Set LED on
 				State = SYNC;
-				WaitTimer(TIMER_DELAY_EDGE);
+				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				WaitTimer();
 			}
 			break;
 
 		case SYNC:
-			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
+			timerSetupPeriodUs(HQII_WAIT_EDGE_US);
+			curr_bit = WaitEdge();
 			if(curr_bit >= 0) {
 				sync_word = (sync_word << 1) | curr_bit;
 				bit_count++;
@@ -266,11 +265,13 @@ static char GetHQTime(void)
 					data_byte = 0;
 					State = DATA;
 				}
-				WaitTimer(TIMER_DELAY_EDGE);
+				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				WaitTimer();
 			}
 			break;
 		case DATA:
-			curr_bit = WaitEdge(TIMER_WAIT_EDGE);
+			timerSetupPeriodUs(HQII_WAIT_EDGE_US);
+			curr_bit = WaitEdge();
 			if(curr_bit >= 0) {
 				data_byte = (data_byte << 1) | curr_bit;
 				bit_count++;
@@ -286,7 +287,8 @@ static char GetHQTime(void)
 					bit_count = 0;
 					data_byte = 0;
 				}
-				WaitTimer(TIMER_DELAY_EDGE);
+				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				WaitTimer();
  			}
 			break;
 		}
@@ -313,7 +315,8 @@ char ReceiveHQTime(void )
 	SetRTCDataPart1();
 
   	//	3. Find the next HQ stream rising edge with interrupts disabled
-	while ( WaitTimer(0xF0) != 0 ) {};	// Wait until IDLE
+	timerSetupPeriodUs(3 * HQII_WAIT_EDGE_US);
+	while ( WaitTimer() != 0 ) {};		// Wait until IDLE
 	while( pinRead(HQ_DATA)) {};		// look for the rising edge
 	while(!pinRead(HQ_DATA)) {};		
 

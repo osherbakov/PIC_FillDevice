@@ -6,10 +6,6 @@
 #define DAGR_DETECT_TIMEOUT_MS	(8000)  	// 8sec to detect (the MSG 253 is sent once every 6 seconds)
 #define DAGR_PROCESS_TIMEOUT_MS	(2000)  	// 2sec to process Time Transfer (5101) or Status (5040) Message
 
-#define HQ_BIT_TIME_US			(600)  		// 600us for one bit.
-#define HQII_TIMER 				((( (XTAL_FREQ/4) * (HQ_BIT_TIME_US/2)) / 16) - 1 )
-#define HQII_TIMER_CTRL 		( (1<<2) | 2)	// 1:16 pre, on
-
 // GPS and HQII functions
 extern char ReceiveDAGRTime(void);
 extern char ReceiveGPSTime(void);

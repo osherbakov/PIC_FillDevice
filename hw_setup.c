@@ -12,11 +12,6 @@ extern void setup_xtal();
 extern void setup_spi();
 extern void setup_start_io();
 
-#define FREQ_10MS  		(100)  // 100 Hz timer tick - 10ms
-#define CNT_10MS 		((( XTAL_FREQ * 1000000L) / ( 4L * FREQ_10MS * 10L * 16L )) - 1 )
-#define CNTRL_10MS		( (9 << 3) | (1 << 2) | 2 )		// Post=1:10, Pre=1:16, Enable
-#define GP_TIMER_CTRL 	( (1<<2) | 2)	// 1:16 pre, on
-
 void setup_xtal()
 {
   	OSCTUNE = 0;    		// No PLL
@@ -44,20 +39,14 @@ void setup_xtal()
 void setup_clocks()
 {
 	setup_xtal();
-
-	// TIMER 1 - to count OSC_CLOCK in 16-bit mode
-	//  It is used for 0.131072s timeout, when clock overflows
-	// Used for timeouts when we disable interrupts
-  	timeoutSetup((0x3 << 4) | (1<<1) | 1);		// 8-prescalar, 16-bits, enable
-
-	//  TIMER 2 - 10 ms heartbeat timer
-	// Set up the timer 2 to fire every 10 ms, ON
-	timer10msSetup(CNTRL_10MS, CNT_10MS);
+	//  10 ms heartbeat timer
+	// Set up the timer to fire every 10 ms, ON
+	timer10msSetup();
 	timer10msEnableIRQ();
 
-	// TIMER 6 - to roll over with no interrupts
+	// TIMER - to roll over with no interrupts
 	// It is used as a general timeout counter, looking at timerFlag()
-	timerSetup(GP_TIMER_CTRL, 0xFF);
+	timerSetupBaudrate(HQII_BAUDRATE);
 	timerDisableIRQ();
 
 	// Initialize the seconds counter
@@ -140,8 +129,8 @@ void setup_start_io()
 	uartEnable(0);
 	uartIRQRx(0);
 	uartIRQTx(0);
-	uartModeRx(0);
-	uartModeTx(0);
+	uartEnableRx(0);
+	uartEnableTx(0);
 
 	// Enable all interrupts
 	ENABLE_PIRQ();

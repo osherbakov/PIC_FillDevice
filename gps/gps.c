@@ -177,8 +177,8 @@ static char GetGPSTime(void)
 			ch = uartRx();
 			// overruns? clear it
 			if(uartIsError()){
-				uartModeRx(0);
-				uartModeRx(1);
+				uartEnableRx(0);
+				uartEnableRx(1);
 			}else { // ... or process the symbol
 				process_gps_symbol(ch);
 			}
