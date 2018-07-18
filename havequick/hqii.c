@@ -206,6 +206,12 @@ typedef enum
 
 static HQ_STATES State;
 
+
+#define HQII_PERIOD_US		(1000000L/HQII_BAUDRATE)
+#define HQII_HALFPERIOD_US	(HQII_PERIOD_US/2)
+#define HQII_DELAY_EDGE_US 	(HQII_HALFPERIOD_US + (HQII_HALFPERIOD_US / 2 ) - 4)
+#define HQII_WAIT_EDGE_US  	(HQII_HALFPERIOD_US - 4 )
+
 static char GetHQTime(void)
 {
 	timerSetupBaudrate(HQII_BAUDRATE);

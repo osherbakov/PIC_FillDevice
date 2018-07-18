@@ -15,9 +15,7 @@ extern void reset_timeout(void);
 extern char is_timeout(void);
 extern char is_not_timeout(void);
 
-
-#define DelayMs(x) 		Delay1K((XTAL_FREQ * (x)) / 4 )
-#define DelayUs(x) 		Delay10TCYx((XTAL_FREQ * (x)) / (4 * 10) )
-
+extern void DelayMs(unsigned int); 
+extern void DelayUs(unsigned int); 
 
 #endif		// __DELAY_H_

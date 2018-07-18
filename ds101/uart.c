@@ -216,12 +216,6 @@ typedef enum {
 	TIMEOUT
 } HDLC_STATES;
 
-#define DS101_PERIOD   		(DS101_PERIOD_US)
-#define HALF_DS101_PERIOD  	(DS101_PERIOD/2)
-#define QTR_DS101_PERIOD   	(DS101_PERIOD/4)
-#define EIGTH_DS101_PERIOD	(DS101_PERIOD/8)
-#define SAMPLE_PERIOD 		(HALF_DS101_PERIOD + EIGTH_DS101_PERIOD)	// PERIOD_CNTR * 0.625 ( 0.5 + 0.125)
-
 #define 	PIN_IN			Data_P
 #define 	DATA_PIN_IN		DATA_Data_P
 #define 	TRIS_PIN_IN		TRIS_Data_P
@@ -244,6 +238,7 @@ static		byte 				prevIRQ;
 
 #define 	DS101_TIMEOUT_MS	(2000)
 
+static unsigned int period_us;
 int RxRS485Data(char *pData)
 {
 	// Take care of physical pins
@@ -252,8 +247,10 @@ int RxRS485Data(char *pData)
 	
 	st = INIT;
 	
-	// Start the timer to sample at 0.625T
-	timerSetupPeriodUs(SAMPLE_PERIOD);
+	// Start the timer to sample at 0.65T
+	period_us = (0.65 * 10000000)/ DS101_BAUDRATE;
+	
+	timerSetupPeriodUs(period_us);
 	set_timeout(DS101_TIMEOUT_MS);
 	DelayMs(4 * 10);			// Little timeout
 
@@ -451,7 +448,8 @@ void TxRS485Data(char *pData, int nBytes)
 	pinWrite(Data_N, 0);
 	next_bit 		= 1;
 
-	timerSetupPeriodUs(HALF_DS101_PERIOD);
+	period_us = (0.5 * 10000000)/ DS101_BAUDRATE;
+	timerSetupPeriodUs(period_us);
 	set_timeout(DS101_TIMEOUT_MS);
 	DelayMs(4 * 10);			// Little timeout
 

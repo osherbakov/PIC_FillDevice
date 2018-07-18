@@ -7,9 +7,9 @@
 #include 	"config.h"
 #include	"delay.h"
 
-void
-Delay1K(unsigned int cnt)
-{
+static unsigned int cnt;
+void	DelayMs(unsigned int delay_ms) {
+	cnt = ( (XTAL_FREQ/4) * delay_ms);
 	while(cnt > 256)
 	{
 		Delay1KTCYx(0);
@@ -17,7 +17,12 @@ Delay1K(unsigned int cnt)
 	}
 	if(cnt)
 		Delay1KTCYx(cnt);
-}
+}	
+
+void	DelayUs(unsigned int delay_us) {
+	cnt = ((XTAL_FREQ/4) * delay_us) / 10;
+	Delay10TCYx(cnt);
+}	
 
 volatile unsigned int timeout_counter;
 volatile unsigned int timeout_limit;
@@ -82,9 +87,10 @@ char is_not_timeout(void)
 #define 	TIMER_FROM_PERIOD_US2(period) 	(((XTAL_FREQ * (period) / 4L)/16L) - 1 )
 #define 	TIMER_FROM_PERIOD_US3(period) 	(((XTAL_FREQ * (period) / 4L)/(16L * 10L)) - 1 )
 
+static unsigned int ctrl_reg;
 void timerSetupBaudrate(unsigned int baudrate)
 {
-	unsigned int ctrl_reg = TIMER_FROM_BAUDRATE0(baudrate);
+	ctrl_reg = ((XTAL_FREQ * 1000000L)/baudrate) - 1;
 	
 	// Highest settings for the timer - 64 MHz with PLL, no scaling
 	if(ctrl_reg <= 255){
@@ -120,7 +126,8 @@ void timerSetupBaudrate(unsigned int baudrate)
 
 void	timerSetupPeriodUs(unsigned int period_us)
 {
-	unsigned int ctrl_reg = TIMER_FROM_PERIOD_US0(period_us);
+	ctrl_reg = (XTAL_FREQ * period_us) - 1;
+	
 	// Highest settings for the timer - 64 MHz with PLL, no scaling
 	if(ctrl_reg <= 255){
 		pllEnable(1);
