@@ -87,38 +87,42 @@ char is_not_timeout(void)
 #define 	TIMER_FROM_PERIOD_US2(period) 	(((XTAL_FREQ * (period) / 4L)/16L) - 1 )
 #define 	TIMER_FROM_PERIOD_US3(period) 	(((XTAL_FREQ * (period) / 4L)/(16L * 10L)) - 1 )
 
-static unsigned int ctrl_reg;
+static unsigned int limit_reg;
 void timerSetupBaudrate(unsigned int baudrate)
 {
-	ctrl_reg = ((XTAL_FREQ * 1000000L)/baudrate) - 1;
+	limit_reg = ((XTAL_FREQ * 1000000L)/baudrate) - 1;
 	
 	// Highest settings for the timer - 64 MHz with PLL, no scaling
-	if(ctrl_reg <= 255){
+	if(limit_reg <= 255){
 		pllEnable(1);
-		timerSetup(ctrl_reg, TIMER_CTRL0);
+		timerLimit(limit_reg);
+		timerSetup(TIMER_CTRL0);
 		return;
 	}
 	// Next settings for the timer - 16 MHz, no scaling
-	ctrl_reg /= 4; 
-	if(ctrl_reg <= 255){
+	limit_reg /= 4; 
+	if(limit_reg <= 255){
 		pllEnable(0);
-		timerSetup(ctrl_reg, TIMER_CTRL1);
+		timerLimit(limit_reg);
+		timerSetup(TIMER_CTRL1);
 		return;
 	}
 
 	// Next settings for the timer - 16 MHz, 1:16 prescaler
-	ctrl_reg /= 16; 
-	if(ctrl_reg <= 255){
+	limit_reg /= 16; 
+	if(limit_reg <= 255){
 		pllEnable(0);
-		timerSetup(ctrl_reg, TIMER_CTRL2);
+		timerLimit(limit_reg);
+		timerSetup(TIMER_CTRL2);
 		return;
 	}
 
 	// Next settings for the timer - 16 MHz, 1:16 prescaler, 1:10 postscaler
-	ctrl_reg /= 10; 
+	limit_reg /= 10; 
 	if(ctrl_reg <= 255){
 		pllEnable(0);
-		timerSetup(ctrl_reg, TIMER_CTRL3);
+		timerLimit(limit_reg);
+		timerSetup(TIMER_CTRL3);
 		return;
 	}
 	while(0) {}	// Error loop

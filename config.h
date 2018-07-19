@@ -410,7 +410,7 @@ extern void timerSetupBaudrate(unsigned int baudrate);
 extern void	timerSetupPeriodUs(unsigned int period_us);
 extern char timerCalculateLimit(unsigned int period_us);
 
-#define 	timerSetup(count, ctrl)		do{PR6 = (count); TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (ctrl);}while(0)
+#define 	timerSetup(ctrl)			do{PR6 = (count); TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (ctrl);}while(0)
 #define 	timerLimit(limit)			do{PR6 = (limit);}while(0)
 #define 	timerCounter(counter)		do{TMR6 = (counter);}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
