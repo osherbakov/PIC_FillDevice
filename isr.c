@@ -132,8 +132,6 @@ void high_isr (void)
 			timeout_counter++;
 			if(timeout_counter >= timeout_limit) timeout_flag = 1;
 		}
-		timer10msClearFlag();	// Clear overflow flag and interrupt
-
 		// If the LED counter is counting
 		if(led_counter && (--led_counter == 0))
 		{
@@ -142,6 +140,7 @@ void high_isr (void)
 			pinWrite(LEDP, LED_current_bit);
 			led_counter = LED_current_bit ? led_on_time : led_off_time;
 		}
+		timer10msClearFlag();	// Clear overflow flag and interrupt
 	}
 
 	//--------------------------------------------------------------------------

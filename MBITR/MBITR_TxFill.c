@@ -32,12 +32,14 @@ static char WaitMBITRReq(byte req_type)
 	return ( char_received == char_to_expect ) ? ST_OK : ST_TIMEOUT ; 
 }
 
+
+static	byte    bytes, byte_cnt;
+static	byte  	fill_type, records;
+static	char    wait_result;
+static	unsigned short long base_address;
+
 char WaitReqSendMBITRFill(byte stored_slot)
 {
-	byte    bytes, byte_cnt;
-  	byte  	fill_type, records;
-	char    wait_result;
-	unsigned short long base_address;
 
 	// If first fill request was not answered - just return with timeout
 	// We will be called again after switches are checked
@@ -98,19 +100,21 @@ void close_mbitr(void)
 	pinMode(RxMBITR, INPUT);
 	pinMode(TxMBITR, INPUT);
 }
+
+static	byte 	bitcount, data;
+static	byte	nrcvd = 0;	
+static  byte 	half_cell;
 	
 byte rx_mbitr(unsigned char *p_data, byte ncount)
 {
-	byte bitcount, data;
-	byte	nrcvd = 0;	
 
 	pinMode(RxMBITR, INPUT);
 	
 	timerSetupBaudrate(MBITR_BAUDRATE);
+	half_cell = timerLimitReg() >> 1;
 	timerClear();
 
 	timerDisableIRQ();
-
  	set_timeout(RX_TIMEOUT1_MBITR);
 	
 	while( (ncount > nrcvd) && is_not_timeout() )
@@ -119,8 +123,9 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 		if(pinRead(RxMBITR) )
 		{
 			// Delay by 1/2 cell
-			DelayUs(1000000/(MBITR_BAUDRATE * 2));
-			timerClear();		// Clear counter and start counting cells
+			timerCounter(half_cell);
+			while(!timerFlag()){} ;
+			timerClearFlag();		// Clear flag and start counting cells
 		  	set_timeout(RX_TIMEOUT2_MBITR);
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{

@@ -34,13 +34,14 @@ void CloseRS232()
 // We DO NOT disable interrupts here due to slow (2400Baud) speed
 //
 static 	byte bitcount, data;
+static	int  result;
+static	unsigned char half_cell;
 
 int RxRS232Char()
 {
-	int  result;
-
 	pinMode(RxPC, INPUT);
 	timerSetupBaudrate(DTD_BAUDRATE);
+	half_cell = timerLimitReg() >> 1;
 	timerClear();
   	
 	result = -1;
@@ -51,8 +52,9 @@ int RxRS232Char()
 		if(pinRead(RxPC) )
 		{
 			// Skip the half of the cell
-			DelayUs(1000000/(DTD_BAUDRATE*2));
-			timerClear();
+			timerCounter(half_cell);
+			while(!timerFlag()){} ;
+			timerClearFlag();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows
@@ -120,10 +122,9 @@ void CloseDTD()
 //
 int RxDTDChar()
 {
-	int		result;
-
 	pinMode(RxDTD, INPUT);
 	timerSetupBaudrate(DTD_BAUDRATE);
+	half_cell = timerLimitReg() >> 1;
 	timerClear();
 
 	result = -1;
@@ -133,8 +134,9 @@ int RxDTDChar()
 		if(pinRead(RxDTD) )
 		{
 			// Skip the half of the cell
-			DelayUs(1000000/(DTD_BAUDRATE*2));
-			timerClear();
+			timerCounter(half_cell);
+			while(!timerFlag()){} ;
+			timerClearFlag();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
 			{
 				// Wait until timer overflows

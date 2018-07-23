@@ -12,10 +12,9 @@
 //   Returns the position number currently selected.
 //  Works by:
 // 	- reading from S1_8 and S9_16 ports
+static	byte data;
 byte get_switch_state()
 {
-	byte data;
-
   	// Force all bits of port A and D into Digital IO mode
 	// Make all of them Inputs (Tristate)
 	portMode(S1_8, INPUT_PULLUP);
@@ -115,9 +114,9 @@ byte	NO_ANSEL;		// Dummy
 unsigned char Threshold = 0xB0;
 
 
+static unsigned char ADC_Value;
 static char pinAnalogRead(void)
 {
-	unsigned char ADC_Value;
   	ADCON2 = 0x15;  // Left justified + 4TAD and Fosc/16
   	ADCON1 = 0;
   	ADCON0bits.GO = 1;
@@ -129,9 +128,9 @@ static char pinAnalogRead(void)
   	return (ADC_Value >= Threshold) ? HIGH : LOW;
 }
 
+static char ret;
 char pin_B()
 {
-  char ret;
   pinMode(PIN_B, INPUT);
   ret = pinRead(PIN_B);
   if(ret == LOW) return ret;
@@ -145,7 +144,6 @@ char pin_B()
 
 char pin_C()
 {
-  char ret;
   pinMode(PIN_C, INPUT);
   ret = pinRead(PIN_C);
   if(ret == LOW) return ret;
@@ -159,7 +157,6 @@ char pin_C()
 
 char pin_D()
 {
-  char ret;
   pinMode(PIN_D, INPUT);
   ret = pinRead(PIN_D);
   if(ret == LOW) return ret;
@@ -173,7 +170,6 @@ char pin_D()
 
 char pin_E()
 {
-  char ret;
   pinMode(PIN_E, INPUT);
   ret = pinRead(PIN_E);
   if(ret == LOW) return ret;
@@ -187,7 +183,6 @@ char pin_E()
 
 char pin_F()
 {
-  char ret;
   pinMode(PIN_F, INPUT);
   ret = pinRead(PIN_F);
   return ret;
