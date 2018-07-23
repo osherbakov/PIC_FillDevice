@@ -162,9 +162,10 @@ static char curr_bit;
 //  returns 0 - if LOW->HIGH ("0") is detected
 //  returns 1 - if HIGH->LOW ("1") was detected
 //  returns -1 - if the timeout occured
-static char WaitEdge(void)
+static char WaitEdge(unsigned char limit)
 {
 	ret_value = current_pin;
+	timerLimit(limit);
 	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
@@ -180,9 +181,10 @@ static char WaitEdge(void)
 // WaitTimer - return ONLY after the timeout expired, returning the number of edges that happened within that timeout..
 //  returns number of edges detected within a specified timeout
 //  returns 0 - if no edges detected during that timeout
-static char WaitTimer(void)
+static char WaitTimer(unsigned char limit)
 {
 	ret_value = 0;
+	timerLimit(limit);
 	while(!timerFlag())
 	{
 		hq_pin = pinRead(HQ_DATA);
@@ -220,24 +222,22 @@ static char GetHQTime(void)
 	wait_edge = timerLimitReg();
 	
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
+	State = INIT;
 	current_pin = pinRead(HQ_DATA);
 
-	State = INIT;
 	while(is_not_timeout() )
 	{
 		switch(State)
 		{
 		case INIT:	// Wait for no activity on the line and HQ_PIN == LOW for at least 3 clock periods
-			timerLimit(255);
-			if( (WaitTimer() == 0) && (current_pin == LOW))
+			if( (WaitTimer(255) == 0) && (current_pin == LOW))
 			{
 				State = IDLE;
 			}
 			break;
 	
 		case IDLE:
-			timerLimit(delay_edge);
-			if( WaitEdge() == 0)	// LOW->HIGH transition detected
+			if( WaitEdge(delay_edge) == 0)	// LOW->HIGH transition detected
 			{
   				set_led_off();		// Set LED off
 				State = IDLE_1;
@@ -245,22 +245,19 @@ static char GetHQTime(void)
 			break;
 
 		case IDLE_1:
-			timerLimit(delay_edge);
-			if( WaitEdge() == 1 )	// HIGH->LOW transition detected
+			if( WaitEdge(delay_edge) == 1 )	// HIGH->LOW transition detected
 			{
 				sync_word = 0x0001;
 				bit_count = 1;
 				byte_count = 0;
   				set_led_on();		// Set LED on
 				State = SYNC;
-				timerLimit(delay_edge);
-				WaitTimer();
+				WaitTimer(delay_edge);
 			}
 			break;
 
 		case SYNC:
-			timerLimit(wait_edge);
-			curr_bit = WaitEdge();
+			curr_bit = WaitEdge(wait_edge);
 			if(curr_bit >= 0) {
 				sync_word = (sync_word << 1) | curr_bit;
 				bit_count++;
@@ -272,13 +269,11 @@ static char GetHQTime(void)
 					data_byte = 0;
 					State = DATA;
 				}
-				timerLimit(delay_edge);
-				WaitTimer();
+				WaitTimer(delay_edge);
 			}
 			break;
 		case DATA:
-			timerLimit(wait_edge);
-			curr_bit = WaitEdge();
+			curr_bit = WaitEdge(wait_edge);
 			if(curr_bit >= 0) {
 				data_byte = (data_byte << 1) | curr_bit;
 				bit_count++;
@@ -294,8 +289,7 @@ static char GetHQTime(void)
 					bit_count = 0;
 					data_byte = 0;
 				}
-				timerLimit(delay_edge);
-				WaitTimer();
+				WaitTimer(delay_edge);
  			}
 			break;
 		}
@@ -322,8 +316,7 @@ char ReceiveHQTime(void )
 	SetRTCDataPart1();
 
   	//	3. Find the next HQ stream rising edge with interrupts disabled
-	timerSetupPeriodUs(3 * HQII_WAIT_EDGE_US);
-	while ( WaitTimer() != 0 ) {};		// Wait until IDLE
+	while ( WaitTimer(255) != 0 ) {};		// Wait until IDLE
 	while( pinRead(HQ_DATA)) {};		// look for the rising edge
 	while(!pinRead(HQ_DATA)) {};		
 
