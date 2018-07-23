@@ -414,7 +414,7 @@ extern void	timerSetupPeriodUs(unsigned int period_us);
 #define 	timerLimitReg()				(PR6)
 #define 	timerCountReg()				(TMR6)
 
-#define 	timerLimit(limit)			do{PR6 = (limit);PIR5bits.TMR6IF = 0;}while(0)
+#define 	timerLimit(limit)			do{PR6 = (limit);TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerCounter(counter)		do{TMR6 = (counter);PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerClear()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
