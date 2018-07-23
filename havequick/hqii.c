@@ -206,19 +206,20 @@ typedef enum
 
 static HQ_STATES State;
 
-
-#define HQII_PERIOD_US		(1000000L/HQII_BAUDRATE)
-#define HQII_HALFPERIOD_US	(HQII_PERIOD_US/2)
-#define HQII_DELAY_EDGE_US 	(HQII_HALFPERIOD_US + (HQII_HALFPERIOD_US / 2 ) - 4)
-#define HQII_WAIT_EDGE_US  	(HQII_HALFPERIOD_US - 4 )
+unsigned char wait_edge;
+unsigned char delay_edge;
 
 static char GetHQTime(void)
 {
-	timerSetupBaudrate(HQII_BAUDRATE);
 	timerDisableIRQ();
-
+	
+	// Precalculate and save the timer values
+	timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+	delay_edge = timerLimitReg();
+	timerSetupPeriodUs(HQII_WAIT_EDGE_US);
+	wait_edge = timerLimitReg();
+	
 	set_timeout(HQ_DETECT_TIMEOUT_MS);	// try to detect the HQ stream within 4 seconds
-
 	current_pin = pinRead(HQ_DATA);
 
 	State = INIT;
@@ -227,7 +228,7 @@ static char GetHQTime(void)
 		switch(State)
 		{
 		case INIT:	// Wait for no activity on the line and HQ_PIN == LOW for at least 3 clock periods
-			timerSetupPeriodUs(3 * HQII_WAIT_EDGE_US);
+			timerLimit(255);
 			if( (WaitTimer() == 0) && (current_pin == LOW))
 			{
 				State = IDLE;
@@ -235,7 +236,7 @@ static char GetHQTime(void)
 			break;
 	
 		case IDLE:
-			timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+			timerLimit(delay_edge);
 			if( WaitEdge() == 0)	// LOW->HIGH transition detected
 			{
   				set_led_off();		// Set LED off
@@ -244,7 +245,7 @@ static char GetHQTime(void)
 			break;
 
 		case IDLE_1:
-			timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+			timerLimit(delay_edge);
 			if( WaitEdge() == 1 )	// HIGH->LOW transition detected
 			{
 				sync_word = 0x0001;
@@ -252,13 +253,13 @@ static char GetHQTime(void)
 				byte_count = 0;
   				set_led_on();		// Set LED on
 				State = SYNC;
-				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				timerLimit(delay_edge);
 				WaitTimer();
 			}
 			break;
 
 		case SYNC:
-			timerSetupPeriodUs(HQII_WAIT_EDGE_US);
+			timerLimit(wait_edge);
 			curr_bit = WaitEdge();
 			if(curr_bit >= 0) {
 				sync_word = (sync_word << 1) | curr_bit;
@@ -271,12 +272,12 @@ static char GetHQTime(void)
 					data_byte = 0;
 					State = DATA;
 				}
-				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				timerLimit(delay_edge);
 				WaitTimer();
 			}
 			break;
 		case DATA:
-			timerSetupPeriodUs(HQII_WAIT_EDGE_US);
+			timerLimit(wait_edge);
 			curr_bit = WaitEdge();
 			if(curr_bit >= 0) {
 				data_byte = (data_byte << 1) | curr_bit;
@@ -293,7 +294,7 @@ static char GetHQTime(void)
 					bit_count = 0;
 					data_byte = 0;
 				}
-				timerSetupPeriodUs(HQII_DELAY_EDGE_US);
+				timerLimit(delay_edge);
 				WaitTimer();
  			}
 			break;

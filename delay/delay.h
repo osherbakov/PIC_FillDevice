@@ -10,7 +10,7 @@ extern volatile unsigned int timeout_limit;
 extern volatile char timeout_flag;
 extern volatile char ms_10;
 
-extern void set_timeout(int a);
+extern void set_timeout(unsigned int a);
 extern void reset_timeout(void);
 extern char is_timeout(void);
 extern char is_not_timeout(void);
