@@ -180,15 +180,15 @@ void TxDTDChar(char data)
 void OpenRS485(char Master)
 {
   	pllEnable(1);				// *4 PLL (64MHZ)
-	DelayMs(4 * 10);			// Wait for PLL to become stable
+	DelayMs(4 * 100);			// Wait for PLL to become stable
 
 	if(Master) {
 		pinMode(Data_N, OUTPUT);
 		pinMode(Data_P, OUTPUT);
 		pinWrite(Data_N, LOW);		
 		pinWrite(Data_P, HIGH);		
-		DelayMs(1000);			// Keep pins that way for the slave to detect condition
-		DelayMs(1000);			// Keep pins that way for the slave to detect condition
+		DelayMs(4*1000);		// Keep pins that way for the slave to detect condition
+		DelayMs(4*1000);		// Keep pins that way for the slave to detect condition
 	}else {
 		pinMode(Data_N, INPUT_PULLUP);
 		pinMode(Data_P, INPUT_PULLUP);
@@ -201,7 +201,7 @@ void CloseRS485()
 	pinMode(Data_P, INPUT_PULLUP);
 
   	pllEnable(0);		    	// No PLL (16MHZ)
-	DelayMs(10);				// Wait for the clock to become stable
+	DelayMs(100);				// Wait for the clock to become stable
 }
 
 // DS-101 64000bps Differential Manchester/Bi-phase coding
@@ -253,8 +253,8 @@ int RxRS485Data(char *pData)
 	period_us = (0.65 * 10000000)/ DS101_BAUDRATE;
 	
 	timerSetupPeriodUs(period_us);
-	set_timeout(DS101_TIMEOUT_MS);
-	DelayMs(4 * 10);			// Little timeout
+	set_timeout(4 * DS101_TIMEOUT_MS);
+	DelayMs(4 * 100);			// Little timeout
 
     DISABLE_IRQ(prevIRQ);
 
