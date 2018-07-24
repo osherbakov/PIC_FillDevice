@@ -80,6 +80,8 @@ char CheckFillType4()
 	if( !uartIsEnabled())
 	{
 		// If RxPC (PIN_D) is LOW then maybe there is RS-232 connected
+		pinMode(RxPC, INPUT_PULLUP);
+		DelayMs(10);
 	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
@@ -116,6 +118,8 @@ char CheckFillRS232Type5()
 	if( !uartIsEnabled())
 	{
 		// If RxPC (PIN_D) is LOW, then maybe there is RS-232 connected
+		pinMode(RxPC, INPUT_PULLUP);
+		DelayMs(10);
 	  	if(pinRead(RxPC) == LOW)
 	  	{
 	      // Coming in first time - enable eusart and setup buffer
@@ -138,6 +142,8 @@ char CheckFillDTD232Type5()
 {
 	if( !uartIsEnabled() )
 	{
+		pinMode(RxDTD, INPUT_PULLUP);
+		DelayMs(10);
 	  	if(pinRead(RxDTD) == LOW)
 	  	{
 	  		 close_eusart();

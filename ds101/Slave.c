@@ -17,7 +17,7 @@ static char NewAddress;
 static char Connected;
 static char NumFrames;
 static int StationID;
-static char status;
+static char slave_status;
 
 int frame_len;
 int frame_FDU;
@@ -38,14 +38,14 @@ void SlaveStart(char slot)
 	NewAddress = SLAVE_ADDRESS; 
   	CurrentNumber = SLAVE_NUMBER;
 	Connected = FALSE;
-	status = ST_OK;
+	slave_status = ST_OK;
 }
 
 
 
 char GetSlaveStatus()
 {
-	return status;
+	return slave_status;
 }	
 
 char IsSlaveValidAddressAndCommand(unsigned char Address, unsigned char Command)
@@ -262,7 +262,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 	  CurrentAddress = NewAddress;
 	  // Did we get any data? Yes - Signal as ST_DONE
 	  if(block_counter > 0) {
-		status = ST_DONE;
+		slave_status = ST_DONE;
 	  }
 	}else if(Cmd == UI)      // UI
 	{
@@ -279,4 +279,7 @@ void SlaveProcessUFrame(unsigned char Cmd)
 
 void SlaveProcessIdle()
 {
+	if(is_timeout()) {
+		slave_status = ST_TIMEOUT;
+	}	
 }

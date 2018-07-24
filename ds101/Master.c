@@ -28,8 +28,6 @@ enum MASTER_STATE
 };
 
 
-#define TX_RETRIES   (5)    // 
-
 static char master_state;
 static char retry_count;
 
@@ -92,7 +90,7 @@ void MasterProcessIdle()
 			break;
 
 		case MS_SEND_SNRM:
-			if(++retry_count >= TX_RETRIES) {
+			if(++retry_count >= DS101_TX_RETRIES) {
 				master_state = MS_TIMEOUT;
 			}else {
 				TxUFrame(SNRM);		// Request connection

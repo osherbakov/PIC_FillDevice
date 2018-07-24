@@ -56,6 +56,7 @@ void high_isr (void)
 	  		{
 	  			pinWrite(HQ_DATA, 1);
 	  			timerSetupPeriodUs(HQII_HALFPERIOD_US);	// Will generate IRQ every 300usec
+	  			timerCount(12);		// Empirical value to compensate for processing delay
 	  			timerEnableIRQ();
 	  			// Calculate next value
 	  			hq_current_bit = 0;

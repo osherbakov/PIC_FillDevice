@@ -126,14 +126,14 @@ void SetupDS101Mode(char slot, char mode )
     KeySlot = slot;
 }	
 
+static  unsigned char Address;
+static  unsigned char Command;
+  
+static  int  	nSymb;
+static  char 	*p_data;
+
 char ProcessDS101(void)
 {
-  unsigned char Address;
-  unsigned char Command;
-  
-  int  	nSymb;
-  char 	*p_data;
-
   StartProcess(KeySlot);
 
   while(GetStatus() == ST_OK)

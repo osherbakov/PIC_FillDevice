@@ -40,6 +40,15 @@
 #define  RSET 	(0x008F)
 #define  XID  	(0x00AF)
 
+
+#define		DS101_NUM_INITIAL_FLAGS	(5)
+#define		DS101_NUM_FINAL_FLAGS	(1)
+#define 	DS101_TX_TIMEOUT_MS		(1500)
+#define 	DS101_TX_DELAY_MS		(50)
+#define 	DS101_TX_RETRIES   		(5)    
+#define 	DS101_RX_TIMEOUT_MS		(2000)
+
+
 // Virtual functions that are pointing to the appropriate Phy call
 extern int (*RxDS101Data)(char *p_data);
 extern void (*TxDS101Data)(char *p_data, int n_count);

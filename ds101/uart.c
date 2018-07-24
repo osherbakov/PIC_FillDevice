@@ -11,7 +11,7 @@ void OpenRS232(char Master)
   	close_eusart();
 	pinMode(RxPC, INPUT);
 	pinMode(TxPC, OUTPUT);
-	pinWrite(TxPC, 0);
+	pinWrite(TxPC, STOP_BIT);
   	if(Master) {
 		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
@@ -52,7 +52,7 @@ int RxRS232Char()
 		if(pinRead(RxPC) )
 		{
 			// Skip the half of the cell
-			timerCounter(half_cell);
+			timerCount(half_cell);
 			while(!timerFlag()){} ;
 			timerClearFlag();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -99,7 +99,7 @@ void OpenDTD(char Master)
   	close_eusart();
 	pinMode(RxDTD, INPUT);
 	pinMode(TxDTD, OUTPUT);
-	pinWrite(TxDTD, 0);
+	pinWrite(TxDTD, STOP_BIT);
   	if(Master) {
 		DelayMs(500);		// Keep pins that way for the slave to detect condition
     }	
@@ -134,7 +134,7 @@ int RxDTDChar()
 		if(pinRead(RxDTD) )
 		{
 			// Skip the half of the cell
-			timerCounter(half_cell);
+			timerCount(half_cell);
 			while(!timerFlag()){} ;
 			timerClearFlag();
 			for(bitcount = 0; bitcount < 8 ; bitcount++)
@@ -176,19 +176,19 @@ void TxDTDChar(char data)
 //
 //  Functions to deal with RS485 at 640000 bits/sec
 //   in order to handle such high rates we bump clock with PLL from 16MHz to 64MHz
+//  and do all send/receive operations with Interrupts disabled
 //
 void OpenRS485(char Master)
 {
   	pllEnable(1);				// *4 PLL (64MHZ)
-	DelayMs(4 * 100);			// Wait for PLL to become stable
+	DelayMs(10);				// Wait for PLL to become stable
 
 	if(Master) {
 		pinMode(Data_N, OUTPUT);
 		pinMode(Data_P, OUTPUT);
 		pinWrite(Data_N, LOW);		
 		pinWrite(Data_P, HIGH);		
-		DelayMs(4*1000);		// Keep pins that way for the slave to detect condition
-		DelayMs(4*1000);		// Keep pins that way for the slave to detect condition
+		DelayMs(500);			// Keep pins that way for the slave to detect condition
 	}else {
 		pinMode(Data_N, INPUT_PULLUP);
 		pinMode(Data_P, INPUT_PULLUP);
@@ -201,7 +201,7 @@ void CloseRS485()
 	pinMode(Data_P, INPUT_PULLUP);
 
   	pllEnable(0);		    	// No PLL (16MHZ)
-	DelayMs(100);				// Wait for the clock to become stable
+	DelayMs(10);				// Wait for the clock to become stable
 }
 
 // DS-101 64000bps Differential Manchester/Bi-phase coding
@@ -230,17 +230,14 @@ static		unsigned char		bit_count;
 static		unsigned char		stuff_count;
 static		unsigned char		rcvd_byte;
 
-static		unsigned char		timeout_cntr;
 static		unsigned char		flag_detected;
 	
-static		unsigned char		rcvd_Sample;		// The current Sample at 0.75T
+static		unsigned char		rcvd_Sample;		// The current Sample at 0.66T
 static		unsigned char		prev_Sample;		// The Sample at the 0.0T
-
 static		byte 				prevIRQ;
+static 		float 				period_us;
 
-#define 	DS101_TIMEOUT_MS	(2000)
 
-static unsigned int period_us;
 int RxRS485Data(char *pData)
 {
 	// Take care of physical pins
@@ -249,16 +246,16 @@ int RxRS485Data(char *pData)
 	
 	st = INIT;
 	
-	// Start the timer to sample at 0.65T
-	period_us = (0.65 * 10000000)/ DS101_BAUDRATE;
+	// Start the timer to sample at 0.66T
+	period_us = (0.66f * 1000000)/ DS101_BAUDRATE;
 	
 	timerSetupPeriodUs(period_us);
-	set_timeout(4 * DS101_TIMEOUT_MS);
-	DelayMs(4 * 100);			// Little timeout
+	DelayMs(10);			// Little timeout	
+	
+	set_timeout(DS101_RX_TIMEOUT_MS);
 
     DISABLE_IRQ(prevIRQ);
 
-	
 	while(is_not_timeout()) {
 
 		switch(st) {
@@ -268,11 +265,9 @@ int RxRS485Data(char *pData)
 			rcvd_byte 		= 0;
 			stuff_count 	= 0;
 			flag_detected 	= 0;
-			timeout_cntr	= 0;
 
 			prev_Sample = rcvd_Sample = pinRead(PIN_IN);
 	
-			reset_timeout();
 			st = GET_EDGE;
 		 	break;
 
@@ -318,6 +313,7 @@ int RxRS485Data(char *pData)
 				bit_count = 0;
 				stuff_count = 0;
 
+				reset_timeout();
 				st = GET_SAMPLE_EDGE;
 			}
 
@@ -430,32 +426,29 @@ int RxRS485Data(char *pData)
 	return -1;
 }	
 
-
-#define		NUM_INITIAL_FLAGS	(5)
-#define		NUM_FINAL_FLAGS		(1)
-
 static		unsigned char		tx_byte;
 static		unsigned char		next_bit;
 static		unsigned char		bit_to_send;
 
 void TxRS485Data(char *pData, int nBytes)
 {
-
 	st = INIT;
-
 	// Take care of physical pins
 	pinMode(Data_P, OUTPUT);
 	pinMode(Data_N, OUTPUT);
-	pinWrite(Data_P, 1);
-	pinWrite(Data_N, 0);
+
 	next_bit 		= 1;
-
-	period_us = (0.5 * 10000000)/ DS101_BAUDRATE;
+	pinWrite(Data_P, next_bit);
+	pinWrite(Data_N, !next_bit);
+	next_bit 		= !next_bit;
+	
+	period_us = (0.5f * 1000000)/ DS101_BAUDRATE;
 	timerSetupPeriodUs(period_us);
-	set_timeout(DS101_TIMEOUT_MS);
-	DelayMs(4 * 10);			// Little timeout
-
+	DelayMs(10);			// Little timeout
+	
 	DISABLE_IRQ(prevIRQ);
+
+	DelayMs(DS101_TX_DELAY_MS);
 	
 	while(1) {
 		switch(st) {
@@ -463,12 +456,13 @@ void TxRS485Data(char *pData, int nBytes)
 			bit_count 	= 0;
 			byte_count	= 0;
 			stuff_count = 0;
-	
 			st 				= SEND_START_FLAG;
+			
+			timerClear();
 		 	break;
 
 		  case SEND_START_FLAG:
-		  	byte_count	 = NUM_INITIAL_FLAGS;
+		  	byte_count	 = DS101_NUM_INITIAL_FLAGS;
 
 		  	while(byte_count > 0) {
 			  	tx_byte = FLAG;
@@ -476,17 +470,18 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!timerFlag()) {}	// Start of the cell
-			  		pinWrite(Data_P,next_bit);
-					pinWrite(Data_N, !next_bit);
+			  		pinWrite(Data_P,	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!timerFlag()) {}	// Middle of the cell
-					pinWrite(Data_P, next_bit);
-					pinWrite(Data_N, !next_bit);
+					pinWrite(Data_P, 	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
+
 					next_bit = !next_bit; 	// Always flip the bit at the beginning of the cell 
 					bit_count--;
 				}
@@ -505,8 +500,8 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!timerFlag()) {}		// Wait for the next cell beginning
-			  		pinWrite(Data_P, next_bit);
-					pinWrite(Data_N, !next_bit);
+			  		pinWrite(Data_P, 	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
 
 					// Start calculating the next bit
@@ -522,8 +517,8 @@ void TxRS485Data(char *pData, int nBytes)
 					} 
 
 					while(!timerFlag()) {}		// We are now at the middle of the cell
-					pinWrite(Data_P, next_bit);
-					pinWrite(Data_N, !next_bit);
+					pinWrite(Data_P, 	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 					
 
@@ -531,14 +526,14 @@ void TxRS485Data(char *pData, int nBytes)
 					//  do the actual bit stuffing if needed - insert "0"
 					if(stuff_count >= 5) {
 						while(!timerFlag()) {}		// Wait for the next cell beginning
-			  			pinWrite(Data_P,next_bit);
-						pinWrite(Data_N,!next_bit);
+			  			pinWrite(Data_P,	next_bit);
+						pinWrite(Data_N,	!next_bit);
 						timerClearFlag();
 						next_bit = !next_bit;		// Send "0"
 
 						while(!timerFlag()) {}		// Wait for the middle of the cell
-						pinWrite(Data_P, next_bit);
-						pinWrite(Data_N, !next_bit);
+						pinWrite(Data_P, 	next_bit);
+						pinWrite(Data_N, 	!next_bit);
 						timerClearFlag();
 
 						next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
@@ -553,7 +548,7 @@ void TxRS485Data(char *pData, int nBytes)
 		 	break;
 
 		  case SEND_END_FLAG:
-		  	byte_count	 = NUM_FINAL_FLAGS;
+		  	byte_count	 = DS101_NUM_FINAL_FLAGS;
 
 		  	while(byte_count > 0) {
 			  	tx_byte = FLAG;
@@ -561,16 +556,16 @@ void TxRS485Data(char *pData, int nBytes)
 			  	while(bit_count > 0)
 			  	{
 					while(!timerFlag()) {}		// Wait for the cell start
-			  		pinWrite(Data_P, next_bit);
-					pinWrite(Data_N, !next_bit);
+			  		pinWrite(Data_P, 	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
 
 				  	next_bit = tx_byte & 0x01 ? next_bit : !next_bit;	// For "0" flip the bit, for 1" keep in in the middle of the cell
 				  	tx_byte >>= 1;
 
 					while(!timerFlag()) {}		// Wait for the middle of the cell
-					pinWrite(Data_P, next_bit);
-					pinWrite(Data_N, !next_bit);
+					pinWrite(Data_P, 	next_bit);
+					pinWrite(Data_N, 	!next_bit);
 					timerClearFlag();
 					next_bit = !next_bit;	// Always flip the bit at the beginning of the cell 
 					bit_count--;
@@ -581,6 +576,10 @@ void TxRS485Data(char *pData, int nBytes)
 			while(!timerFlag()) {}		// Wait for the cell start
 	  		pinWrite(Data_P, next_bit);
 			pinWrite(Data_N, !next_bit);
+			timerClearFlag();
+			while(!timerFlag()) {}		// Wait for the cell start
+			timerClearFlag();
+			while(!timerFlag()) {}		// Wait for the cell start
 			timerClearFlag();
 			st = DONE;
 		 	break;

@@ -8,8 +8,10 @@
 #include	"delay.h"
 
 static unsigned int cnt;
+unsigned char	use_pll;
+
 void	DelayMs(unsigned int delay_ms) {
-	cnt = ( (XTAL_FREQ/4) * delay_ms);
+	cnt = use_pll ? (XTAL_FREQ*delay_ms) :((XTAL_FREQ/4)*delay_ms);
 	while(cnt > 256)
 	{
 		Delay1KTCYx(0);
@@ -20,7 +22,7 @@ void	DelayMs(unsigned int delay_ms) {
 }	
 
 void	DelayUs(unsigned int delay_us) {
-	cnt = ((XTAL_FREQ/4) * delay_us) / 10;
+	cnt = use_pll ? (XTAL_FREQ*delay_us)/10 : ((XTAL_FREQ/4)*delay_us)/10;
 	Delay10TCYx(cnt);
 }	
 
@@ -33,7 +35,7 @@ static char  prev;
 void set_timeout(unsigned int timeout_ms)
 {
 	DISABLE_IRQ(prev);
-	timeout_limit = timeout_ms/10;
+	timeout_limit = use_pll ? (timeout_ms * 4)/10 : timeout_ms/10;
 	timeout_counter = 0;
 	timeout_flag = 0;
 	ENABLE_IRQ(prev);
@@ -119,9 +121,9 @@ void timerSetupBaudrate(unsigned int baudrate)
 	while(0) {}	// Error loop
 }
 
-void	timerSetupPeriodUs(unsigned int period_us)
+void	timerSetupPeriodUs(float period_us)
 {
-	limit_reg = (XTAL_FREQ * period_us) - 1;
+	limit_reg = (unsigned int)(XTAL_FREQ * period_us) - 1;
 	
 	// Highest settings for the timer - 64 MHz with PLL, no scaling
 	if(limit_reg <= 255){

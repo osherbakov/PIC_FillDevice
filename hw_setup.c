@@ -16,21 +16,22 @@ void setup_xtal()
 {
   	OSCTUNE = 0;    		// No PLL
 	OSCCONbits.IDLEN = 1; 	// On Sleep() enter IDLE
+	pllEnable(0);
 
 	// Select appropriate clock source
-#if XTAL_FREQ == 16 MHZ
+#if XTAL_FREQ == 16
 	OSCCONbits.IRCF = 0x7;	// 16MHz
 #endif
-#if XTAL_FREQ == 8 MHZ
+#if XTAL_FREQ == 8 
 	OSCCONbits.IRCF = 0x6;	// 8MHz
 #endif
-#if XTAL_FREQ == 4 MHZ
+#if XTAL_FREQ == 4 
 	OSCCONbits.IRCF = 0x5;	// 4MHz
 #endif
-#if XTAL_FREQ == 2 MHZ
+#if XTAL_FREQ == 2 
 	OSCCONbits.IRCF = 0x4;	// 2MHz
 #endif
-#if XTAL_FREQ == 1MHZ
+#if XTAL_FREQ == 1 
 	OSCCONbits.IRCF = 0x3;	// 1MHz
 #endif
 	OSCCONbits.SCS = 0x00;	// Internal with MUX (can be PLL'd*4)

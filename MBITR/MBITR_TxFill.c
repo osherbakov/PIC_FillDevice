@@ -123,7 +123,7 @@ byte rx_mbitr(unsigned char *p_data, byte ncount)
 		if(pinRead(RxMBITR) )
 		{
 			// Delay by 1/2 cell
-			timerCounter(half_cell);
+			timerCount(half_cell);
 			while(!timerFlag()){} ;
 			timerClearFlag();		// Clear flag and start counting cells
 		  	set_timeout(RX_TIMEOUT2_MBITR);

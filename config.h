@@ -2,8 +2,7 @@
 #define __CONFIG_H__
 
 #include <p18cxxx.h>
-#define	MHZ	*1
-#define XTAL_FREQ	(16 MHZ)
+#define XTAL_FREQ	(16)
 
 #ifndef MAX
 #define MAX(a,b)  ((a) > (b) ? (a) : (b))
@@ -386,7 +385,8 @@ extern	byte	NO_ANSEL;
 
 
 #define		pullUps(en)					do{INTCON2bits.RBPU=(!en);}while(0)
-#define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);}while(0)
+extern 		unsigned char				use_pll;
+#define		pllEnable(en)				do{OSCTUNEbits.PLLEN=(en);use_pll=(en);}while(0)
 
 #define 	ENABLE_1PPS_IRQ()			do{IOC_RTC_1PPS=1;INTCONbits.RBIE=1;}while(0)
 #define 	IS_1PPS_IRQ_ENABLED()		(INTCONbits.RBIE)
@@ -407,7 +407,7 @@ extern	byte	NO_ANSEL;
 #define		timer10msIsIRQEnabled()		(PIE1bits.TMR2IE)
 
 extern void timerSetupBaudrate(unsigned int baudrate);
-extern void	timerSetupPeriodUs(unsigned int period_us);
+extern void	timerSetupPeriodUs(float period_us);
 
 #define 	timerSetup(ctrl)			do{TMR6 = 0; PIR5bits.TMR6IF = 0;T6CON = (ctrl);}while(0)
 #define 	timerCtrlReg()				(T6CON)
@@ -415,7 +415,7 @@ extern void	timerSetupPeriodUs(unsigned int period_us);
 #define 	timerCountReg()				(TMR6)
 
 #define 	timerLimit(limit)			do{PR6 = (limit);TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
-#define 	timerCounter(counter)		do{TMR6 = (counter);PIR5bits.TMR6IF = 0;}while(0)
+#define 	timerCount(count)			do{TMR6 = (count);PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerReset()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerClear()				do{TMR6 = 0;PIR5bits.TMR6IF = 0;}while(0)
 #define 	timerFlag()					(PIR5bits.TMR6IF)

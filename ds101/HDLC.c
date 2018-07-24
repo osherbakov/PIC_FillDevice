@@ -7,9 +7,6 @@
 #include <delay.h>
 #include <Fill.h>
 
-
-#define TX_DELAY_MS	(20)
-
 typedef enum
 {
     ST_IDLE,
@@ -19,28 +16,28 @@ typedef enum
 
 RX_STATE hdlc_state = ST_IDLE;
 
+static  	int  symbol;
+static  	char ch;
+static  	int  n_chars;
+
 // Returns:
 //   -1  - Timeout occured
-//   0   - Aborted or incorrect FCS
+//   0   - Aborted 
 //   >0  - Data received
 int RxRS232Data(char *p_data)
 {
-  	int  symbol;
-  	char ch;
-  	int  n_chars;
-
-  	set_timeout(500);
+  	set_timeout(DS101_RX_TIMEOUT_MS);
     hdlc_state = ST_IDLE;
 	n_chars = 0;
 
-    while(1)
+    while(is_not_timeout())
     {
       symbol = ReadCharDS101();
       if(symbol < 0)
       { 
         return -1;   
       }
-  	  set_timeout(100);
+  	  reset_timeout();
        
       ch = (char) symbol;   
       switch(hdlc_state)
@@ -73,23 +70,21 @@ int RxRS232Data(char *p_data)
           break;
       }
     }
-    return -1; 
+    return -1;
 }
 
 
-
+static unsigned char i;
 void TxRS232Data(char *p_data, int n_chars)
 {
+	DelayMs(DS101_TX_DELAY_MS);
 
-	DelayMs(TX_DELAY_MS);
-
-	// Send 5 flags  
-  	WriteCharDS101(FLAG);
-  	WriteCharDS101(FLAG);
-  	WriteCharDS101(FLAG);
-  	WriteCharDS101(FLAG);
-  	WriteCharDS101(FLAG);
-
+	// Send starting HDLC flags 
+	for(i = 0; i < DS101_NUM_INITIAL_FLAGS; i++)
+	{ 
+  		WriteCharDS101(FLAG);
+ 	} 		
+ 
   	while(n_chars-- > 0)
   	{
     	char ch = *p_data++;
@@ -102,5 +97,9 @@ void TxRS232Data(char *p_data, int n_chars)
 		}
 
   	}
-	WriteCharDS101(FLAG);
+  	// Send finishing HDLC flags
+	for(i = 0; i < DS101_NUM_FINAL_FLAGS; i++)
+	{ 
+  		WriteCharDS101(FLAG);
+ 	} 		
 }
