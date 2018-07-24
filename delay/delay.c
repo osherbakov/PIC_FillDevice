@@ -73,10 +73,10 @@ char is_not_timeout(void)
 	return !timeout_flag;
 }
     
-#define 	TIMER_CTRL0 					( (0 << 3) | (1<<2) | (0<<0) )     		// Post = 1:1, Pre = 1:1, ENA 
-#define 	TIMER_CTRL1 					( (0 << 3) | (1<<2) | (0<<0) )     		// Post = 1:1, Pre = 1:1, ENA 
-#define 	TIMER_CTRL2 					( (0 << 3) | (1<<2) | (2<<0) )     		// Post = 1:1, Pre = 1:16, ENA 
-#define 	TIMER_CTRL3 					( (9 << 3) | (1<<2) | (2<<0) )			// Post = 1:10, Pre=1:16, ENA
+#define 	TIMER_CTRL0 					( (0 << 3) | (1<<2) | (0<<1) )     		// Post = 1:1, Pre = 1:1, ENA 
+#define 	TIMER_CTRL1 					( (0 << 3) | (1<<2) | (0<<1) )     		// Post = 1:1, Pre = 1:1, ENA 
+#define 	TIMER_CTRL2 					( (0 << 3) | (1<<2) | (1<<1) )     		// Post = 1:1, Pre = 1:16, ENA 
+#define 	TIMER_CTRL3 					( (9 << 3) | (1<<2) | (1<<1) )			// Post = 1:10, Pre=1:16, ENA
 
 static unsigned int limit_reg;
 void timerSetupBaudrate(unsigned int baudrate)
