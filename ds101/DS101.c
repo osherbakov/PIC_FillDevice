@@ -32,12 +32,13 @@ char (*IsValidAddressAndCommand)(unsigned char  Address, unsigned char  Command)
 char (*GetStatus)(void);
 void (*StartProcess)(char slot);
 
-int  (*RxDS101Data)(char *p_data);
+int  (*RxDS101Data)(char *p_data, unsigned int timeout);
 void (*TxDS101Data)(char *p_data, int n_count);
 void (*WriteCharDS101)(char ch);
 int  (*ReadCharDS101)(void);
 
 static char KeySlot;
+static unsigned int timeout;
 
 void TxSFrame(unsigned char cmd)
 {
@@ -110,6 +111,7 @@ typedef enum {
 void SetupDS101Mode(char slot, char mode )
 {
 	char TxRxMode = ( (mode == TX_RS232) || (mode == TX_RS485) || (mode == TX_DTD232) ) ? MASTER : SLAVE;
+	timeout		= 	TxRxMode ? DS101_TX_TIMEOUT_MS : DS101_RX_TIMEOUT_MS;
     CurrentName = 	TxRxMode ? master_name : slave_name;
     IsValidAddressAndCommand = TxRxMode ?  IsMasterValidAddressAndCommand : IsSlaveValidAddressAndCommand;
     ProcessIdle = 	TxRxMode ? MasterProcessIdle : SlaveProcessIdle;
@@ -141,7 +143,7 @@ char ProcessDS101(void)
     ProcessIdle();
 
     p_data = &RxTx_buff[0];
-    nSymb = RxDS101Data(p_data);
+    nSymb = RxDS101Data(p_data, timeout);
 	
     if( (nSymb >= 4) && CRC16chk(p_data, nSymb))
     {

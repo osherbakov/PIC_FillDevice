@@ -36,6 +36,7 @@ void CloseRS232()
 static 	byte bitcount, data;
 static	int  result;
 static	unsigned char half_cell;
+static	byte  stop_detected;
 
 int RxRS232Char()
 {
@@ -45,12 +46,14 @@ int RxRS232Char()
 	timerClear();
   	
 	result = -1;
+	stop_detected = 0;
   	
   	while( is_not_timeout() )
 	{
-		// Start conditiona was detected - count 1.5 cell size	
-		if(pinRead(RxPC) )
-		{
+		if(!stop_detected) {
+			if (pinRead(RxPC) == STOP_BIT) stop_detected = TRUE;
+		}else if(pinRead(RxPC) == START_BIT){
+			// Start conditiona was detected - count 1.5 cell size	
 			// Skip the half of the cell
 			timerCount(half_cell);
 			while(!timerFlag()){} ;
@@ -63,7 +66,7 @@ int RxRS232Char()
 				data = (data >> 1) | (pinRead(RxPC) ? 0x00 : 0x80);
 			}
  			while(!timerFlag()){} ;	// Wait for stop bit
-			result =  pinRead(RxPC) ? -1 : ((int)data) & 0x00FF;
+			result =  pinRead(RxPC) != STOP_BIT ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -128,11 +131,15 @@ int RxDTDChar()
 	timerClear();
 
 	result = -1;
+	stop_detected = 0;
+
   	while( is_not_timeout() )
 	{
-		// Start conditiona was detected - count 1.5 cell size	
-		if(pinRead(RxDTD) )
+		if(!stop_detected) { 
+			if(pinRead(RxDTD) == STOP_BIT) stop_detected = TRUE;
+		}else if(pinRead(RxDTD) == START_BIT)
 		{
+			// Start conditiona was detected - count 1.5 cell size	
 			// Skip the half of the cell
 			timerCount(half_cell);
 			while(!timerFlag()){} ;
@@ -145,7 +152,7 @@ int RxDTDChar()
 				data = (data >> 1) | (pinRead(RxDTD) ? 0x00 : 0x80);
 			}
 			while(!timerFlag()){} ; // Wait for stop bit
-			result = pinRead(RxDTD) ? -1 : ((int)data) & 0x00FF;
+			result = pinRead(RxDTD) != STOP_BIT ? -1 : ((int)data) & 0x00FF;
 			break;
 		}
 	}
@@ -238,7 +245,7 @@ static		byte 				prevIRQ;
 static 		float 				period_us;
 
 
-int RxRS485Data(char *pData)
+int RxRS485Data(char *pData, unsigned int timeout)
 {
 	// Take care of physical pins
 	pinMode(Data_P, INPUT);
@@ -252,7 +259,7 @@ int RxRS485Data(char *pData)
 	timerSetupPeriodUs(period_us);
 	DelayMs(10);			// Little timeout	
 	
-	set_timeout(DS101_RX_TIMEOUT_MS);
+	set_timeout(timeout);
 
     DISABLE_IRQ(prevIRQ);
 

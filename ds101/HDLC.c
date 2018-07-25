@@ -24,9 +24,9 @@ static  	int  n_chars;
 //   -1  - Timeout occured
 //   0   - Aborted 
 //   >0  - Data received
-int RxRS232Data(char *p_data)
+int RxRS232Data(char *p_data, unsigned int timeout)
 {
-  	set_timeout(DS101_RX_TIMEOUT_MS);
+  	set_timeout(timeout);
     hdlc_state = ST_IDLE;
 	n_chars = 0;
 
