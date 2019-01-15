@@ -180,22 +180,6 @@ int rx_eusart_symbol(void)
 	return	result;
 }	
 
-byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout)
-{
-	DISABLE_IRQ(prev);		// Disable interrupts
-	
-  	set_timeout(timeout);
-  	
-	ncount = MIN(ncount, (rx_idx_in - rx_idx_out));
-	memcpy((void *)p_data, (void *)&rx_data[rx_idx_out], ncount);
-	rx_idx_out += ncount;
-	// Check for the all symbols taken and adjust the indices
-	if(rx_idx_in == rx_idx_out){ rx_idx_in = rx_idx_out = 0; }
-	ENABLE_IRQ(prev);
-	return	ncount;
-}	
-
-
 void tx_eusart_async(const unsigned char *p_data, byte ncount)
 {
 	tx_eusart_flush();	// Make sure that the old data is fully flushed and sent...

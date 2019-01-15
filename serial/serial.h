@@ -50,7 +50,6 @@ extern byte rx_eusart_count(void);
 extern void rx_eusart_reset(void);
 extern int 	rx_eusart_symbol(void);
 extern byte rx_eusart_line(unsigned char *p_data, byte ncount, unsigned int timeout);
-extern byte rx_eusart_data(unsigned char *p_data, byte ncount, unsigned int timeout);
 
 extern void tx_eusart_async(const unsigned char *p_data, byte ncount);
 extern void tx_eusart_flush(void);
