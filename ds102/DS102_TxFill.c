@@ -34,17 +34,16 @@
 
 static  byte  NewState;	
 static	byte  PreviousState;
-static  char  prev;
 static  byte i;
 
 // Sends byte data on PIN_B with clocking on PIN_E
 static void SendMode23Query(byte Data)
 {
   // Set up pins mode and levels
-  pinMode(PIN_B, OUTPUT);    // make pin active
-  pinMode(PIN_E, OUTPUT);    // make pin active
-  pinWrite(PIN_E, HIGH);  // Set clock to High
-  delayMicroseconds(tJ);      // Setup time for clock high
+  pinMode(PIN_B, OUTPUT);   // make pin active
+  pinMode(PIN_E, OUTPUT);   // make pin active
+  pinWrite(PIN_E, HIGH);  	// Set clock to High
+  delayMicroseconds(tJ);    // Setup time for clock high
 
   // Output the first data bit of the request
   pinWrite(PIN_B, (Data & 0x01) ? LOW : HIGH);  // Output data bit
@@ -52,9 +51,9 @@ static void SendMode23Query(byte Data)
   delayMicroseconds(tK1);    // Satisfy Setup time tK1
 
     // Pulse the clock
-  pinWrite(PIN_E, LOW);  // Drop Clock to LOW 
-  delayMicroseconds(tT);     // Hold Clock in LOW for tT
-  pinWrite(PIN_E, HIGH);  // Bring Clock to HIGH
+  pinWrite(PIN_E, LOW);  	// Drop Clock to LOW 
+  delayMicroseconds(tT);    // Hold Clock in LOW for tT
+  pinWrite(PIN_E, HIGH);  	// Bring Clock to HIGH
 
   // Output the rest of the data
   for(i = 0; i < 7; i++)
@@ -80,12 +79,13 @@ static void SendMode23Query(byte Data)
 //   The total number of clocks is 40 (41), but only the last bit matters
 static signed char GetEquipmentMode23Type(void)
 {
+  static char  	prev;
   signed char	result;
 
   pinWrite(PIN_B, HIGH);  		// Turn on 20 K Pullup
   pinWrite(PIN_E, LOW);      	// Turn_on the pullup register
-  pinMode(PIN_B, INPUT_PULLUP);    		// Tristate the pin
-  pinMode(PIN_E, INPUT);			// Tristate the pin
+  pinMode(PIN_B, INPUT_PULLUP); // Tristate the pin
+  pinMode(PIN_E, INPUT);		// Tristate the pin
   
   set_timeout(tB);
 
@@ -163,7 +163,7 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 	//  2. read PIN_B 
 	if(fill_type == MODE1) {
 	  	pinWrite(PIN_B, HIGH);  // Keep pin_B HIGH for Mode 1
-    	pinMode(PIN_B, OUTPUT);	
+    	pinMode(PIN_B, INPUT_PULLUP);	
 	}else {
 	  	pinWrite(PIN_B, HIGH);  // Set pullup for Mode 2 and 3
     	pinMode(PIN_B, INPUT_PULLUP);	
@@ -218,16 +218,16 @@ static char WaitDS102Req(byte fill_type, byte req_type)
 
 static void StartMode23Handshake(void)
 {
-  pinMode(PIN_B, INPUT_PULLUP);
-  pinMode(PIN_C, INPUT);
-  pinMode(PIN_D, OUTPUT);    // make pin output
-  pinMode(PIN_E, OUTPUT);  
-  pinMode(PIN_F, OUTPUT);    // make pin output
   pinWrite(PIN_B, HIGH);
   pinWrite(PIN_C, HIGH);
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
+  pinMode(PIN_B, INPUT_PULLUP);
+  pinMode(PIN_C, INPUT);
+  pinMode(PIN_D, OUTPUT);    // make pin output
+  pinMode(PIN_E, OUTPUT);  
+  pinMode(PIN_F, OUTPUT);    // make pin output
   delay(200);
 
   // Drop PIN_D first
@@ -267,7 +267,7 @@ static void AcquireMode1Bus(void)
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
-  pinMode(PIN_B, OUTPUT);
+  pinMode(PIN_B, INPUT_PULLUP);
   pinMode(PIN_C, INPUT);
   pinMode(PIN_D, OUTPUT);
   pinMode(PIN_E, OUTPUT);
@@ -293,17 +293,17 @@ static void AcquireMode23Bus(void)
 
 static void ReleaseBus(void)
 {
-  pinMode(PIN_B, INPUT);
-  pinMode(PIN_C, INPUT);
-  pinMode(PIN_D, INPUT);
-  pinMode(PIN_E, INPUT);
-  pinMode(PIN_F, INPUT);
-  delay(tB);
   pinWrite(PIN_B, HIGH);
   pinWrite(PIN_C, HIGH);
   pinWrite(PIN_D, HIGH);
   pinWrite(PIN_E, HIGH);
   pinWrite(PIN_F, HIGH);
+  pinMode(PIN_B, INPUT_PULLUP);
+  pinMode(PIN_C, INPUT_PULLUP);
+  pinMode(PIN_D, INPUT_PULLUP);
+  pinMode(PIN_E, INPUT_PULLUP);
+  pinMode(PIN_F, INPUT_PULLUP);
+  delay(tB);
 }
 
 

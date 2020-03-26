@@ -241,12 +241,13 @@ static		unsigned char		flag_detected;
 	
 static		unsigned char		rcvd_Sample;		// The current Sample at 0.66T
 static		unsigned char		prev_Sample;		// The Sample at the 0.0T
-static		byte 				prevIRQ;
 static 		float 				period_us;
 
 
 int RxRS485Data(char *pData, unsigned int timeout)
 {
+	static	byte prevIRQ;
+
 	// Take care of physical pins
 	pinMode(Data_P, INPUT);
 	pinMode(Data_N, INPUT);
@@ -439,6 +440,8 @@ static		unsigned char		bit_to_send;
 
 void TxRS485Data(char *pData, int nBytes)
 {
+	static	byte	prevIRQ;
+
 	st = INIT;
 	// Take care of physical pins
 	pinMode(Data_P, OUTPUT);

@@ -297,9 +297,10 @@ static char GetHQTime(void)
 	return ST_TIMEOUT;
 }
 
-static	char prev;
 char ReceiveHQTime(void )
 {
+	static	char prev;
+
 	// Config pin as input
 	pinMode(HQ_DATA, INPUT);
 

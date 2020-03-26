@@ -528,9 +528,10 @@ static char FindRisingEdge(void)
 	return ST_TIMEOUT;
 }
 
-static  char prev;
 char ReceiveDAGRTime()
 {
+	static  char prev;
+
 	//	1. Find the 1PPS rising edge
 	if(FindRisingEdge() != ST_OK) return ST_TIMEOUT;
 

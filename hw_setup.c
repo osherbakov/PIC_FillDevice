@@ -65,9 +65,9 @@ void setup_spi()
 	OpenSPI1(SPI_FOSC_16, MODE_00, SMPEND);
 }
 
-static byte prev;
 void setup_start_io()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
 	DISABLE_PIRQ();
 
@@ -140,6 +140,8 @@ void setup_start_io()
 
 void setup_sleep_io()
 {
+
+	static byte  prev;
 	DISABLE_PIRQ();
 	DISABLE_IRQ(prev);
 

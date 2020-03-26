@@ -31,9 +31,9 @@ volatile unsigned int timeout_limit;
 volatile char timeout_flag;
 volatile char ms_10;
 
-static char  prev;
 void set_timeout(unsigned int timeout_ms)
 {
+	static char  prev;
 	DISABLE_IRQ(prev);
 	timeout_limit = use_pll ? (timeout_ms * 4)/10 : timeout_ms/10;
 	timeout_counter = 0;
@@ -43,6 +43,7 @@ void set_timeout(unsigned int timeout_ms)
 
 void reset_timeout(void)
 {
+	static char  prev;
 	DISABLE_IRQ(prev);
 	timeout_counter = 0;
 	timeout_flag = 0;

@@ -90,9 +90,9 @@ void set_pin_f_as_power()
 	pinWrite(PIN_F_PWR, 1);
 }
 
-static byte  prev;
 void disable_tx_hqii()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
   	hq_enabled = 0;
 	ENABLE_IRQ(prev);
@@ -101,6 +101,7 @@ void disable_tx_hqii()
 
 void enable_tx_hqii()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
   	hq_enabled = 1;
 	ENABLE_IRQ(prev);
@@ -199,6 +200,7 @@ volatile char LED_current_bit;
 
 void set_led_state(char on_time, char off_time)
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
 	led_on_time = on_time;
 	led_off_time = off_time;
@@ -210,6 +212,7 @@ void set_led_state(char on_time, char off_time)
 
 void set_led_on()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
 	led_counter = 0;
 	LED_current_bit = HIGH;				// Turn on LED
@@ -219,11 +222,11 @@ void set_led_on()
 
 void set_led_off()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
 	led_counter = 0;
 	LED_current_bit = LOW;				// Turn off LED
 	pinWrite(LEDP, LED_current_bit);
 	ENABLE_IRQ(prev);
-
 }
 

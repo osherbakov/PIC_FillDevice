@@ -210,9 +210,9 @@ void GetRTCData()
 	CalculateJulianDay();
 }
 
-static char prev;
 void SetRTCData()
 {
+	static byte  prev;
 	DISABLE_IRQ(prev);
 	SetRTCDataPart1();
 	SWAckI2C(READ);

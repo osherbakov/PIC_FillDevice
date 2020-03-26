@@ -71,14 +71,9 @@ static byte 	prev_power_pos;
 //  Returns 1 if transition from LOW to HIGH was detected
 static byte TestButtonPress(void)
 {
-	button_pos = get_button_state();
-	if(button_pos != prev_button_pos)
+	if( (button_pos != prev_button_pos) && (button_pos == UP_POS) )
 	{
-		prev_button_pos = button_pos;
-		if(button_pos == UP_POS)
-		{
-			return 1;
-		}
+		return 1;
 	}
 	return 0;
 }
@@ -90,7 +85,7 @@ static void SetNextState(char nextState)
 	switch(nextState)
 	{
 		case INIT:
-			set_led_state(10, 200);		// Short Blink
+			set_led_state(10, 190);		// Short Blink
 			break;
 
 		case IDLE:
@@ -103,13 +98,16 @@ static void SetNextState(char nextState)
 
 		case FILL_RX :
 		case HQ_GPS_RX :
-		case FILL_RX_DS102_WAIT:
 		case FILL_RX_RS232_WAIT:
-			set_led_state(20, 20);		// "Key empty" blink pattern (Fast Blink)
+			set_led_state(10, 40);		// "Key empty RS-232 fill" blink pattern (Fast Blink)
+			break;
+
+		case FILL_RX_DS102_WAIT:
+			set_led_state(40, 10);		// "Key empty" blink pattern (Fast Blink)
 			break;
 
 		case FILL_TX_MBITR:
-			set_led_state(10, 200);		// "Connect Serial" blink pattern	
+			set_led_state(10, 190);		// "Connect Serial" blink pattern	
 			break;
 
 		case FILL_TX :
@@ -120,23 +118,23 @@ static void SetNextState(char nextState)
 
 		case HQ_TX:
 		case PC_CONN:
-			set_led_state(10, 200);		// "Connect Serial" blink pattern
+			set_led_state(10, 190);		// "Connect Serial" blink pattern
 			break;
 
 		case FILL_TX_RS232:
-			set_led_state(20, 100);		// "Connect RS232" blink pattern
+			set_led_state(20, 80);		// "Connect RS232" blink pattern
 			break;
 			
 		case FILL_TX_DTD232:
-			set_led_state(60, 60);		// "Try RS232" blink pattern
+			set_led_state(50, 50);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_TX_RS485:
-			set_led_state(100, 20);		// "Try RS485" blink pattern
+			set_led_state(190, 10);		// "Try RS485" blink pattern
 			break;
 
 		case FILL_RX_PC:
-			set_led_state(200, 50);		// "Try RS232 PC" blink pattern
+			set_led_state(150, 50);		// "Try RS232 PC" blink pattern
 			break;
 
 	    case FILL_RX_DS102:
@@ -148,15 +146,15 @@ static void SetNextState(char nextState)
 			break;
     
 		case FILL_RX_RS232:
-			set_led_state(200, 50);		// "Try RS232 PC" blink pattern
+			set_led_state(150, 50);		// "Try RS232 PC" blink pattern
 			break;
 
 		case FILL_RX_DTD232:
-			set_led_state(200, 50);		// "Try RS232" blink pattern
+			set_led_state(150, 50);		// "Try RS232" blink pattern
 			break;
 
 		case FILL_RX_RS485:
-			set_led_state(80, 40);		// "Try RS485" blink pattern
+			set_led_state(80, 20);		// "Try RS485" blink pattern
 			break;
 	
 		case ERROR:
@@ -245,9 +243,9 @@ static void  PinsToDS102(void)
 	DelayMs(10);
 }
 
-static char prev;
 static void bump_idle_counter(void)
 {
+	static char prev;
 	DISABLE_IRQ(prev);
 	idle_counter = seconds_counter + IDLE_SECS;
 	ENABLE_IRQ(prev);
@@ -260,6 +258,7 @@ static char  allow_type45_fill;
 
 void main()
 {
+	static char  prev;
   
 	setup_start_io();
   	PinsToDefault();	
@@ -294,7 +293,7 @@ void main()
   
 	while(1)
 	{
-		//
+		// ********** Check for the User activity   **********************
 		// If no activity was detected for more than 6 minutes - shut down
 		//
 		if(idle_counter < seconds_counter)
@@ -307,8 +306,12 @@ void main()
 			};
 		}
 
+		//  **************   Read switches status ***********************
 		//	Get the switch, power and button switches states
 		//
+		prev_switch_pos = switch_pos; 	// Save state
+		prev_power_pos = power_pos; 	// Save state
+  		prev_button_pos = button_pos; 	// Save state
 		switch_pos = get_switch_state();
 		button_pos = get_button_state();
 		power_pos = get_power_state();
@@ -320,10 +323,10 @@ void main()
 		{
       		// On any change bump the idle counter
       		bump_idle_counter();
-			prev_switch_pos = switch_pos; 	// Save new state
 			if(button_pos == UP_POS)  {
 				SetNextState(INIT);
 			}else {
+  				allow_type45_fill = TRUE;
   				SetNextState(CHECK_KEY);
 			}
 		}
@@ -336,7 +339,6 @@ void main()
       		// On any change bump the idle counter
       		bump_idle_counter();
 			// Reset the state only when switch goes into the ZERO, but not back.
-			prev_power_pos = power_pos; 	// Save new state
 			if( power_pos == ZERO_POS )
 			{
 				SetNextState(INIT);
@@ -434,7 +436,7 @@ void main()
 			//------------------------------------------------------------
 			case FILL_TX_DS102_WAIT:
 				result = CheckType123Equipment(fill_type);
-				if( (result != ST_TIMEOUT) && (result != NONE) )
+				if( result != NONE )
 				{
 				  SetNextState(FILL_TX_DS102);
 				}
@@ -498,7 +500,7 @@ void main()
 			//------------------------------------------------------------
 			case FILL_TX_TIME:
 				result = CheckType123Equipment(fill_type);
-				if( (result != ST_TIMEOUT) && (result != NONE) )
+				if( result != NONE )
 				{
 					SetNextState(FILL_TX_TIME_PROC);
 				}
@@ -514,8 +516,8 @@ void main()
 			//********************************************
 			//-----------FILL_RX--------------	
 			case FILL_RX:
-			  	if( allow_type45_fill ){ 
-        			// Only RS-232 and RS-485 fills are allowed 
+				if(allow_type45_fill)
+				{	// Only RS-232 and RS-485 fills are allowed 
 					PinsToRS232();
 					DelayMs(100);
   					SetNextState(FILL_RX_RS232_WAIT);
@@ -584,9 +586,9 @@ void main()
 				break;
 			//
 			// DS-102 Fill is Done
-			//
+			//***********************************************************
 			
-			//
+			//***********************************************************
       		// Wait for serial RS-232 or DS-101 fills				
       		// Check for each type in turn				
 			//

@@ -38,9 +38,9 @@ static	byte  NewState;
 static	byte  bit_count;
 static	byte  Data;
 
-static byte  prev; 
 static char GetQueryByte(void)
 {
+	static  char prev;
 	char  ret;
   
   	pinMode(PIN_B, INPUT_PULLUP);		
@@ -115,6 +115,8 @@ static  byte  byte_count;
 
 static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
 {
+  static  char prev;
+
   pinMode(PIN_D, INPUT);		// make pin input DATA
   pinMode(PIN_E, INPUT_PULLUP);	// make pin input CLOCK
   pinMode(PIN_F, INPUT);		// make pin input MUX OVR
@@ -122,7 +124,6 @@ static byte ReceiveDS102Cell(byte fill_type, byte *p_cell, byte count)
   pinWrite(PIN_E, HIGH);  // Turn on 20 K Pullup
   pinWrite(PIN_F, HIGH);  // Turn on 20 K Pullup
   
-
   byte_count = 0;
   bit_count = 0;
   PreviousState = pin_E();

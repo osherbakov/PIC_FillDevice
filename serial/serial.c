@@ -143,11 +143,11 @@ volatile byte rx_idx_in;  // Index of characters received
 volatile byte rx_idx_out; // Index of characters consumed
 volatile byte rx_idx_max; // Max index in the buffer
 
-static  char prev;
 
 // Return the number of bytes received and stored in the buffer
 byte rx_eusart_count(void)
 {
+	static  char prev;
 	byte	count;
 
 	DISABLE_IRQ(prev);		// Disable interrupts
@@ -159,6 +159,7 @@ byte rx_eusart_count(void)
 
 void rx_eusart_reset(void)
 {
+	static  char prev;
 	DISABLE_IRQ(prev);		// Disable interrupts
 	rx_idx_in = rx_idx_out = 0; 
 	ENABLE_IRQ(prev);
@@ -167,6 +168,7 @@ void rx_eusart_reset(void)
 
 int rx_eusart_symbol(void)
 {
+	static  char prev;
 	int 	result = -1;
 
 	DISABLE_IRQ(prev);		// Disable interrupts
